@@ -4,7 +4,8 @@
 ;
 ;	Operating Systems Development Tutorial
 ;*********************************************
- 
+
+
 org		0x7c00				; We are loaded by BIOS at 0x7C00
  
 bits	16					; We are still in 16 bit Real Mode
