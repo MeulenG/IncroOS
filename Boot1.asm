@@ -1,4 +1,3 @@
-#credit http://www.brokenthorn.com/Resources/OSDevIndex.html
 ;*********************************************
 ;	Boot1.asm
 ;		- A Simple Bootloader
