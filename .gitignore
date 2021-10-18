@@ -1,1 +1,9 @@
-.vs
+
+#ignores vscode
+.vscode
+
+#ingores directiories
+Notes/
+
+#ingores files with extentions
+*.pdf
