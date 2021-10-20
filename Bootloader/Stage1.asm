@@ -82,11 +82,11 @@ loader:
 times 510 - ($-$$) db 0						; We have to be 512 bytes. Clear the rest of the bytes with 0
  
 dw 0xAA55							; Boot Signiture
- 
+
 ; End of sector 1, beginning of sector 2 ---------------------------------
- 
- 
+
+
 org 0x1000							; This sector is loaded at 0x1000:0 by the bootsector
- 
+
 cli								; just halt the system
 hlt
