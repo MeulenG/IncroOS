@@ -1,9 +1,9 @@
-#include "cpu/isr.h"
-#include "screen.h"
+#include "../drivers/screen.h"
 #include "kernel.h"
-#include "libc/string.h"
-#include "libc/mem.h"
+#include "../libc/string.h"
+#include "../libc/mem.h"
 #include <stdint.h>
+#include "../cpu/isr.h"
 
 void kernel_main() {
     isr_install();

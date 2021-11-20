@@ -3,8 +3,8 @@
 #include "../cpu/isr.h"
 #include "screen.h"
 #include "../libc/string.h"
-#include "libc/function.h"
-#include "kernel/kernel.h"
+#include "../libc/function.h"
+#include "../kernel/kernel.h"
 #include <stdint.h>
 
 #define BACKSPACE 0x0E
