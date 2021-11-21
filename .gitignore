@@ -3,7 +3,7 @@
 .vscode
 
 #ingores directiories
-Notes/
+Books/
 
 #ingores files with extentions
 *.pdf

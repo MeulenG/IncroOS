@@ -1,13 +1,12 @@
 #ifndef MEM_H
 #define MEM_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "../cpu/type.h"
 
-void memory_copy(uint8_t *source, uint8_t *dest, int nbytes);
-void memory_set(uint8_t *dest, uint8_t val, uint32_t len);
+void memory_copy(u8 *source, u8 *dest, int nbytes);
+void memory_set(u8 *dest, u8 val, u32 len);
 
 /* At this stage there is no 'free' implemented. */
-uint32_t kmalloc(size_t size, int align, uint32_t *phys_addr);
+u32 kmalloc(u32 size, int align, u32 *phys_addr);
 
 #endif

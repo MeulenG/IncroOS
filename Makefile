@@ -7,7 +7,8 @@ OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o}
 CC = /home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB = /home/puhaa/opt/cross/bin/i686-elf-gdb
 # -g: Use debugging symbols in gcc
-CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32
+CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs \
+		 -Wall -Wextra -Werror
 
 # First rule is run by default
 os-image.bin: boot/bootsect.bin kernel.bin
@@ -27,13 +28,13 @@ run: os-image.bin
 
 # Open the connection to qemu and load our kernel-object file with symbols
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -fda os-image.bin -d guest_errors,int &
+	qemu-system-i686 -s -fda os-image.bin -d guest_errors,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c
 %.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -c $< -o $@
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
 
 %.o: %.asm
 	nasm $< -f elf -o $@
