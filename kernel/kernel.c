@@ -3,6 +3,8 @@
 #include "kernel.h"
 #include "../libc/string.h"
 #include "../libc/mem.h"
+#include <linux/kernel.h>
+#include <linux/module.h>
 
 void kernel_main() {
     isr_install();
