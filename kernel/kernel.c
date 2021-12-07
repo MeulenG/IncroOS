@@ -4,7 +4,7 @@
 #include "../libc/string.h"
 #include "../libc/mem.h"
 #include <linux/kernel.h>
-#include <linux/module.h>
+#include <linux/module.h>   
 
 void kernel_main() {
     isr_install();
@@ -19,7 +19,7 @@ void user_input(char *input) {
         kprint("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     } else if (strcmp(input, "PAGE") == 0) {
-        /* Lesson 22: Code to test kmalloc, the rest is unchanged */
+
         u32 phys_addr;
         u32 page = kmalloc(1000, 1, &phys_addr);
         char page_str[16] = "";
