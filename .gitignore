@@ -1,9 +1,0 @@
-
-#ignores vscode
-.vscode
-
-#ingores directiories
-Books/
-
-#ingores files with extentions
-*.pdf
