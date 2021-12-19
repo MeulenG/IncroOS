@@ -6,6 +6,9 @@
 #include <linux/kernel.h>
 #include <linux/module.h>   
 
+
+
+
 void kernel_main() {
     isr_install();
     irq_install();
