@@ -33,7 +33,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 My first OS written in Assembly and C in order to learn OS Development. I dedicate all my spare-time to developing this, and learning OS development.
 
@@ -44,7 +43,6 @@ My first OS written in Assembly and C in order to learn OS Development. I dedica
 
 ### Built With
 
-This section should list any major frameworks/libraries used to bootstrap your project. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
 
 * [osdev](https://wiki.osdev.org)
 * [C](https://www.learn-c.org/)
@@ -151,7 +149,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Oliver Meulengracht - [Linkedin_handle](https://www.linkedin.com/in/olivermeulengracht/) - Mollern2000@outlook.dk
+Oliver Meulengracht - [Linkedin](https://www.linkedin.com/in/olivermeulengracht/) - Mollern2000@outlook.dk
 
 Project Link: [https://github.com/your_username/repo_name](https://github.com/MeulenG/OMOS.git)
 
