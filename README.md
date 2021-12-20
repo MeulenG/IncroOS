@@ -61,12 +61,12 @@ In order to setup this project, you need a cross-compiler, gcc compiler and NASM
 ### Prerequisites
 
 
-* gcc
+* gcc (C compiler)
   ```sh
   sudo apt install build-essential
   ```
 
-* NASM
+* NASM (x86 compiler)
   ```sh
   sudo apt install nasm
   ```
@@ -74,7 +74,7 @@ In order to setup this project, you need a cross-compiler, gcc compiler and NASM
   ```sh
   sudo apt install make
   ```
-* QEMU
+* QEMU (emulator)
   ```sh
   sudo apt install qemu
   ```
