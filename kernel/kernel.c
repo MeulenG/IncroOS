@@ -3,9 +3,6 @@
 #include "kernel.h"
 #include "../libc/string.h"
 #include "../libc/mem.h"
-#include <linux/kernel.h>
-#include <linux/module.h>   
-
 
 
 
@@ -16,6 +13,9 @@ void kernel_main() {
     kprint("Type something, it will go through the kernel\n"
         "Type END to halt the CPU or PAGE to request a kmalloc()\n> ");
 }
+
+
+
 
 void user_input(char *input) {
     if (strcmp(input, "END") == 0) {
