@@ -13,12 +13,196 @@ KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
     call switch_to_pm
     jmp $ ; Never executed
 
-%include "boot/print.asm"
-%include "boot/print_hex.asm"
-%include "boot/disk.asm"
-%include "boot/gdt.asm"
-%include "boot/32bit_print.asm"
-%include "boot/switch_pm.asm"
+print:
+    pusha
+
+start:
+    mov al, [bx]
+    cmp al, 0 
+    je done
+
+    mov ah, 0x0e
+    int 0x10
+
+    add bx, 1
+    jmp start
+
+done:
+    popa
+    ret
+
+
+
+print_nl:
+    pusha
+    
+    mov ah, 0x0e
+    mov al, 0x0a
+    int 0x10
+    mov al, 0x0d
+    int 0x10
+    
+    popa
+    ret
+
+print_hex:
+    pusha
+
+    mov cx, 0
+
+hex_loop:
+    cmp cx, 4
+    je end
+    
+    mov ax, dx
+    and ax, 0x000f
+    add al, 0x30
+    cmp al, 0x39
+    jle step2
+    add al, 7
+
+step2:
+    mov bx, HEX_OUT + 5
+    sub bx, cx
+    mov [bx], al
+    ror dx, 4
+
+    add cx, 1
+    jmp hex_loop
+
+end:
+    mov bx, HEX_OUT
+    call print
+
+    popa
+    ret
+
+HEX_OUT:
+    db '0x0000',0
+
+
+
+disk_load:
+    pusha
+    push dx
+
+    mov ah, 0x02 
+    mov al, dh
+    mov cl, 0x02 
+    mov ch, 0x00
+    mov dh, 0x00 ; dh <- head number (0x0 .. 0xF)
+
+    ; [es:bx] <- pointer to buffer where the data will be stored
+    ; caller sets it up for us, and it is actually the standard location for int 13h
+    int 0x13      ; BIOS interrupt
+    jc disk_error ; if error (stored in the carry bit)
+
+    pop dx
+    cmp al, dh    ; BIOS also sets 'al' to the # of sectors read. Compare it.
+    jne sectors_error
+    popa
+    ret
+
+disk_error:
+    mov bx, DISK_ERROR
+    call print
+    call print_nl
+    mov dh, ah
+    call print_hex 
+    jmp disk_loop
+
+sectors_error:
+    mov bx, SECTORS_ERROR
+    call print
+
+disk_loop:
+    jmp $
+
+DISK_ERROR: db "Disk read error", 0
+SECTORS_ERROR: db "Incorrect number of sectors read", 0
+
+gdt_start:
+    dd 0x0
+    dd 0x0
+
+
+gdt_code: 
+    dw 0xffff    ; segment length, bits 0-15
+    dw 0x0       ; segment base, bits 0-15
+    db 0x0       ; segment base, bits 16-23
+    db 10011010b ; flags (8 bits)
+    db 11001111b ; flags (4 bits) + segment length, bits 16-19
+    db 0x0       ; segment base, bits 24-31
+
+
+gdt_data:
+    dw 0xffff
+    dw 0x0
+    db 0x0
+    db 10010010b
+    db 11001111b
+    db 0x0
+
+gdt_end:
+
+; GDT descriptor
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
+; define some constants for later use
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
+
+[bits 32]
+
+VIDEO_MEMORY equ 0xb8000
+WHITE_OB_BLACK equ 0x0f
+
+print_string_pm:
+    pusha
+    mov edx, VIDEO_MEMORY
+
+print_string_pm_loop:
+    mov al, [ebx] ; [ebx] is the address of our character
+    mov ah, WHITE_OB_BLACK
+
+    cmp al, 0
+    je print_string_pm_done
+
+    mov [edx], ax
+    add ebx, 1
+    add edx, 2
+
+    jmp print_string_pm_loop
+
+print_string_pm_done:
+    popa
+    ret
+
+
+[bits 16]
+switch_to_pm: ; switch to protected mode
+    cli
+    lgdt [gdt_descriptor]
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+    jmp CODE_SEG:init_pm
+
+[bits 32]
+init_pm: ; init_protected mode
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov ebp, 0x90000
+    mov esp, ebp
+
+    call BEGIN_PM ; begin protected mode
 
 bits 16
 load_kernel:
