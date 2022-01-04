@@ -1,59 +1,56 @@
-BUILD_DIR=build
-BOOTLOADER=$(BUILD_DIR)/boot/bootsect.o
-OS=$(BUILD_DIR)/os/kernel_entry.o
-
 C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
 HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
-
+# Nice syntax for file extension replacement
 OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o} 
+
+
 
 # Environmental Variables
 CC = /home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB = /home/puhaa/opt/cross/bin/i686-elf-gdb
 
 
-all: os-image.bin
-
-.PHONY: os-image.bin bootloader os
-
-
-CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs \
-		 -Wall -Wextra -Werror
+# Emulator
+EMU = qemu-system-i386
+EMU_ARGS  = -machine q35
+EMU_ARGS += -fda 
 
 
-bootloader:
-	make -C bootloader
+# -g: Use debugging symbols in gcc
+CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32
 
-os-image.bin: boot/bootsect.bin kernel.bin
-	cat $^ > os-image.bin
+# First rule is run by default
+PuhaaOS-image.bin: boot/bootsect.bin kernel.bin
+	cat $^ > PuhaaOS-image.bin
 
-# Only relevant for debugging
-kernel.elf: boot/kernel_entry.o ${OBJ}
-	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
-
-
+# '--oformat binary' deletes all symbols as a collateral, so we don't need
+# to 'strip' them manually on this case
 kernel.bin: boot/kernel_entry.o ${OBJ}
 	i686-elf-ld -o $@ -Ttext 0x1000 $^ --oformat binary
 
-os:
-	make -C os
+# Used for debugging purposes
+kernel.elf: boot/kernel_entry.o ${OBJ}
+	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
 
-run: os-image.bin
-	qemu-system-i386 -fda os-image.bin
+run: PuhaaOS-image.bin
+	qemu-system-i386 -fda build/PuhaaOS-image.bin
 
-debug: os-image.bin kernel.elf
-	qemu-system-i686 -s -fda os-image.bin -d guest_errors,int &
+# Open the connection to qemu and load our kernel-object file with symbols
+debug: PuhaaOS-image.bin kernel.elf
+	qemu-system-i686 -s -fda PuhaaOS-image.bin -d guest_errors,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
-
+# Generic rules for wildcards
+# To make an object, always compile from its .c
 %.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+	${CC} ${CFLAGS} -c $< -o $@
+
+%.o: %.asm
+	nasm $< -f elf -o $@
+
+%.bin: %.asm
+	nasm $< -f bin -o $@
 
 clean:
 	rm -rf *.bin *.dis *.o os-image.bin *.elf
 	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o libc/*.o
-
-
-clean:
-	make -C bootloader clean
-	make -C os clean
