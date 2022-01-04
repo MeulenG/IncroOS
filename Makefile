@@ -26,8 +26,8 @@ GCC_ARGS += -fno-exceptions
 GCC_ARGS += -m32
 
 #NASM - Assembly Compiler
-ASMCC = nasm
-ASMCC_ARGS = -f
+ASMC = nasm
+ASMC_ARGS = -f
 
 
 RMVE = rm -rf
@@ -78,10 +78,10 @@ debug: PuhaaOS-image.bin kernel.elf
 	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
 
 %.o: %.asm
-	${ASMCC} $< ${ASMCC_ARGS} elf -o $@
+	${ASMC} $< ${ASMC_ARGS} elf -o $@
 
 %.bin: %.asm
-	${ASMCC} $< ${ASMCC_ARGS} bin -o $@
+	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 clean:
 	${RMVE} *.bin *.dis *.o os-image.bin *.elf
