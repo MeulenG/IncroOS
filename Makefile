@@ -13,12 +13,44 @@ GDB = /home/puhaa/opt/cross/bin/i686-elf-gdb
 # Emulator
 EMU = qemu-system-i386
 EMU_ARGS  = -machine q35
-EMU_ARGS += -fda 
+EMU_ARGS += -fda
 
 
 # -g: Use debugging symbols in gcc
-CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32
+CFLAGS = -g
+GCC_ARGS = -ffreestanding
+GCC_ARGS += -fda
+GCC_ARGS += -Wall
+GCC_ARGS += -Wextra
+GCC_ARGS += -fno-exceptions
+GCC_ARGS += -m32
 
+#NASM - Assembly Compiler
+ASMCC = nasm
+ASMCC_ARGS = -f
+
+
+RMVE = rm -rf
+
+.PHONY: boot cpu drivers kernel kernel_entry libc PuhaaOS-image.bin kernel.bin kernel.elf
+
+boot:
+	make -C boot
+
+cpu:
+	make -C cpu
+
+drivers:
+	make -C drivers
+
+kernel:
+	make -C kernel
+
+kernel_entry:
+	make -C kernel_entry
+
+libc:
+	make -C libc
 # First rule is run by default
 PuhaaOS-image.bin: boot/bootsect.bin kernel.bin
 	cat $^ > PuhaaOS-image.bin
@@ -33,24 +65,24 @@ kernel.elf: boot/kernel_entry.o ${OBJ}
 	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
 
 run: PuhaaOS-image.bin
-	qemu-system-i386 -fda build/PuhaaOS-image.bin
+	${EMU} ${EMU_ARGS} build/PuhaaOS-image.bin
 
 # Open the connection to qemu and load our kernel-object file with symbols
 debug: PuhaaOS-image.bin kernel.elf
-	qemu-system-i686 -s -fda PuhaaOS-image.bin -d guest_errors,int &
+	qemu-system-i386 -s -fda PuhaaOS-image.bin -d guest_errors,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c
 %.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -c $< -o $@
+	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
 
 %.o: %.asm
-	nasm $< -f elf -o $@
+	${ASMCC} $< ${ASMCC_ARGS} elf -o $@
 
 %.bin: %.asm
-	nasm $< -f bin -o $@
+	${ASMCC} $< ${ASMCC_ARGS} bin -o $@
 
 clean:
-	rm -rf *.bin *.dis *.o os-image.bin *.elf
-	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o libc/*.o
+	${RMVE} *.bin *.dis *.o os-image.bin *.elf
+	${RMVE} kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o libc/*.o
