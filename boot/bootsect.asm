@@ -36,10 +36,10 @@ done:
 print_nl:
     pusha
     
-    mov ah, 0x0e
-    mov al, 0x0a
+    mov ah, 0x0e ; 14
+    mov al, 0x0a ; 10
     int 0x10
-    mov al, 0x0d
+    mov al, 0x0d ; 13
     int 0x10
     
     popa
@@ -86,12 +86,13 @@ disk_load:
     pusha
     push dx
 
+    ; Default boot procedure
     mov ah, 0x02 
     mov al, dh
-    mov cl, 0x02 
-    mov ch, 0x00
-    mov dh, 0x00 ; dh <- head number (0x0 .. 0xF)
-
+    mov ch, 0 ; track/cylinder number
+    mov cl, 2 ; sector number
+    mov dh, 0 ; head number
+    mov dl, 0 ; drive number
     ; [es:bx] <- pointer to buffer where the data will be stored
     ; caller sets it up for us, and it is actually the standard location for int 13h
     int 0x13      ; BIOS interrupt
@@ -195,7 +196,7 @@ init_pm: ; init_protected mode
     mov ax, DATA_SEG
     mov ds, ax
     mov ss, ax
-    mov es, ax
+    
     mov fs, ax
     mov gs, ax
 
@@ -232,4 +233,4 @@ MSG_RETURNED_KERNEL db "Returned from kernel. Error?", 0
 
 
 times 510 - ($-$$) db 0
-dw 0xAA55
+dw 0xAA55 ; Boot Signature

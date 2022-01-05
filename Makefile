@@ -1,36 +1,36 @@
-C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
+C_SOURCES 	= 			$(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
+HEADERS 	= 			$(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
 # Nice syntax for file extension replacement
-OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o} 
+OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o} 
 
 
 
 # Environmental Variables
-CC = /home/puhaa/opt/cross/bin/i686-elf-gcc
-GDB = /home/puhaa/opt/cross/bin/i686-elf-gdb
+CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
+GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
 
 
 # Emulator
-EMU = qemu-system-i386
-EMU_ARGS  = -machine q35
-EMU_ARGS += -fda
+EMU 	  	= 			qemu-system-i386
+EMU_ARGS  	= 			-machine q35
+EMU_ARGS  	+= 			-fda
 
 
 # -g: Use debugging symbols in gcc
-CFLAGS = -g
-GCC_ARGS = -ffreestanding
-GCC_ARGS += -fda
-GCC_ARGS += -Wall
-GCC_ARGS += -Wextra
-GCC_ARGS += -fno-exceptions
-GCC_ARGS += -m32
+CFLAGS 	 	= 			-g
+GCC_ARGS 	= 			-ffreestanding
+GCC_ARGS 	+= 			-fda
+GCC_ARGS 	+= 			-Wall
+GCC_ARGS 	+= 			-Wextra
+GCC_ARGS 	+= 			-fno-exceptions
+GCC_ARGS 	+= 			-m32
 
 #NASM - Assembly Compiler
-ASMC = nasm
-ASMC_ARGS = -f
+ASMC 	  	= 			nasm
+ASMC_ARGS 	= 			-f
 
 
-RMVE = rm -rf
+RMVE 		= 			rm -rf
 
 .PHONY: boot cpu drivers kernel kernel_entry libc PuhaaOS-image.bin kernel.bin kernel.elf
 
