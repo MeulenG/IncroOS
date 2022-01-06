@@ -14,9 +14,9 @@
 #define REG_SCREEN_DATA 0x3d5
 
 /* Public kernel API */
-void clear_screen();
-void kprint_at(char *message, int col, int row);
-void kprint(char *message);
-void kprint_backspace();
+void                        clear_screen            ();
+void                        kprint_at               (char *message, int col, int row);
+void                        kprint                  (char *message);
+void                        kprint_backspace        ();
 
 #endif

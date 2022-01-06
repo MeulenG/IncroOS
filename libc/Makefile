@@ -7,10 +7,10 @@ OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o}
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
 
-BUILD_DIR=../build
+BUILD_DIR	=			../build
 
-OS_SRCS := 				$(wildcard *.c)
-OS_OBJS := 				$(patsubst %.c, $(BUILD_DIR)/%.o, $(OS_SRCS))
+OS_SRCS 	:= 			$(wildcard *.c)
+OS_OBJS 	:= 			$(patsubst %.c, $(BUILD_DIR)/%.o, $(OS_SRCS))
 
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
@@ -22,7 +22,7 @@ GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
 
 
-all: 					$(OS_OBJS)
+all			: 			$(OS_OBJS)
 
 
 # Generic rules for wildcards

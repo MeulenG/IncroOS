@@ -26,26 +26,38 @@ const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',
 
 static void keyboard_callback(registers_t regs) {
 
-    u8 scancode = port_byte_in(0x60);
+    u8 scancode       =         port_byte_in(0x60);
     
-    if (scancode > SC_MAX) return;
-    if (scancode == BACKSPACE) {
-        backspace(key_buffer);
-        kprint_backspace();
-    } else if (scancode == ENTER) {
-        kprint("\n");
-        user_input(key_buffer);
-        key_buffer[0] = '\0';
-    } else {
-        char letter = sc_ascii[(int)scancode];
+    if                          (scancode > SC_MAX) return;
+    
+    if                          (scancode == BACKSPACE) 
+    {
         
-        char str[2] = {letter, '\0'};
-        append(key_buffer, letter);
-        kprint(str);
+        backspace               (key_buffer);
+        
+        kprint_backspace        ();
+    } 
+    
+    else if                     (scancode == ENTER) {
+        kprint                  ("\n");
+        
+        user_input              (key_buffer);
+        
+        key_buffer[0] =         '\0';
+    } 
+    else 
+    {
+        char letter   =         sc_ascii[(int)scancode];
+        
+        char str[2]   =         {letter, '\0'};
+        append                  (key_buffer, letter);
+        kprint                  (str);
     }
-    UNUSED(regs);
+    UNUSED                      (regs);
 }
 
 void init_keyboard() {
-   register_interrupt_handler(IRQ1, keyboard_callback); 
+
+   register_interrupt_handler   (IRQ1, keyboard_callback); 
+
 }

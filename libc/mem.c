@@ -6,7 +6,7 @@ void memory_copy(u8 *source, u8 *dest, int nbytes) {
     for                     (i = 0; i < nbytes; i++) 
     
     {
-        *(dest + i) = *(source + i);
+        *(dest + i)         = *(source + i);
     }
 }
 

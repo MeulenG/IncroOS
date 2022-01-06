@@ -146,6 +146,18 @@ gdt_data:
 
 gdt_end:
 
+;--------------------------------------
+; Enables a20 line through bios
+;--------------------------------------
+
+EnableA20_Bios:
+	pusha
+	mov	ax, 0x2401
+	int	0x15
+	popa
+	ret
+
+
 ; GDT descriptor
 gdt_descriptor:
     dw gdt_end - gdt_start - 1
