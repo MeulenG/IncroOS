@@ -19,11 +19,17 @@ EMU_ARGS  	+= 			-fda
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
 GCC_ARGS 	= 			-ffreestanding
-GCC_ARGS 	+= 			-fda
 GCC_ARGS 	+= 			-Wall
 GCC_ARGS 	+= 			-Wextra
+GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
+GCC_ARGS 	+= 			-fno-builtin
+GCC_ARGS 	+= 			-nostdlib
+GCC_ARGS 	+= 			-nostdinc
+GCC_ARGS 	+= 			-fno-stack-protector
+GCC_ARGS 	+= 			-nostartfiles
+GCC_ARGS 	+= 			-nodefaultlibs
 
 #NASM - Assembly Compiler
 ASMC 	  	= 			nasm
@@ -32,27 +38,8 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-.PHONY: boot cpu drivers kernel kernel_entry libc PuhaaOS-image.bin kernel.bin kernel.elf
-
-boot:
-	make -C boot
-
-cpu:
-	make -C cpu
-
-drivers:
-	make -C drivers
-
-kernel:
-	make -C kernel
-
-kernel_entry:
-	make -C kernel_entry
-
-libc:
-	make -C libc
 # First rule is run by default
-PuhaaOS-image.bin: boot/bootsect.bin kernel.bin
+PuhaaOS-image.bin: boot/Stage1.bin kernel.bin
 	cat $^ > PuhaaOS-image.bin
 
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
@@ -65,7 +52,7 @@ kernel.elf: boot/kernel_entry.o ${OBJ}
 	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
 
 run: PuhaaOS-image.bin
-	${EMU} ${EMU_ARGS} build/PuhaaOS-image.bin
+	${EMU} ${EMU_ARGS} PuhaaOS-image.bin
 
 # Open the connection to qemu and load our kernel-object file with symbols
 debug: PuhaaOS-image.bin kernel.elf
