@@ -20,7 +20,7 @@ GCC_ARGS 	+= 			-fno-stack-protector
 GCC_ARGS 	+= 			-nostartfiles
 GCC_ARGS 	+= 			-nodefaultlibs
 
-all: $(BUILD_DIR)/string.o $(BUILD_DIR)/mem.o $(BUILD_DIR)/function.o
+all: $(BUILD_DIR)/string.o $(BUILD_DIR)/mem.o
 
 
 

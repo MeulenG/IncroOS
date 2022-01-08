@@ -1,12 +1,15 @@
-BUILD_DIR=../build
+BUILD_DIR	=			../build
 
-BOOT_SRCS := $(wildcard *.asm)
-BOOT_OBJS := $(patsubst %.asm, $(BUILD_DIR)/%.o, $(BOOT_SRCS))
+#NASM - Assembly Compiler
+ASMC 	  	= 			nasm
+ASMC_ARGS 	= 			-f
 
-all: $(BOOT_OBJS)
 
-$(BUILD_DIR)/%.bin: %.asm
-	nasm -f bin $< -o $@
+
+all: $(BUILD_DIR)/Stage1.bin
+
+$(BUILD_DIR)/Stage1.bin: Stage1.asm
+	nasm Stage1.asm -f bin -o Stage1.bin
 
 
 clean:
