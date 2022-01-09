@@ -1,16 +1,11 @@
-C_SOURCES 	= 			$(wildcard cpu/*.c)
-HEADERS 	= 			$(wildcard cpu/*.h)
-# Nice syntax for file extension replacement
-OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o} 
+include 				/home/puhaa/Desktop/PuhaaOS/buildpath.txt
+
 
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
 
-BUILD_DIR	=			../build
 
-OS_SRCS 	:= 			$(wildcard *.c)
-OS_OBJS 	:= 			$(patsubst %.c, $(BUILD_DIR)/%.o, $(OS_SRCS))
 
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
@@ -22,15 +17,24 @@ GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
 
 
-all			: 			$(OS_OBJS)
+all			: 			$(BUILD_DIR)/interrupt.o $(BUILD_DIR)/idt.o $(BUILD_DIR)/isr.o $(BUILD_DIR)/port.o $(BUILD_DIR)/timer.o
 
 
-# Generic rules for wildcards
-# To make an object, always compile from its .c
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
 
+$(BUILD_DIR)/interrupt.o: interrupt.asm
+	${ASMC} interrupt.asm ${ASMC_ARGS} elf -o $@
 
+$(BUILD_DIR)/idt.o: idt.c idt.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c idt.c -o $@
+
+$(BUILD_DIR)/isr.o: isr.c isr.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c isr.c -o $@
+
+$(BUILD_DIR)/port.o: port.c port.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c port.c -o $@
+
+$(BUILD_DIR)/timer.o: timer.c timer.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c timer.c -o $@
 
 clean:
 	rm $(BUILD_DIR)/*
