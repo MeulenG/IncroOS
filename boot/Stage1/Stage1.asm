@@ -1,6 +1,8 @@
 org 0x7c00 ; BIOS
 KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
 
+
+
     mov [BOOT_DRIVE], dl
     mov bp, 0x9000
     mov sp, bp
@@ -170,7 +172,7 @@ DATA_SEG equ gdt_data - gdt_start
 [bits 32]
 
 VIDEO_MEMORY equ 0xb8000
-WHITE_OB_BLACK equ 0x0f
+WHITE_OB_BLACK equ 0x3B
 
 print_string_pm:
     pusha
@@ -244,5 +246,5 @@ MSG_LOAD_KERNEL db "Loading kernel into memory", 0
 MSG_RETURNED_KERNEL db "Returned from kernel. Error?", 0
 
 
-times 510 - ($-$$) db 0
-dw 0xAA55 ; Boot Signature
+          TIMES 510-($-$$) DB 0
+          DW 0xAA55
