@@ -1,13 +1,14 @@
-BUILD_DIR=../build
+include 				/home/puhaa/Desktop/PuhaaOS/buildpath.txt
 
-BOOT_SRCS := $(wildcard *.asm)
-BOOT_OBJS := $(patsubst %.asm, $(BUILD_DIR)/%.o, $(BOOT_SRCS))
+#NASM - Assembly Compiler
+ASMC 	  	= 			nasm
+ASMC_ARGS 	= 			-f
 
-all: $(BOOT_OBJS)
 
+all: 					$(BUILD_DIR)/Stage1.bin
 
-$(BUILD_DIR)/%.bin: %.asm
-	nasm -f bin $< -o $@
+$(BUILD_DIR)/Stage2.bin: Stage2.asm
+	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 
 clean:

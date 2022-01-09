@@ -6,12 +6,11 @@ OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o}
 
 
 
-BUILD_DIR	= 			build
 
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-
+include 				/home/puhaa/Desktop/PuhaaOS/buildpath.txt
 
 # Emulator
 EMU 	  	= 			qemu-system-i386

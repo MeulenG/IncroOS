@@ -1,5 +1,4 @@
-BUILD_DIR	=			../build
-
+include 				/home/puhaa/Desktop/PuhaaOS/buildpath.txt
 #NASM - Assembly Compiler
 ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
@@ -9,7 +8,7 @@ ASMC_ARGS 	= 			-f
 all: $(BUILD_DIR)/Stage1.bin
 
 $(BUILD_DIR)/Stage1.bin: Stage1.asm
-	nasm Stage1.asm -f bin -o Stage1.bin
+	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 
 clean:
