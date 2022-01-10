@@ -30,7 +30,5 @@ all			: 			$(OS_OBJS)
 %.o: %.c ${HEADERS}
 	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
 
-
-
 clean:
 	rm $(BUILD_DIR)/*
