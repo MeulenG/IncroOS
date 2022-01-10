@@ -7,3 +7,5 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, 0x7c00
+
+message_print:

@@ -125,8 +125,8 @@ DISK_ERROR: db "Disk read error", 0
 SECTORS_ERROR: db "Incorrect number of sectors read", 0
 
 gdt_start:
-    dd 0x0
-    dd 0x0
+    dd 0
+    dd 0
 
 
 gdt_code: 
