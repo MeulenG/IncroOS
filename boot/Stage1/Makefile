@@ -1,5 +1,9 @@
-include 				/home/puhaa/Desktop/PuhaaOS/buildpath.txt
+# Environmental Variables
+
+include 				/home/puhaa/Desktop/PuhaaOS/buildbootpath
+
 #NASM - Assembly Compiler
+
 ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 

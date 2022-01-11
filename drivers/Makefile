@@ -1,36 +1,35 @@
-C_SOURCES 	= 			$(wildcard drivers/*.c)
-HEADERS 	= 			$(wildcard drivers/*.h)
-# Nice syntax for file extension replacement
-OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o} 
-
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
+include 				/home/puhaa/Desktop/PuhaaOS/buildpath
 
-BUILD_DIR	=			../build
-
-OS_SRCS 	:= 			$(wildcard *.c)
-OS_OBJS 	:= 			$(patsubst %.c, $(BUILD_DIR)/%.o, $(OS_SRCS))
 
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
 GCC_ARGS 	= 			-ffreestanding
-GCC_ARGS 	+= 			-fda
 GCC_ARGS 	+= 			-Wall
 GCC_ARGS 	+= 			-Wextra
+GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
+GCC_ARGS 	+= 			-fno-builtin
+GCC_ARGS 	+= 			-nostdlib
+GCC_ARGS 	+= 			-nostdinc
+GCC_ARGS 	+= 			-fno-stack-protector
+GCC_ARGS 	+= 			-nostartfiles
+GCC_ARGS 	+= 			-nodefaultlibs
 
 
-all			: 			$(OS_OBJS)
+all			: 			$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/screen.o $(BUILD_DIR)/disk.o
 
+$(BUILD_DIR)/keyboard.o: keyboard.c keyboard.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c keyboard.c -o $@
 
-# Generic rules for wildcards
-# To make an object, always compile from its .c
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
+$(BUILD_DIR)/screen.o: screen.c screen.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c screen.c -o $@
 
-
+$(BUILD_DIR)/disk.o: disk.c disk.h
+	${CC} ${CFLAGS} ${GCC_ARGS} -c disk.c -o $@
 
 clean:
 	rm $(BUILD_DIR)/*
