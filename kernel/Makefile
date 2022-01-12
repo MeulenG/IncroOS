@@ -21,7 +21,7 @@ GCC_ARGS 	+= 			-nostartfiles
 GCC_ARGS 	+= 			-nodefaultlibs
 
 
-all			: 			$(OS_OBJS)
+all			: 			$(BUILD_DIR)/kernel.o
 
 
 # Generic rules for wildcards
