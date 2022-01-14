@@ -6,11 +6,11 @@ ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 
 
-all: 					$(BUILD_DIR)/Stage1.bin
+all			: 			$(BUILD_DIR_BOOT)/Stage2.bin
 
-$(BUILD_DIR)/Stage2.bin: Stage2.asm
+$(BUILD_DIR_BOOT)/Stage2.bin: Stage2.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 
 clean:
-	rm $(BUILD_DIR)/*
+	rm $(BUILD_DIR_BOOT)/*.bin

@@ -1,5 +1,4 @@
 # Environmental Variables
-
 include 				/home/puhaa/Desktop/PuhaaOS/buildbootpath
 
 #NASM - Assembly Compiler
@@ -9,11 +8,11 @@ ASMC_ARGS 	= 			-f
 
 
 
-all: $(BUILD_DIR)/Stage1.bin
+all			: 			$(BUILD_DIR_BOOT)/Stage1.bin
 
-$(BUILD_DIR)/Stage1.bin: Stage1.asm
+$(BUILD_DIR_BOOT)/Stage1.bin: Stage1.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 
 clean:
-	rm $(BUILD_DIR)/*
+	rm -rf $(BUILD_DIR_BOOT)/*.bin

@@ -47,4 +47,4 @@ $(BUILD_DIR)/timer.o: timer.c timer.h
 	${CC} ${CFLAGS} ${GCC_ARGS} -c timer.c -o $@
 
 clean:
-	rm $(BUILD_DIR)/*
+	rm $(BUILD_DIR)/*.o

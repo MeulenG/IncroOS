@@ -1,15 +1,9 @@
-C_SOURCES 	= 			$(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
-HEADERS 	= 			$(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
-# Nice syntax for file extension replacement
-OBJ 		= 			${C_SOURCES:.c=.o cpu/interrupt.o} 
-
-
-
-
-
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
+include 				/home/puhaa/Desktop/PuhaaOS/buildOS
+include					/home/puhaa/Desktop/PuhaaOS/buildpath
+include					/home/puhaa/Desktop/PuhaaOS/buildbootpath
 
 # Emulator
 EMU 	  	= 			qemu-system-i386
@@ -39,38 +33,38 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-# First rule is run by default
-PuhaaOS-image.bin: boot/Stage1.bin kernel.bin
-	cat $^ > PuhaaOS-image.bin
+all			:			boot	cpu		drivers		kernel		kernel_entry		libc		$(BUILD_DIR_OS)/kernel.bin		$(BUILD_DIR_OS)/OS
 
-# '--oformat binary' deletes all symbols as a collateral, so we don't need
-# to 'strip' them manually on this case
-kernel.bin: boot/kernel_entry.o ${OBJ}
-	i686-elf-ld -o $@ -Ttext 0x1000 $^ --oformat binary
+boot:
+	make -C boot/Stage1
+	make -C boot/Stage2
 
-# Used for debugging purposes
-kernel.elf: boot/kernel_entry.o ${OBJ}
-	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
+cpu:
+	make -C cpu
 
-run: PuhaaOS-image.bin
-	${EMU} ${EMU_ARGS} PuhaaOS-image.bin
+drivers:
+	make -C drivers
 
-# Open the connection to qemu and load our kernel-object file with symbols
-debug: PuhaaOS-image.bin kernel.elf
-	qemu-system-i386 -s -fda PuhaaOS-image.bin -d guest_errors,int &
-	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+kernel:
+	make -C kernel
 
-# Generic rules for wildcards
-# To make an object, always compile from its .c
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} ${GCC_ARGS} -c $< -o $@
+kernel_entry:
+	make -C kernel_entry
 
-%.o: %.asm
-	${ASMC} $< ${ASMC_ARGS} elf -o $@
+libc:
+	make -C libc
 
-%.bin: %.asm
-	${ASMC} $< ${ASMC_ARGS} bin -o $@
+$(BUILD_DIR_OS)/kernel.bin:
+	i686-elf-ld -o kernel.bin -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o --oformat binary
+
+$(BUILD_DIR_OS)/OS:
+	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin kernel.bin > PuhaaOS-image.bin
 
 clean:
-	${RMVE} *.bin *.dis *.o os-image.bin *.elf
-	${RMVE} kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o libc/*.o
+	make -C boot/Stage1 clean
+	make -C boot/Stage2 clean
+	make -C cpu clean
+	make -C drivers clean
+	make -C kernel clean
+	make -C kernel_entry clean
+	make -C libc clean
