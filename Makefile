@@ -55,10 +55,14 @@ libc:
 	make -C libc
 
 $(BUILD_DIR_OS)/kernel.bin:
-	i686-elf-ld -o kernel.bin -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o --oformat binary
+	i686-elf-ld -o $(BUILD_DIR_OS)/kernel.bin -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o --oformat binary
 
 $(BUILD_DIR_OS)/OS:
-	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin kernel.bin > PuhaaOS-image.bin
+	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin build/OS/kernel.bin > build/OS/PuhaaOS-image.bin
+
+run: PuhaaOS-image.bin
+	${EMU} ${EMU_ARGS} build/OS/PuhaaOS-image.bin
+
 
 clean:
 	make -C boot/Stage1 clean
