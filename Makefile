@@ -33,11 +33,12 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-all			:			boot	cpu		drivers		kernel		kernel_entry		libc		$(BUILD_DIR_OS)/kernel.bin		$(BUILD_DIR_OS)/OS
+all			:			boot	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
+
+.PHONY		: 			boot	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
 
 boot:
-	make -C boot/Stage1
-	make -C boot/Stage2
+	make -C boot
 
 cpu:
 	make -C cpu
@@ -65,8 +66,7 @@ run: PuhaaOS-image.bin
 
 
 clean:
-	make -C boot/Stage1 clean
-	make -C boot/Stage2 clean
+	make -C boot/Stage1 clean 
 	make -C cpu clean
 	make -C drivers clean
 	make -C kernel clean

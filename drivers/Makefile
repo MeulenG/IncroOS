@@ -31,5 +31,3 @@ $(BUILD_DIR)/screen.o: screen.c screen.h
 $(BUILD_DIR)/disk.o: disk.c disk.h
 	${CC} ${CFLAGS} ${GCC_ARGS} -c disk.c -o $@
 
-clean:
-	rm $(BUILD_DIR)/*

@@ -30,5 +30,3 @@ all			: 			$(BUILD_DIR)/kernel.o
 $(BUILD_DIR)/kernel.o: kernel.c kernel.h
 	${CC} ${CFLAGS} ${GCC_ARGS} -c kernel.c -o $@
 
-clean:
-	rm $(BUILD_DIR)/*
