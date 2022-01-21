@@ -10,7 +10,3 @@ all			: 			$(BUILD_DIR_BOOT)/Stage2.bin
 
 $(BUILD_DIR_BOOT)/Stage2.bin: Stage2.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
-
-
-clean:
-	rm $(BUILD_DIR_BOOT)/*.bin

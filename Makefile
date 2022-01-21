@@ -58,12 +58,19 @@ libc:
 $(BUILD_DIR_OS)/kernel.bin:
 	i686-elf-ld -o $(BUILD_DIR_OS)/kernel.bin -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o --oformat binary
 
+kernel.elf: boot/kernel_entry.o ${OBJ}
+	i686-elf-ld -o $(BUILD_DIR_OS)/kernel.elf -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o
+
+
 $(BUILD_DIR_OS)/OS:
 	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin build/OS/kernel.bin > build/OS/PuhaaOS-image.bin
 
 run: PuhaaOS-image.bin
 	${EMU} ${EMU_ARGS} build/OS/PuhaaOS-image.bin
 
+debug: PuhaaOS-image.bin kernel.elf
+	qemu-system-i386 -s -fda build/OS/PuhaaOS-image.bin -d guest_errors,int &
+	${GDB} -ex "target remote localhost:1234" -ex "symbol-file $(BUILD_DIR_OS)/kernel.elf"
 
 clean:
 	make -C boot/Stage1 clean 
