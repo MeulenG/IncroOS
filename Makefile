@@ -33,12 +33,15 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-all			:			boot	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
+all			:			Stage1	Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
 
-.PHONY		: 			boot	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
+.PHONY		: 			Stage1	Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
 
-boot:
-	make -C boot
+Stage1:
+	make -C Stage1
+
+Stage2:
+	make -C Stage2
 
 cpu:
 	make -C cpu
@@ -58,7 +61,7 @@ libc:
 $(BUILD_DIR_OS)/kernel.bin:
 	i686-elf-ld -o $(BUILD_DIR_OS)/kernel.bin -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o --oformat binary
 
-kernel.elf: boot/kernel_entry.o ${OBJ}
+kernel.elf: build/kernel_entry.o
 	i686-elf-ld -o $(BUILD_DIR_OS)/kernel.elf -Ttext 0x1000 build/kernel_entry.o build/kernel.o build/interrupt.o build/disk.o build/keyboard.o build/screen.o build/idt.o build/isr.o build/ports.o build/timer.o build/mem.o build/string.o
 
 
@@ -73,7 +76,7 @@ debug: PuhaaOS-image.bin kernel.elf
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file $(BUILD_DIR_OS)/kernel.elf"
 
 clean:
-	make -C boot/Stage1 clean 
+	make -C Stage1 clean 
 	make -C cpu clean
 	make -C drivers clean
 	make -C kernel clean
