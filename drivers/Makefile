@@ -1,7 +1,7 @@
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-include 				/home/puhaa/Desktop/PuhaaOS/buildpath
+include 				/home/puhaa/Desktop/OMOS/buildpath
 
 
 # -g: Use debugging symbols in gcc

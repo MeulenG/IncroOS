@@ -1,4 +1,4 @@
-include 				/home/puhaa/Desktop/PuhaaOS/buildpath
+include 				/home/puhaa/Desktop/OMOS/buildpath
 
 
 # Environmental Variables

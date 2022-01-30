@@ -1,5 +1,5 @@
 # Environmental Variables
-include 				/home/puhaa/Desktop/PuhaaOS/buildbootpath
+include 				/home/puhaa/Desktop/OMOS/buildbootpath
 
 #NASM - Assembly Compiler
 

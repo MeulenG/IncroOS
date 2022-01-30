@@ -1,9 +1,9 @@
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-include 				/home/puhaa/Desktop/PuhaaOS/buildOS
-include					/home/puhaa/Desktop/PuhaaOS/buildpath
-include					/home/puhaa/Desktop/PuhaaOS/buildbootpath
+include 				/home/puhaa/Desktop/OMOS/buildOS
+include					/home/puhaa/Desktop/OMOS/buildpath
+include					/home/puhaa/Desktop/OMOS/buildbootpath
 
 # Emulator
 EMU 	  	= 			qemu-system-i386
@@ -68,7 +68,7 @@ kernel.elf: build/kernel_entry.o
 $(BUILD_DIR_OS)/OS:
 	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin build/OS/kernel.bin > build/OS/PuhaaOS-image.bin
 
-run: PuhaaOS-image.bin
+run: build/OS/PuhaaOS-image.bin
 	${EMU} ${EMU_ARGS} build/OS/PuhaaOS-image.bin
 
 debug: PuhaaOS-image.bin kernel.elf
@@ -82,3 +82,4 @@ clean:
 	make -C kernel clean
 	make -C kernel_entry clean
 	make -C libc clean
+	${RMVE} /home/puhaa/Desktop/OMOS/build/OS/*.bin
