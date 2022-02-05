@@ -61,7 +61,7 @@ In order to setup this project, you need a cross-compiler, gcc compiler and NASM
 ### Prerequisites
 
 
-* gcc (C compiler)
+* gcc (C/C++ compiler)
   ```sh
   sudo apt install build-essential
   ```
@@ -162,6 +162,5 @@ Project Link: [OMOS](https://github.com/MeulenG/OMOS.git)
 
 Use this space to list resources you find helpful and would like to give credit to. I've included a few of my favorites to kick things off!
 
-* [os-tutorial](https://github.com/cfenollosa/os-tutorial)
 * [Brokenthorn](http://brokenthorn.com/)
 <p align="right">(<a href="#top">back to top</a>)</p>
