@@ -1,9 +1,7 @@
-org 0x7c00 ; BIOS
+[BITS 16]
+org 0x7c00 ; BIOS 16 standard
 KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
-
-
-
-    mov [BOOT_DRIVE], dl
+    mov [DRIVE], dl
     mov bp, 0x9000
     mov sp, bp
 
@@ -15,8 +13,12 @@ KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
     call switch_to_pm
     jmp $ ; Never executed
 
+
+
 print:
     pusha
+
+
 
 start:
     mov al, [bx]
@@ -60,10 +62,10 @@ hex_loop:
     and ax, 0x000f
     add al, 0x30
     cmp al, 0x39
-    jle step2
+    jle stage2
     add al, 7
 
-step2:
+stage2:
     mov bx, HEX_OUT + 5
     sub bx, cx
     mov [bx], al
@@ -169,7 +171,7 @@ gdt_descriptor:
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
-[bits 32]
+[BITS 32]
 
 VIDEO_MEMORY equ 0xb8000
 WHITE_OB_BLACK equ 0x3B
@@ -196,7 +198,7 @@ print_string_pm_done:
     ret
 
 
-[bits 16]
+[BITS 16]
 switch_to_pm: ; switch to protected mode
     cli
     lgdt [gdt_descriptor]
@@ -205,7 +207,7 @@ switch_to_pm: ; switch to protected mode
     mov cr0, eax
     jmp CODE_SEG:init_pm
 
-[bits 32]
+[BITS 32]
 init_pm: ; init_protected mode
     mov ax, DATA_SEG
     mov ds, ax
@@ -219,7 +221,7 @@ init_pm: ; init_protected mode
 
     call BEGIN_PM ; begin protected mode
 
-bits 16
+[BITS] 16
 load_kernel:
     mov bx, MSG_LOAD_KERNEL
     call print
@@ -227,11 +229,11 @@ load_kernel:
 
     mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
     mov dh, 31 ; Our future kernel will be larger, make this big
-    mov dl, [BOOT_DRIVE]
+    mov dl, [DRIVE]
     call disk_load
     ret
 
-bits 32
+[BITS] 32
 BEGIN_PM: ; Protected Mode
     mov ebx, MSG_PROT_MODE
     call print_string_pm
@@ -239,12 +241,12 @@ BEGIN_PM: ; Protected Mode
     jmp $ ; Stay here when the kernel returns control to us (if ever)
 
 
-BOOT_DRIVE db 0
+DRIVE db 0
 MSG_REAL_MODE db "Started in 16-bit Real Mode", 0
 MSG_PROT_MODE db "Landed in 32-bit Protected Mode", 0
 MSG_LOAD_KERNEL db "Loading kernel into memory", 0
 MSG_RETURNED_KERNEL db "Returned from kernel. Error?", 0
 
 
-          TIMES 510-($-$$) DB 0
+          TIMES 510 - ($ - $$) DB 0
           DW 0xAA55
