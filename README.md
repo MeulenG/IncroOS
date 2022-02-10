@@ -34,7 +34,7 @@
 ## About The Project
 
 
-My first OS written in Assembly and C in order to learn OS Development. I dedicate all my spare-time to developing this, and learning OS development.
+My first OS written in Assembly and C in order to learn OS Development. I dedicate all my spare-time to developing this.
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
