@@ -8,7 +8,6 @@ include					/home/puhaa/Desktop/OMOS/buildbootpath
 # Emulator
 EMU 	  	= 			qemu-system-i386
 EMU_ARGS  	= 			-machine q35
-EMU_ARGS  	+= 			-fda
 
 
 # -g: Use debugging symbols in gcc
@@ -66,13 +65,14 @@ kernel.elf: build/kernel_entry.o
 
 
 $(BUILD_DIR_OS)/OS:
-	cat build/bootloader/Stage1.bin build/bootloader/Stage2.bin build/OS/kernel.bin > build/OS/PuhaaOS-image.bin
+	cat build/bootloader/fat-stage1.bin build/bootloader/fat-stage2.bin build/OS/kernel.bin > build/OS/OMOS-image.bin
 
-run: build/OS/PuhaaOS-image.bin
-	${EMU} ${EMU_ARGS} build/OS/PuhaaOS-image.bin
+run: build/OS/OMOS-image.bin
+	qemu-system-i386 -drive if=virtio,file=build/OS/OMOS-image.bin,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
 
-debug: PuhaaOS-image.bin kernel.elf
-	qemu-system-i386 -s -fda build/OS/PuhaaOS-image.bin -d guest_errors,int &
+
+debug: OMOS-image.bin kernel.elf
+	qemu-system-i386 -s -fda build/OS/OMOS-image.bin -d guest_errors,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file $(BUILD_DIR_OS)/kernel.elf"
 
 clean:
@@ -83,3 +83,9 @@ clean:
 	make -C kernel_entry clean
 	make -C libc clean
 	${RMVE} /home/puhaa/Desktop/OMOS/build/OS/*.bin
+
+
+#nasm -f bin -o boot.bin boot.asm
+#nasm -f bin -o loader.bin loader.asm
+#dd if=boot.bin of=boot.img bs=512 count=1 conv=notrunc
+#dd if=loader.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
