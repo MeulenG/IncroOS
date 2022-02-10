@@ -1,0 +1,42 @@
+#####################
+# scheme
+#     values: {MBR, GPT}
+#
+# MBR
+#     Formats the partition table in MBR format and installs a
+#     predefined MBR bootsector that automatically loads the first VBR
+#     that has a bootsignature.
+# GPT
+#     Formats the partition table in GPT format and installs a 
+#     predefined hybrid MBR bootsector that automatically loads the first
+#     partition VBR marked as legacy boot ('boot' attribute).
+#
+scheme: MBR
+size: 512MB
+
+# define partitions for disk
+partitions:
+  - label: system
+
+    # The partition type. For FAT any size below 512mb will automatically result
+    # in the partition being of FAT16. The minimum size of FAT is 64mb. 
+    type: FAT
+    guid: EA2CBEBB-2B4E-49B5-9A07-043EE82836E7
+    size: 256MB
+
+    # Attributes can be: boot, readonly, shadow, noautomount.
+    # If boot is specified, the 'vbr-image' and optionally the 'reserved-sectors-image'
+    # must be specified.
+    attributes:
+      - boot
+    vbr-image: fat-stage1.bin
+    reserved-sectors-image: fat-stage2.bin
+
+    # Sources are the files that should be copied onto the filesystem partition
+    # and can be either 'file' or 'dir'. Both of these types expect a 'path' and
+    # a 'target' defined. The 'path' is the source of the file/directory. The
+    # 'target' attribute defines where on the filesystem it should be written.
+    sources:
+      - type: dir
+        path: deploy/hdd/boot
+        target: /
