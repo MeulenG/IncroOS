@@ -32,9 +32,9 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-all			:			Stage1	Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
+all			:				Stage1 Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
 
-.PHONY		: 			Stage1	Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
+.PHONY		: 				Stage1 Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	$(BUILD_DIR_OS)/OS
 
 Stage1:
 	make -C Stage1
@@ -65,12 +65,12 @@ kernel.elf: build/kernel_entry.o
 
 
 $(BUILD_DIR_OS)/OS:
-#dd if=build/bootloader/fat-stage1.bin of=boot.img bs=512 count=1 conv=notrunc
-	dd if=build/bootloader/fat-stage2.bin of=build/OS/OMOS-image.img bs=512 count=1 seek=0 conv=notrunc
-	dd if=build/OS/kernel.bin of=build/OS/OMOS-image.img bs=512 count=20 seek=1 conv=notrunc
-#cat build/bootloader/fat-stage1.bin build/bootloader/fat-stage2.bin build/OS/kernel.bin > build/OS/OMOS-image.bin
+	dd if=build/bootloader/fat-stage1.bin of=boot.img bs=512 count=1 conv=notrunc
+	dd if=build/bootloader/fat-stage2.bin of=build/OS/OMOS-image.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=build/OS/kernel.bin of=build/OS/OMOS-image.img bs=512 count=100 seek=6 conv=notrunc
 
-run: build/OS/OMOS-image.bin
+
+run: build/OS/OMOS-image.img
 	qemu-system-i386 -drive if=virtio,file=build/OS/OMOS-image.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
 
 
