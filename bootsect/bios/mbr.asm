@@ -7,6 +7,7 @@ mbr_start:
     mov ss, ax
     mov sp, 0x7c00
 
+
 TestDiskExtention:
     mov [DRIVE], dl
     mov ah, 0x41
@@ -16,7 +17,25 @@ TestDiskExtention:
     cmp bx, 0xaa55
     jne NotSupported
 
-Printstring:
+
+Stage2:
+    mov si, ReadPacket
+    mov word[si], 0x10
+    mov word[si+2], 1
+    mov word[si+4], 0x7e00
+    mov word[si+6], 0
+    mov dword[si+8], 1
+    mov dword[si+0xc], 0
+    mov dl, [DRIVE]
+    mov ah, 0x42
+    int 0x13
+    jc BroadCastError
+
+    mov dl, [DRIVE]
+    jmp 0x7e00
+
+BroadCastError:
+NotSupported:
     mov ah, 0x13 ; Function code
     mov al, 1 ; Cursor gets placed at the end of the string
     mov bx, 0xd ;0xa means it will be printed in green
@@ -25,14 +44,14 @@ Printstring:
     mov cx, MessageLen ; Copies the characters to cx
     int 0x10 ;interrupt
 
-NotSupported:
 mbr_end:
     hlt 
     jmp mbr_end
 
-DRIVE db 0
-Message: db "Disk Extention is supported"
+DRIVE: db 0
+Message: db "Error at bootsect"
 MessageLen: equ $-Message
+ReadPacket: times 16 db 0
 
 times (0x1be-($-$$)) db 0 ;Starts at the address 0x1be and fills it with 0'es until the end of the message/start of our code
 ; offsides of 0x1be is other partions
