@@ -5,19 +5,17 @@
 
 ;*************************************************;
 
-
-
 [BITS   16]
 [ORG    0x7e00]
 
 loader_start:
     mov [DRIVE], dl
 
-    mov eax, 0x80000000 ; by passing this value we get processor features
+    mov eax, 0x80000000 ; by passing this value we get CPU features
     cpuid ; Returns cpu information
-    cmp eax, 0x80000001 ; We check for 64-bit support AKA long mode support, so if its below, then we jump
-    jb NotSupported
-    mov eax, 0x80000001
+    cmp eax, 0x80000001 ; We check for 64-bit support AKA long mode support, so if its below, then we jump to an error message
+    jb NotSupported ; 
+    mov eax, 0x80000001 ;
     cpuid
     test edx, (1<<29) ;
     jz NotSupported
@@ -66,6 +64,55 @@ GetMemoryMapSucess:
     mov cx, MessageLen ; Copies the characters to cx
     int 0x10 ;interrupt
 
+ ********************************
+; PrintNumber16
+; @brief Prints out a digit to the screen at current position.
+; 
+; @param number_low  [In] The low word of the number to print
+; @param number_high [In] The high word of the number to print
+; @return            None
+; ********************************
+PrintNumber16:
+    push bx
+
+    ; load number into eax
+    mov eax, dword
+
+    xor bx, bx
+    mov ecx, 10
+
+    .convert:
+        xor edx, edx
+        div ecx
+
+        ; now eax <-- eax/10
+        ;     edx <-- eax % 10
+
+        ; print edx
+        ; this is one digit, which we have to convert to ASCII
+        ; the print routine uses edx and eax, so let's push eax
+        ; onto the stack. we clear edx at the beginning of the
+        ; loop anyway, so we don't care if we much around with it
+
+        ; convert dl to ascii
+        add dx, 48
+        push dx      ; store it for print
+        inc  bx
+
+        ; if eax is zero, we can quit
+        cmp eax, 0
+        jnz .convert
+
+    .print:
+        call PrintChar16
+        pop ax
+
+        dec bx
+        jnz .print
+
+    pop bx
+    ret
+
 NotSupported:
 loader_end:
     hlt
@@ -75,38 +122,38 @@ loader_end:
 ;	LONG        MODE        SUPPORT
 ;*************************************************;
 DRIVE: db 0
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageLongModeSupport: db "Long Mode Is Supported!"
+MessageLen: equ $-MessageLongModeSupport
 ReadPacket: times 16 db 0
 
 ;*************************************************;
 ;	KERNEL        LOAD          MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageKernelLoad: db "Kernel Is Loaded"
+MessageLen: equ $-MessageKernelLoad
 
 ;*************************************************;
 ;	MEMORY        MAP           MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageMemory: db "Get Memory Info done"
+MessageLen: equ $-MessageMemory
 ;*************************************************;
 ;	A        20          MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageA20: db "A20 Gate Is Enabled"
+MessageLen: equ $-MessageA20
 ;*************************************************;
 ;	VIDEO        MODE          MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageVideoMode: db "Video Mode Set, Success"
+MessageLen: equ $-MessageVideoMode
 ;*************************************************;
 ;	PROTECTED        MODE          MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
-MessageLen: equ $-Message
+MessageProtectedMode: db "Protected Mode, Entered"
+MessageLen: equ $-MessageProtectedMode
 ;*************************************************;
 ;	LONG        MODE          MESSAGE
 ;*************************************************;
-Message: db "Get Memory Info done"
+MessageLongMode: db "Long Mode, Entered"
 MessageLen: equ $-Message
