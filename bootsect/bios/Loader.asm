@@ -60,58 +60,30 @@ GetMemoryMapSucess:
     mov al, 1 ; Cursor gets placed at the end of the string
     mov bx, 0xa ;0xa means it will be printed in green
     xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
-    mov bp, Message ;Message displayed
-    mov cx, MessageLen ; Copies the characters to cx
+    mov bp, MessageMemory ;Message displayed
+    mov cx, MessageLenMemory ; Copies the characters to cx
     int 0x10 ;interrupt
 
- ********************************
-; PrintNumber16
-; @brief Prints out a digit to the screen at current position.
-; 
-; @param number_low  [In] The low word of the number to print
-; @param number_high [In] The high word of the number to print
-; @return            None
-; ********************************
-PrintNumber16:
-    push bx
+A20:
+    mov ax,0xffff
+    mov es, ax
+    mov word[ds:0x7c00], 0xa200
+    cmp word[es:0x7c10], 0xa200
+    jne EnableA20
+    mov word[0x7c00], 0xb200
+    cmp word[es:0x7c10], 0xb200
+    je loader_end
 
-    ; load number into eax
-    mov eax, dword
-
-    xor bx, bx
-    mov ecx, 10
-
-    .convert:
-        xor edx, edx
-        div ecx
-
-        ; now eax <-- eax/10
-        ;     edx <-- eax % 10
-
-        ; print edx
-        ; this is one digit, which we have to convert to ASCII
-        ; the print routine uses edx and eax, so let's push eax
-        ; onto the stack. we clear edx at the beginning of the
-        ; loop anyway, so we don't care if we much around with it
-
-        ; convert dl to ascii
-        add dx, 48
-        push dx      ; store it for print
-        inc  bx
-
-        ; if eax is zero, we can quit
-        cmp eax, 0
-        jnz .convert
-
-    .print:
-        call PrintChar16
-        pop ax
-
-        dec bx
-        jnz .print
-
-    pop bx
-    ret
+EnableA20:
+    xor ax, ax
+    mov es, ax
+    mov ah, 0x13 ; Function code
+    mov al, 1 ; Cursor gets placed at the end of the string
+    mov bx, 0xa ;0xa means it will be printed in green
+    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
+    mov bp, MessageA20 ;Message displayed
+    mov cx, MessageLenA20 ; Copies the characters to cx
+    int 0x10 ;interrupt
 
 NotSupported:
 loader_end:
@@ -123,37 +95,37 @@ loader_end:
 ;*************************************************;
 DRIVE: db 0
 MessageLongModeSupport: db "Long Mode Is Supported!"
-MessageLen: equ $-MessageLongModeSupport
+MessageLenLongModeSupport: equ $-MessageLongModeSupport
 ReadPacket: times 16 db 0
 
 ;*************************************************;
 ;	KERNEL        LOAD          MESSAGE
 ;*************************************************;
 MessageKernelLoad: db "Kernel Is Loaded"
-MessageLen: equ $-MessageKernelLoad
+MessageLenKernelLoad: equ $-MessageKernelLoad
 
 ;*************************************************;
 ;	MEMORY        MAP           MESSAGE
 ;*************************************************;
 MessageMemory: db "Get Memory Info done"
-MessageLen: equ $-MessageMemory
+MessageLenMemory: equ $-MessageMemory
 ;*************************************************;
 ;	A        20          MESSAGE
 ;*************************************************;
 MessageA20: db "A20 Gate Is Enabled"
-MessageLen: equ $-MessageA20
+MessageLenA20: equ $-MessageA20
 ;*************************************************;
 ;	VIDEO        MODE          MESSAGE
 ;*************************************************;
 MessageVideoMode: db "Video Mode Set, Success"
-MessageLen: equ $-MessageVideoMode
+MessageLenVideoMode: equ $-MessageVideoMode
 ;*************************************************;
 ;	PROTECTED        MODE          MESSAGE
 ;*************************************************;
 MessageProtectedMode: db "Protected Mode, Entered"
-MessageLen: equ $-MessageProtectedMode
+MessageLenProtectedMode: equ $-MessageProtectedMode
 ;*************************************************;
 ;	LONG        MODE          MESSAGE
 ;*************************************************;
 MessageLongMode: db "Long Mode, Entered"
-MessageLen: equ $-Message
+MessageLenLongMode: equ $-MessageLongMode
