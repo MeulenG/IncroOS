@@ -22,6 +22,14 @@ loader_start:
     test edx, (1<<26) ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
 
+    mov ah,0x13
+    mov al,1
+    mov bx,0xa
+    xor dx,dx
+    mov bp,MessageLongModeSupport
+    mov cx,MessageLenLongModeSupport
+    int 0x10
+
 ReadKernel:
     mov si, ReadPacket
     mov word[si], 0x10
@@ -34,6 +42,13 @@ ReadKernel:
     mov ah, 0x42
     int 0x13
     jc NotSupported
+    mov ah,0x13
+    mov al,1
+    mov bx,0xa
+    xor dx,dx
+    mov bp,MessageKernelLoad
+    mov cx,MessageLenKernelLoad
+    int 0x10
 
 MemoryMap:
     mov  eax, 0xe820
