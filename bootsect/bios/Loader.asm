@@ -139,14 +139,49 @@ PMEntry:
     mov ss, ax
     mov esp, 0x7c00
 
-    mov byte[0xb8000], 'P'
-    mov byte[0xb8001], 0xa
+    cld
+    mov edi, 0x80000
+    xor eax, eax
+    mov ecx, 0x10000/4
+    rep stosd
 
+    mov dword[0x80000], 0x81007
+    mov dword[0x81000], 10000111b 
+
+    
+    lgdt [Gdt64Pointer]
+
+    mov eax, cr4
+    or eax, (1<<5)
+    mov cr4, eax
+
+    mov eax, 0x80000
+    mov cr3, eax
+
+    mov ecx, 0xc0000080
+    rdmsr
+    or eax, (1<<8)
+    wrmsr
+
+    mov eax, cr0
+    or eax, (1<<31)
+    mov cr0, eax
+
+    jmp 8:LMEntry
 PEnd:
     hlt
     jmp PEnd
 
+[BITS   64]
+LMEntry:
+    mov rsp, 0x7c00
 
+    mov byte[0xb8000], 'L'
+    mov byte[0xb8001], 0xa
+
+LEnd:
+    hlt
+    jmp LEnd
 
 DRIVE: db 0
 ReadPacket: times 16 db 0
@@ -173,6 +208,16 @@ Gdt32Pointer: dw Gdt32Len-1
 
 Idt32Pointer: dw 0
             dd 0
+
+Gdt64Len: equ $-Gdt64Pointer
+
+Gdt64:
+    dq 0
+    dq 0x002098000000000
+
+
+Gdt64Pointer: dw Gdt64Len-1
+                dd Gdt64
 ;*************************************************;
 ;	LONG        MODE        SUPPORT
 ;*************************************************;
