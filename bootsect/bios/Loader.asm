@@ -100,18 +100,85 @@ EnableA20:
     mov cx, MessageLenA20 ; Copies the characters to cx
     int 0x10 ;interrupt
 
+VideoMode:
+    mov ax, 3 ;test mode
+    int 0x10
+
+    cli 
+    lgdt [Gdt32Pointer]
+    lidt [Idt32Pointer]
+
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    jmp 8:PMEntry
+;    mov si, MessageVideoMode
+;    mov ax, 0xb800
+;    mov es, ax
+;    xor di, di
+;    mov cx, MessageLenVideoMode
+;Print:
+;    mov al, [si]
+;    mov [es:di], al
+;    mov byte[es:di+1], 0xa
+;
+ ;   add di, 2
+ ;   add si, 1
+ ;   loop Print
+
 NotSupported:
 loader_end:
     hlt
     jmp loader_end
+[BITS   32]
+PMEntry:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov esp, 0x7c00
 
+    mov byte[0xb8000], 'P'
+    mov byte[0xb8001], 0xa
+
+PEnd:
+    hlt
+    jmp PEnd
+
+
+
+DRIVE: db 0
+ReadPacket: times 16 db 0
+
+Gdt32:
+    dq 0
+Code32:
+    dw 0xffff
+    dw 0
+    db 0
+    db 0x9a
+    db 0xcf
+    db 0
+Data32:
+    dw 0xffff
+    dw 0
+    db 0
+    db 0x92
+    db 0xcf
+    db 0
+Gdt32Len: equ $-Gdt32Pointer
+Gdt32Pointer: dw Gdt32Len-1
+        dd Gdt32
+
+Idt32Pointer: dw 0
+            dd 0
 ;*************************************************;
 ;	LONG        MODE        SUPPORT
 ;*************************************************;
-DRIVE: db 0
 MessageLongModeSupport: db "Long Mode Is Supported!"
 MessageLenLongModeSupport: equ $-MessageLongModeSupport
-ReadPacket: times 16 db 0
+
 
 ;*************************************************;
 ;	KERNEL        LOAD          MESSAGE
