@@ -14,7 +14,7 @@ loader_start:
     mov eax, 0x80000000 ; by passing this value we get CPU features
     cpuid ; Returns cpu information
     cmp eax, 0x80000001 ; We check for 64-bit support AKA long mode support, so if its below, then we jump to an error message
-    jb NotSupported ; 
+    jb NotSupported ; if this isnt the case, then we tell them the OS isnt supported
     mov eax, 0x80000001 ;
     cpuid
     test edx, (1<<29) ;
