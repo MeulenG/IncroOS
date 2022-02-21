@@ -22,14 +22,6 @@ loader_start:
     test edx, (1<<26) ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
 
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,MessageLongModeSupport
-    mov cx,MessageLenLongModeSupport
-    int 0x10
-
 ReadKernel:
     mov si, ReadPacket
     mov word[si], 0x10
@@ -42,13 +34,6 @@ ReadKernel:
     mov ah, 0x42
     int 0x13
     jc NotSupported
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,MessageKernelLoad
-    mov cx,MessageLenKernelLoad
-    int 0x10
 
 MemoryMap:
     mov  eax, 0xe820
@@ -71,14 +56,6 @@ GetMemoryInfo:
     jnz GetMemoryInfo
 
 GetMemoryMapSucess:
-    mov ah, 0x13 ; Function code
-    mov al, 1 ; Cursor gets placed at the end of the string
-    mov bx, 0xa ;0xa means it will be printed in green
-    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
-    mov bp, MessageMemory ;Message displayed
-    mov cx, MessageLenMemory ; Copies the characters to cx
-    int 0x10 ;interrupt
-
 A20:
     mov ax,0xffff
     mov es, ax
@@ -92,13 +69,6 @@ A20:
 EnableA20:
     xor ax, ax
     mov es, ax
-    mov ah, 0x13 ; Function code
-    mov al, 1 ; Cursor gets placed at the end of the string
-    mov bx, 0xa ;0xa means it will be printed in green
-    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
-    mov bp, MessageA20 ;Message displayed
-    mov cx, MessageLenA20 ; Copies the characters to cx
-    int 0x10 ;interrupt
 
 VideoMode:
     mov ax, 3 ;test mode
@@ -113,24 +83,13 @@ VideoMode:
     mov cr0, eax
 
     jmp 8:PMEntry
-;    mov si, MessageVideoMode
-;    mov ax, 0xb800
-;    mov es, ax
-;    xor di, di
-;    mov cx, MessageLenVideoMode
-;Print:
-;    mov al, [si]
-;    mov [es:di], al
-;    mov byte[es:di+1], 0xa
-;
- ;   add di, 2
- ;   add si, 1
- ;   loop Print
 
 NotSupported:
 loader_end:
     hlt
     jmp loader_end
+
+
 [BITS   32]
 PMEntry:
     mov ax, 0x10
@@ -145,9 +104,8 @@ PMEntry:
     mov ecx, 0x10000/4
     rep stosd
 
-    mov dword[0x80000], 0x81007
-    mov dword[0x81000], 10000111b 
-
+    mov dword[0x70000], 0x71007
+    mov dword[0x71000], 10000111b
     
     lgdt [Gdt64Pointer]
 
@@ -155,7 +113,7 @@ PMEntry:
     or eax, (1<<5)
     mov cr4, eax
 
-    mov eax, 0x80000
+    mov eax, 0x70000
     mov cr3, eax
 
     mov ecx, 0xc0000080
@@ -168,6 +126,7 @@ PMEntry:
     mov cr0, eax
 
     jmp 8:LMEntry
+
 PEnd:
     hlt
     jmp PEnd
@@ -176,8 +135,13 @@ PEnd:
 LMEntry:
     mov rsp, 0x7c00
 
-    mov byte[0xb8000], 'L'
-    mov byte[0xb8001], 0xa
+    mov ah, 0x13
+    mov al, 1
+    mov bx, 0xa
+    xor dx, dx
+    mov bp, MessageLongMode
+    mov cx, MessageLenLongMode
+    int 0x10
 
 LEnd:
     hlt
@@ -202,22 +166,24 @@ Data32:
     db 0x92
     db 0xcf
     db 0
-Gdt32Len: equ $-Gdt32Pointer
+Gdt32Len: equ $-Gdt32
 Gdt32Pointer: dw Gdt32Len-1
-        dd Gdt32
+          dd Gdt32
 
 Idt32Pointer: dw 0
-            dd 0
+          dd 0
 
-Gdt64Len: equ $-Gdt64Pointer
+Gdt64Len: equ $-Gdt64
 
 Gdt64:
     dq 0
-    dq 0x002098000000000
+    dq 0x0020980000000000
 
 
 Gdt64Pointer: dw Gdt64Len-1
-                dd Gdt64
+          dd Gdt64
+
+
 ;*************************************************;
 ;	LONG        MODE        SUPPORT
 ;*************************************************;
