@@ -104,8 +104,8 @@ PMEntry:
     mov ecx, 0x10000/4
     rep stosd
 
-    mov dword[0x70000], 0x71007
-    mov dword[0x71000], 10000111b
+    mov dword[0x80000], 0x81007
+    mov dword[0x81000], 10000111b
     
     lgdt [Gdt64Pointer]
 
@@ -113,7 +113,7 @@ PMEntry:
     or eax, (1<<5)
     mov cr4, eax
 
-    mov eax, 0x70000
+    mov eax, 0x80000
     mov cr3, eax
 
     mov ecx, 0xc0000080
@@ -135,13 +135,13 @@ PEnd:
 LMEntry:
     mov rsp, 0x7c00
 
-    mov ah, 0x13
-    mov al, 1
-    mov bx, 0xa
-    xor dx, dx
-    mov bp, MessageLongMode
-    mov cx, MessageLenLongMode
-    int 0x10
+    cld
+    mov rdi, 0x200000
+    mov rsi, 0x10000
+    mov rcx, 51200/8
+    rep movsq
+
+    jmp 0x200000
 
 LEnd:
     hlt
