@@ -5,6 +5,6 @@ kernel_entry_start:
     mov byte[0xb8000], 'K'
     mov byte[0xb8001], 0xa
 
-End:
+kernel_entry_end:
     hlt
-    jmp End
+    jmp kernel_entry_end

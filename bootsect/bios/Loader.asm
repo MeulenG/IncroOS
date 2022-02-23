@@ -22,6 +22,8 @@ loader_start:
     test edx, (1<<26) ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
 
+
+
 ReadKernel:
     mov si, ReadPacket
     mov word[si], 0x10
@@ -34,6 +36,8 @@ ReadKernel:
     mov ah, 0x42
     int 0x13
     jc NotSupported
+
+
 
 MemoryMap:
     mov  eax, 0xe820
@@ -70,10 +74,10 @@ EnableA20:
     xor ax, ax
     mov es, ax
 
+
 VideoMode:
     mov ax, 3 ;test mode
     int 0x10
-
     cli 
     lgdt [Gdt32Pointer]
     lidt [Idt32Pointer]
@@ -134,12 +138,11 @@ PEnd:
 [BITS   64]
 LMEntry:
     mov rsp, 0x7c00
-
     cld
     mov rdi, 0x200000
     mov rsi, 0x10000
     mov rcx, 51200/8
-    rep movsq
+    rep movsq ; since its 64-bit mode
 
     jmp 0x200000
 
