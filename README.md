@@ -133,6 +133,6 @@ Project Link: [OMOS](https://github.com/MeulenG/OMOS.git)
 ## Acknowledgments
 
 * [Brokenthorn](http://brokenthorn.com/)
-* [Udemy](https://www.udemy.com/course/writing-your-own-operating-system-from-scratch/learn/lecture/21916964#questions/15664276)
+* [Udemy](https://www.udemy.com/course/writing-your-own-operating-system-from-scratch)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
