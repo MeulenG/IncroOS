@@ -54,7 +54,7 @@ My first OS written in Assembly and C in order to learn OS Development. I dedica
 <!-- GETTING STARTED -->
 ## Getting Started
 
-In order to setup this project, you need a cross-compiler, gcc compiler and NASM(assembly compiler). 
+In order to setup this project, you need a cross-compiler, gcc compiler(C compiler) and NASM(assembly compiler) and an the emulator QEMU. 
 
 ### Prerequisites
 
