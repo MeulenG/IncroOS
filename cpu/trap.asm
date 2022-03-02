@@ -1,4 +1,3 @@
-
 section .text
 extern handler ;function isnt defined here
 global vector0
