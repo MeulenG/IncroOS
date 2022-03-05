@@ -29,3 +29,13 @@ partitions:
       - boot
     vbr-image: /home/puhaa/Desktop/DevProjects/OMOS/bootsect/bios/Fat-Stage1/fat-stage1.bin
     reserved-sectors-image: /home/puhaa/Desktop/DevProjects/OMOS/bootsect/bios/Fat-Stage2/fat-stage2.bin
+
+
+    # Sources are the files that should be copied onto the filesystem partition
+    # and can be either 'file' or 'dir'. Both of these types expect a 'path' and
+    # a 'target' defined. The 'path' is the source of the file/directory. The
+    # 'target' attribute defines where on the filesystem it should be written.
+    sources:
+      - type: dir
+        path: deploy/hdd/boot
+        target: /
