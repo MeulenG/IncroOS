@@ -5,6 +5,13 @@ BUILD_DIR	=			../build
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
 
+
+#NASM - Assembly Compiler
+ASMC 	  	= 			nasm
+ASMC_ARGS 	= 			-f
+ASMC_ARGS 	+= 			elf64
+
+
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
 GCC_ARGS 	= 			-ffreestanding
@@ -14,22 +21,18 @@ GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
 GCC_ARGS 	+= 			-fno-builtin
-GCC_ARGS 	+= 			-nostdlib
-GCC_ARGS 	+= 			-nostdinc
 GCC_ARGS 	+= 			-fno-stack-protector
-GCC_ARGS 	+= 			-nostartfiles
-GCC_ARGS 	+= 			-nodefaultlibs
 
-all: $(BUILD_DIR)/string.o $(BUILD_DIR)/mem.o
+all: 	$(BUILD_DIR)/print.o 	$(BUILD_DIR)/lib.o	$(BUILD_DIR)/libassem.o
 
 
 
 $(BUILD_DIR)/print.o: print.c print.h
-	${CC} ${CFLAGS} ${GCC_ARGS} -c string.c -o $@
+	${CC} ${CFLAGS} ${GCC_ARGS} -c print.c -o $@
 
 $(BUILD_DIR)/lib.o: lib.h
-	${CC} ${CFLAGS} ${GCC_ARGS} -c mem.c -o $@
+	${CC} ${CFLAGS} ${GCC_ARGS} -c lib.h -o $@
 
 
 $(BUILD_DIR)/libassem.o: lib.asm
-	nasm -f elf64 -o liba.o lib.asm
+	${ASMC} $< ${ASMC_ARGS} -o $@

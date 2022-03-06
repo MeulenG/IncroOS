@@ -1,9 +1,6 @@
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-include 				/home/puhaa/Desktop/OMOS/buildOS
-include					/home/puhaa/Desktop/OMOS/buildpath
-include					/home/puhaa/Desktop/OMOS/buildbootpath
 
 # QEMU Emulator
 EMU 	  	= 			qemu-system-i386
@@ -32,9 +29,9 @@ ASMC_ARGS 	= 			-f
 
 RMVE 		= 			rm -rf
 
-all			:				Fat-Stage1 Fat-Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	ObjCopy	$(BUILD_DIR_OS)/OS
+all			:				Fat-Stage1 Fat-Stage2	cpu				Core		kernel_entry	libc	$(BUILD_DIR_OS)/kernel	ObjCopy	$(BUILD_DIR_OS)/OS
 
-.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu		drivers		kernel		kernel_entry	libc	$(BUILD_DIR_OS)/kernel.bin	ObjCopy	$(BUILD_DIR_OS)/OS
+.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu				Core		kernel_entry	libc	$(BUILD_DIR_OS)/kernel	ObjCopy	$(BUILD_DIR_OS)/OS
 
 Stage1:
 	make -C Fat-Stage1
@@ -45,11 +42,11 @@ Stage2:
 cpu:
 	make -C cpu
 
-drivers:
-	make -C drivers
+#drivers:
+#make -C drivers
 
-kernel:
-	make -C kernel
+Core:
+	make -C Core
 
 kernel_entry:
 	make -C kernel_entry
@@ -57,9 +54,8 @@ kernel_entry:
 libc:
 	make -C libc
 
-$(BUILD_DIR_OS)/kernel.bin:
-	ld -nostdlib -T link.lds -o kernel kernel.o main_kernel.o trapa.o trap.o libassem.o print.o	
-#i686-elf-ld -o $(BUILD_DIR_OS)/kernel.bin
+$(BUILD_DIR_OS)/kernel:
+	ld -m elf_i386 -s -nostdlib -T link.lds -o kernel build/main_kernel.o build/trapa.o build/trap.o build/libassem.o build/print.o
 
 ObjCopy:
 	objcopy -O binary kernel kernel.bin
@@ -73,7 +69,8 @@ $(BUILD_DIR_OS)/OS:
 	dd if=fat-stage2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
 	dd if=kernel_entry.bin of=boot.img bs=512 count=100 seek=6 conv=notrunc
 
-run: build/OS/OMOS-image.img
+simulate: build/OS/OMOS-image.img
+	osbuilder --project "/home/puhaa/Desktop/DevProjects/OMOS/test.yaml" --target img
 	qemu-system-i386 -drive if=virtio,file=build/OS/OMOS-image.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
 
 
@@ -84,8 +81,7 @@ debug: OMOS-image.bin kernel.elf
 clean:
 	make -C Fat-Stage1 clean 
 	make -C cpu clean
-	make -C drivers clean
-	make -C kernel clean
+	make -C Core clean
 	make -C kernel_entry clean
 	make -C libc clean
 	${RMVE} /home/puhaa/Desktop/OMOS/build/OS/*.bin

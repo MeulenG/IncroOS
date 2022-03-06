@@ -1,14 +1,13 @@
-# Environmental Variables
-include 				/home/puhaa/Desktop/OMOS/buildbootpath
+BUILD_DIR	=			../build/bootloader
 
 #NASM - Assembly Compiler
 ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 
 
-all			: 			$(BUILD_DIR_BOOT)/fat-stage1.bin
+all			: 			$(BUILD_DIR)/fat-stage1.bin
 
-$(BUILD_DIR_BOOT)/fat-stage1.bin: fat-stage1.asm
+$(BUILD_DIR)/fat-stage1.bin: fat-stage1.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 

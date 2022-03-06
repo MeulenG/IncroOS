@@ -1,5 +1,4 @@
-include 				/home/puhaa/Desktop/OMOS/buildpath
-
+BUILD_DIR	=			../build
 
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
@@ -20,11 +19,8 @@ GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
 GCC_ARGS 	+= 			-fno-builtin
-GCC_ARGS 	+= 			-nostdlib
-GCC_ARGS 	+= 			-nostdinc
 GCC_ARGS 	+= 			-fno-stack-protector
-GCC_ARGS 	+= 			-nostartfiles
-GCC_ARGS 	+= 			-nodefaultlibs
+
 
 
 all			: 			$(BUILD_DIR)/trapa.o $(BUILD_DIR)/trap.o
@@ -32,10 +28,10 @@ all			: 			$(BUILD_DIR)/trapa.o $(BUILD_DIR)/trap.o
 
 
 $(BUILD_DIR)/trapa.o: trap.asm
-	${ASMC} interrupt.asm ${ASMC_ARGS} elf -o $@
+	${ASMC} trap.asm ${ASMC_ARGS} elf64 -o $@
 
 $(BUILD_DIR)/trap.o: trap.c trap.h
-	${CC} ${CFLAGS} ${GCC_ARGS} -c idt.c -o $@
+	${CC} ${CFLAGS} ${GCC_ARGS} -c trap.c -o $@
 
 clean:
 	rm $(BUILD_DIR)/*.o
