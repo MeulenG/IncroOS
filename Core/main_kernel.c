@@ -1,5 +1,8 @@
-#include "trap.h"
-#include "print.h"
+#include "../cpu/trap.h"
+#include "../libc/print.h"
+
+
+
 void main_kernel(void)
 {
    char *string = "Hello and Welcome my dude";

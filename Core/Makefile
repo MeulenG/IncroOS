@@ -1,7 +1,7 @@
 # Environmental Variables
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-
+BUILD_DIR	=			../build
 
 
 # -g: Use debugging symbols in gcc
@@ -13,18 +13,11 @@ GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
 GCC_ARGS 	+= 			-m32
 GCC_ARGS 	+= 			-fno-builtin
-GCC_ARGS 	+= 			-nostdlib
-GCC_ARGS 	+= 			-nostdinc
 GCC_ARGS 	+= 			-fno-stack-protector
-GCC_ARGS 	+= 			-nostartfiles
-GCC_ARGS 	+= 			-nodefaultlibs
 
 
-all			: 			$(BUILD_DIR)/kernel.o
+all			: 			$(BUILD_DIR)/main_kernel.o
 
 
-# Generic rules for wildcards
-# To make an object, always compile from its .c
-
-$(BUILD_DIR)/kernel.o: kernel.c
-	${CC} ${CFLAGS} ${GCC_ARGS} -c kernel.c -o $@
+$(BUILD_DIR)/main_kernel.o: main_kernel.c
+	${CC} ${CFLAGS} ${GCC_ARGS} -c main_kernel.c -o $@
