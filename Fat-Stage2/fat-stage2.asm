@@ -19,8 +19,8 @@ loader_start:
     mov al,1
     mov bx,0xa
     xor dx,dx
-    mov bp,Message
-    mov cx,MessageLen   
+    mov bp,Message16bitmode
+    mov cx,MessageLen16bitmode
     int 0x10
 
 ReadKernel:
@@ -191,7 +191,7 @@ Gdt64Pointer: dw Gdt64Len-1
 ;	LONG        MODE        SUPPORT
 ;*************************************************;
 Message16bitmode: db "Started in 16-bit Real Mode!"
-MessageLenLongModeSupport: equ $-Message16bitmode
+MessageLen16bitmode: equ $-Message16bitmode
 
 
 
