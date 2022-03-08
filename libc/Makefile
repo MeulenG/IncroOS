@@ -1,10 +1,6 @@
 LIBC 		=			../libc
 BUILD_DIR	=			../build
 
-# Environmental Variables
-CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
-GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
-
 
 #NASM - Assembly Compiler
 ASMC 	  	= 			nasm
@@ -19,7 +15,6 @@ GCC_ARGS 	+= 			-Wall
 GCC_ARGS 	+= 			-Wextra
 GCC_ARGS 	+= 			-Werror
 GCC_ARGS 	+= 			-fno-exceptions
-GCC_ARGS 	+= 			-m32
 GCC_ARGS 	+= 			-fno-builtin
 GCC_ARGS 	+= 			-fno-stack-protector
 
@@ -28,10 +23,10 @@ all: 	$(BUILD_DIR)/print.o 	$(BUILD_DIR)/lib.o	$(BUILD_DIR)/libassem.o
 
 
 $(BUILD_DIR)/print.o: print.c print.h
-	${CC} ${CFLAGS} ${GCC_ARGS} -c print.c -o $@
+	gcc ${CFLAGS} ${GCC_ARGS} -c print.c -o $@
 
 $(BUILD_DIR)/lib.o: lib.h
-	${CC} ${CFLAGS} ${GCC_ARGS} -c lib.h -o $@
+	gcc ${CFLAGS} ${GCC_ARGS} -c lib.h -o $@
 
 
 $(BUILD_DIR)/libassem.o: lib.asm
