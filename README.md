@@ -61,22 +61,9 @@ In order to setup this project, you need a cross-compiler, gcc compiler(C compil
 
 * gcc (C/C++ compiler)
   ```sh
-  sudo apt install build-essential
+  ./Dev.sh
+  ./DotnetInstall.sh
   ```
-
-* NASM (x86 compiler)
-  ```sh
-  sudo apt install nasm
-  ```
-* Make
-  ```sh
-  sudo apt install make
-  ```
-* QEMU (emulator)
-  ```sh
-  sudo apt install qemu
-  ```
-
 
 You can use an already written cross-compiler or write your own, if you dont want to write your own, follow this link to setup a cross-compiler[Cross-Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
 
@@ -86,8 +73,12 @@ You can use an already written cross-compiler or write your own, if you dont wan
    ```sh
    git clone https://github.com/MeulenG/OMOS.git
    ```
-The next thing you wanna do is modify the Makefile, because you are going to want to change the cross-compiler path to your own.
-After having succesfully cloned the repo, you need to go into the root directory and type "make os-image.bin && make kernel.bin && make kernel.elf" and thereafter you can run it by simply typing "make run".
+
+2. Make
+   ```sh
+   make all
+   ```
+
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -103,7 +94,7 @@ This project is purely for my own enjoyment and to learn.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Bootloader finished
+- [x] Bootloader finished
 - [ ] File System
 - [ ] User mode
 - [ ] Text Editor
