@@ -4,6 +4,9 @@ BUILD_DIR	=			../build/OS
 CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
 GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
 
+
+osbuilder	=			/home/puhaa/Desktop/GithubOpenSource/ValiOS/diskbuilder/build/osbuilder
+
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
 GCC_ARGS 	= 			-ffreestanding
@@ -17,15 +20,13 @@ GCC_ARGS 	+= 			-fno-stack-protector
 
 
 #NASM - Assembly Compiler
-ASMC 	  	= 			nasm
-ASMC_ARGS 	= 			-f
+AS 	  	= 			nasm
+AS_ARGS 	= 			-f
 
 
-RMVE 		= 			rm -rf
+all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	simulate
 
-all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR_OS)/kernel	ObjCopy	$(BUILD_DIR_OS)/OS
-
-.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR_OS)/kernel	ObjCopy	$(BUILD_DIR_OS)/OS
+.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	simulate
 
 Fat-Stage1:
 	make -C Fat-Stage1
@@ -36,8 +37,8 @@ Fat-Stage2:
 cpu:
 	make -C cpu
 
-#drivers:
-#make -C drivers
+drivers:
+	make -C drivers
 
 Core:
 	make -C Core
@@ -49,19 +50,20 @@ libc:
 	make -C libc
 
 $(BUILD_DIR)/kernel:
-	ld -s -T link.lds -o kernel build/kernel_entry.o build/main_kernel.o build/trapa.o build/trap.o build/libassem.o build/print.o
+	ld -s -T link.lds -o kernel build/kernel_entry.o build/main_kernel.o build/trapa.o build/trap.o build/libassem.o build/print.o build/debug.o
 
-ObjCopy:
+$(BUILD_DIR)/kernel.bin:
 	objcopy -O binary kernel kernel.bin 
+#tmp way to build the OS and run it
+$(BUILD_DIR)/OMOS-image.img:
+	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=OMOS-image.img bs=512 count=1 conv=notrunc
+	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=OMOS-image.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=OMOS-image.img bs=512 count=100 seek=6 conv=notrunc
 
-$(BUILD_DIR)/OS:
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=boot.img bs=512 count=1 conv=notrunc
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=boot.img bs=512 count=100 seek=6 conv=notrunc
-
-simulate: build/OS/boot.img
-	osbuilder --project "/home/puhaa/Desktop/DevProjects/OMOS/test.yaml" --target img
-	qemu-system-i386 -drive if=virtio,file=build/OS/OMOS-image.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
+#gonna use this later
+simulate:
+	$(osbuilder) --project "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
+	qemu-system-x86_64 -cpu qemu, pdpe1gb -drive if=virtio,file=disk.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
 
 
 debug: OMOS-image.bin kernel.elf
@@ -73,5 +75,6 @@ clean:
 	make -C cpu clean
 	make -C Core clean
 	make -C kernel_entry clean
-	make -C libc clean
-	${RMVE} /home/puhaa/Desktop/OMOS/build/OS/*.bin
+	rm -rf disk.img
+	rm -rf kernel.bin
+	rm -rf kernel

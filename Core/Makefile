@@ -24,5 +24,8 @@ all			: 			$(BUILD_DIR)/main_kernel.o
 $(BUILD_DIR)/main_kernel.o: main_kernel.c
 	gcc ${CFLAGS} ${GCC_ARGS} -c main_kernel.c -o $@
 
+$(BUILD_DIR)/debug.o: debug.c
+	gcc ${CFLAGS} ${GCC_ARGS} -c debug.c -o $@
+
 clean:
-	rm $(BUILD_DIR)/*.o
+	rm -rf build/main_kernel.o
