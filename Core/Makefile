@@ -18,7 +18,7 @@ GCC_ARGS 	+= 			-m64
 GCC_ARGS 	+= 			-mno-red-zone
 
 
-all			: 			$(BUILD_DIR)/main_kernel.o
+all			: 			$(BUILD_DIR)/main_kernel.o	$(BUILD_DIR)/debug.o
 
 
 $(BUILD_DIR)/main_kernel.o: main_kernel.c
