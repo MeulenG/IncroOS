@@ -12,7 +12,7 @@
 #     partition VBR marked as legacy boot ('boot' attribute).
 #
 scheme: MBR
-size: 512MB
+size: 64MB
 
 # define partitions for disk
 partitions:
