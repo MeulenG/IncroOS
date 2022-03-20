@@ -5,11 +5,16 @@ ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 
 
-all			: 			$(BUILD_DIR)/fat-stage1.bin
+all			: 			$(BUILD_DIR)/fat-stage1.bin	fat-stage1.bin
 
 $(BUILD_DIR)/fat-stage1.bin: fat-stage1.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 
+fat-stage1.bin: fat-stage1.asm
+	${ASMC} $< ${ASMC_ARGS} bin -o $@
+
+
 clean:
 	rm $(BUILD_DIR)/*.bin
+	rm -rf fat-stage1.bin

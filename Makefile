@@ -9,18 +9,18 @@ osbuilder	=			/home/puhaa/Desktop/GithubOpenSource/ValiOS/diskbuilder/build/osbu
 
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
-GCC_ARGS 	= 			-ffreestanding
-GCC_ARGS 	+= 			-Wall
-GCC_ARGS 	+= 			-Wextra
-GCC_ARGS 	+= 			-Werror
-GCC_ARGS 	+= 			-fno-exceptions
-GCC_ARGS 	+= 			-m64
-GCC_ARGS 	+= 			-fno-builtin
-GCC_ARGS 	+= 			-fno-stack-protector
+CC_ARGS 	= 			-ffreestanding
+CC_ARGS 	+= 			-Wall
+CC_ARGS 	+= 			-Wextra
+CC_ARGS 	+= 			-Werror
+CC_ARGS 	+= 			-fno-exceptions
+CC_ARGS 	+= 			-m64
+CC_ARGS 	+= 			-fno-builtin
+CC_ARGS 	+= 			-fno-stack-protector
 
 
 #NASM - Assembly Compiler
-AS 	  	= 			nasm
+AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
@@ -50,10 +50,11 @@ libc:
 	make -C libc
 
 $(BUILD_DIR)/kernel:
-	ld -s -T link.lds -o kernel build/kernel_entry.o build/main_kernel.o build/trapa.o build/trap.o build/libassem.o build/print.o build/debug.o
+	ld -s -T link.lds -o kernel build/kernel_entry.o build/main_kernel.o build/trapa.o build/trap.o build/libassem.o build/print.o build/debug.o build/memory.o
 
 $(BUILD_DIR)/kernel.bin:
 	objcopy -O binary kernel kernel.bin 
+
 #tmp way to build the OS and run it
 $(BUILD_DIR)/OMOS-image.img:
 	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=OMOS-image.img bs=512 count=1 conv=notrunc
@@ -63,18 +64,19 @@ $(BUILD_DIR)/OMOS-image.img:
 #gonna use this later
 simulate:
 	$(osbuilder) --project "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
-	qemu-system-x86_64 -cpu qemu, pdpe1gb -drive if=virtio,file=disk.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096
 
-
-debug: OMOS-image.bin kernel.elf
-	qemu-system-i386 -s -drive if=virtio,file=build/OS/OMOS-image.img,format=raw -D ./log.txt -monitor stdio -smp 1 -m 4096 -d guest_errors,int &
-	${GDB} -ex "target remote localhost:1234" -ex "symbol-file $(BUILD_DIR_OS)/kernel.elf"
+run:
+	bochs -q -f os.bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
+	make -C Fat-Stage2 clean
 	make -C cpu clean
 	make -C Core clean
 	make -C kernel_entry clean
 	rm -rf disk.img
 	rm -rf kernel.bin
 	rm -rf kernel
+	rm -rf disk.img.lock
+	rm -rf log.txt
+	rm -rf bochsout.txt
