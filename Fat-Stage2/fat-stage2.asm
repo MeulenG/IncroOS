@@ -42,21 +42,23 @@ MemoryMap:
     mov  eax, 0xe820
     mov edx, 0x534d4150
     mov edx, 20
-    mov edi, 0x9000
+    mov dword[0x9000], 0
+    mov edi, 0x9008
     xor ebx, ebx
     int 0x15
     jc NotSupported
 
 GetMemoryInfo:
     add edi, 20
+    inc dword[0x9000]
+    test ebx, ebx
+    jnz GetMemoryInfo
+    
     mov  eax, 0xe820
     mov edx, 0x534d4150
     mov edx, 20
     int 0x15
-    jc NotSupported
-
-    test ebx, ebx
-    jnz GetMemoryInfo
+    jnc GetMemoryInfo
 
 GetMemoryMapSucess:
 A20:
@@ -172,8 +174,9 @@ Gdt32Len: equ $-Gdt32
 Gdt32Pointer: dw Gdt32Len-1
           dd Gdt32
 
-Idt32Pointer: dw 0
-          dd 0
+Idt32Pointer:
+dw 0x3ff
+dd 0
 
 Gdt64Len: equ $-Gdt64
 
@@ -223,13 +226,3 @@ MessageLenA20: equ $-MessageA20
 ;*************************************************;
 MessageVideoMode: db "Video Mode Set, Success"
 MessageLenVideoMode: equ $-MessageVideoMode
-;*************************************************;
-;	PROTECTED        MODE          MESSAGE
-;*************************************************;
-MessageProtectedMode: db "Protected Mode, Entered"
-MessageLenProtectedMode: equ $-MessageProtectedMode
-;*************************************************;
-;	LONG        MODE          MESSAGE
-;*************************************************;
-MessageLongMode: db "Long Mode, Entered"
-MessageLenLongMode: equ $-MessageLongMode

@@ -20,22 +20,6 @@ TssDesc:
 Gdt64PointerKernelEntry: dw Gdt64LenKernelEntry-1
                         dd Gdt64KernelEntry
 
-Idt:
-    %rep 256
-        dw 0
-        dw 0x8
-        db 0
-        db 0x8e
-        dw 0
-        dd 0
-        dd 0
-    %endrep
-
-IdtLen: equ $-Idt
-
-IdtPointer: dw IdtLen-1
-            dq Idt
-
 Tss:
     dd 0
     dq 0x150000
@@ -106,12 +90,8 @@ InitPIC:
     retf
 
 KernelEntry:
-    xor ax,ax
-    mov ss,ax
-    
     mov rsp,0x200000
     call main_kernel
-    sti
 
 kernel_entry_end:
     hlt

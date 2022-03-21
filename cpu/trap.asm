@@ -42,9 +42,6 @@ Trap:
     push r14
     push r15
 
-    inc byte[0xb8020]
-    mov byte[0xb8021],0xe
-
     mov rdi,rsp
     call handler
 
@@ -178,5 +175,3 @@ read_isr:
 load_idt:
     lidt [rdi] ;data is stored in rdi
     ret
-
-
