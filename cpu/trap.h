@@ -3,7 +3,7 @@
 
 #include "stdint.h"
 
-struct IdtEntry {
+typedef struct IdtEntry{
     uint16_t low;
     uint16_t selector;
     uint8_t res0;
@@ -11,14 +11,14 @@ struct IdtEntry {
     uint16_t mid;
     uint32_t high;
     uint32_t res1;
-};
+}__attribute__((packed)) IdtEntry;
 
-struct IdtPtr {
+typedef struct IdtPointer{
     uint16_t limit;
     uint64_t addr;
-} __attribute__((packed));
+} __attribute__((packed)) IdtPointer;
 
-struct TrapFrame {
+typedef struct TrapFrame {
     int64_t r15; // Top of the stack - Low Address
     int64_t r14;
     int64_t r13;
@@ -41,7 +41,7 @@ struct TrapFrame {
     int64_t rflags;
     int64_t rsp;
     int64_t ss; //High Address
-};
+}__attribute__((packed)) TrapFrame;
 
 
 void vector0(void);

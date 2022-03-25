@@ -15,14 +15,6 @@ loader_start:
     test edx, (1<<26) ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
 
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,Message16bitmode
-    mov cx,MessageLen16bitmode
-    int 0x10
-
 ReadKernel:
     mov si, ReadPacket
     mov word[si], 0x10
@@ -191,38 +183,7 @@ Gdt64Pointer: dw Gdt64Len-1
 
 
 ;*************************************************;
-;	LONG        MODE        SUPPORT
+;	16        BIT        MODE
 ;*************************************************;
 Message16bitmode: db "Started in 16-bit Real Mode!"
 MessageLen16bitmode: equ $-Message16bitmode
-
-
-
-;*************************************************;
-;	LONG        MODE        SUPPORT
-;*************************************************;
-MessageLongModeSupport: db "Long Mode Is Supported!"
-MessageLenLongModeSupport: equ $-MessageLongModeSupport
-
-
-;*************************************************;
-;	KERNEL        LOAD          MESSAGE
-;*************************************************;
-MessageKernelLoad: db "Kernel Is Loaded"
-MessageLenKernelLoad: equ $-MessageKernelLoad
-
-;*************************************************;
-;	MEMORY        MAP           MESSAGE
-;*************************************************;
-MessageMemory: db "Get Memory Info done"
-MessageLenMemory: equ $-MessageMemory
-;*************************************************;
-;	A        20          MESSAGE
-;*************************************************;
-MessageA20: db "A20 Gate Is Enabled"
-MessageLenA20: equ $-MessageA20
-;*************************************************;
-;	VIDEO        MODE          MESSAGE
-;*************************************************;
-MessageVideoMode: db "Video Mode Set, Success"
-MessageLenVideoMode: equ $-MessageVideoMode
