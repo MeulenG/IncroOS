@@ -71,9 +71,10 @@ EnableA20:
 VideoMode:
     mov ax, 3 ;test mode
     int 0x10
+    
     cli 
     lgdt [Gdt32Pointer]
-    lidt [Idt32Pointer]
+    lidt [idtReal]
 
     mov eax, cr0
     or eax, 1
@@ -86,9 +87,35 @@ loader_end:
     hlt
     jmp loader_end
 
-
-[BITS   32]
+;*************************************************;
+; Protected mode is the main operating mode of modern Intel processors (and clones) since the 80286 (16 bit). 
+; On 80386s and later, the 32 bit Protected Mode allows working with several virtual address spaces, each of which has a maximum of 4GB of addressable memory;
+; and enables the system to enforce strict memory and hardware I/O protection as well as restricting the available instruction set via Rings.
+;*************************************************;
+ALIGN  32
+BITS   32
 PMEntry:
+    cli ; disable interrupts
+    lgdt[Gdt64Pointer] ; load GDT register with start address of Global Descriptor Table
+    mov eax, cr4
+    or eax, 0x10 ; set PE (Protection Enable) bit in CR0 (Control Register 0)
+    or eax, 0x20
+    mov cr4, eax
+
+    ; Compatability mode
+    mov ecx, 0xC0000080
+    rdmsr
+    or eax, 0x100
+    wrmsr
+    ;Enable Paging
+    mov eax, cr0
+    or al, 1 ; set PE (Protection Enable) bit in CR0 (Control Register 0)
+    mov cr0, eax
+    ; Perform far jump to selector 08h (offset into GDT, pointing at a 32bit PM code segment descriptor) 
+    ; to load CS with proper PM32 descriptor)
+    jmp 08h:PModeMain
+
+PModeMain:
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -103,24 +130,6 @@ PMEntry:
 
     mov dword[0x80000], 0x81007
     mov dword[0x81000], 10000111b
-    
-    lgdt [Gdt64Pointer]
-
-    mov eax, cr4
-    or eax, (1<<5)
-    mov cr4, eax
-
-    mov eax, 0x80000
-    mov cr3, eax
-
-    mov ecx, 0xc0000080
-    rdmsr
-    or eax, (1<<8)
-    wrmsr
-
-    mov eax, cr0
-    or eax, (1<<31)
-    mov cr0, eax
 
     jmp 8:LMEntry
 
@@ -128,15 +137,30 @@ PEnd:
     hlt
     jmp PEnd
 
-[BITS   64]
+ALIGN  64
+BITS   64
 LMEntry:
-    mov rsp, 0x7c00
     cld
     mov rdi, 0x200000
     mov rsi, 0x10000
     mov rcx, 51200/8
-    rep movsq ; since its 64-bit mode
+    rep movsq
+    
+    ; clear out upper 32 bits of stack to make sure
+    ; no intended bits are left up there
+    mov eax, esp
+    xor rsp, rsp
+    mov rsp, rax
+    
+    ; clear out 64 bit parts of registers as we do not
+    ; know the state of them, and we need to use them
+    ; for passing state
 
+    xor rax, rax
+    xor rbx, rbx
+    xor rcx, rcx
+    
+    ;jump to the kernels address and never return
     jmp 0x200000
 
 LEnd:
@@ -166,9 +190,9 @@ Gdt32Len: equ $-Gdt32
 Gdt32Pointer: dw Gdt32Len-1
           dd Gdt32
 
-Idt32Pointer:
-dw 0x3ff
-dd 0
+idtReal:
+	dw 0x3ff		; 256 entries, 4b each = 1K
+	dd 0			; Real Mode IVT @ 0x0000
 
 Gdt64Len: equ $-Gdt64
 
