@@ -1,6 +1,50 @@
 [BITS   16]     ;16 bit real mode
 [ORG    0x7c00] ; Greeted by bios at 0x7c00
 
+; Jump Code, 3 Bytes
+jmp short mbr_start
+nop
+
+; *************************
+; FAT Boot Parameter Block
+; *************************
+szOemName					db		"OMOS    "
+wBytesPerSector				dw		0
+bSectorsPerCluster			db		0
+wReservedSectors			dw		0
+bNumFATs					db		0
+wRootEntries				dw		0
+wTotalSectors				dw		0
+bMediaType					db		0
+wSectorsPerFat				dw		0
+wSectorsPerTrack			dw		0
+wHeadsPerCylinder			dw		0
+dHiddenSectors				dd 		0
+dTotalSectors				dd 		0
+
+; *************************
+; FAT32 Extension Block
+; *************************
+dSectorsPerFat32			dd 		0
+wFlags						dw		0
+wVersion					dw		0
+dRootDirStart				dd 		0
+wFSInfoSector				dw		0
+wBackupBootSector			dw		0
+
+; Reserved 
+dReserved0					dd		0 	;FirstDataSector
+dReserved1					dd		0 	;ReadCluster
+dReserved2					dd 		0 	;ReadCluster
+
+bPhysicalDriveNum			db		0
+bReserved3					db		0
+bBootSignature				db		0
+dVolumeSerial				dd 		0
+szVolumeLabel				db		"NO NAME    "
+szFSName					db		"FAT32   "
+
+
 mbr_start:
     xor ax, ax
     mov ds, ax

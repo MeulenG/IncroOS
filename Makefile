@@ -63,7 +63,7 @@ $(BUILD_DIR)/OMOS-image.img:
 
 #gonna use this later
 simulate:
-	$(osbuilder) --project "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
+	$(osbuilder) "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
 
 run:
 	bochs -q -f os.bochsrc

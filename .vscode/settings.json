@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "screen.h": "c"
+        "screen.h": "c",
+        "random": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }

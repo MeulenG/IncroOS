@@ -17,5 +17,6 @@ $(BUILD_DIR)/kernel_entry.o: kernel_entry.asm
 	${ASMC} $< ${ASMC_ARGS} -o $@
 
 
+
 clean:
 	rm -rf $(BUILD_DIR)/kernel_entry.o

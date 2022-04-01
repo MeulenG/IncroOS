@@ -3,19 +3,19 @@
 
 #include "stdint.h"
 
-typedef struct IdtEntry{
-    uint16_t low;
-    uint16_t selector;
-    uint8_t res0;
-    uint8_t attr;
-    uint16_t mid;
-    uint32_t high;
-    uint32_t res1;
-}__attribute__((packed)) IdtEntry;
+typedef struct InterruptDescriptorTable64{
+    uint16_t offset_1;        // offset bits 0..15
+    uint16_t selector;        // a code segment selector in GDT or LDT
+    uint8_t  ist;             // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
+    uint8_t  type_attributes; // gate type, dpl, and p fields
+    uint16_t offset_2;        // offset bits 16..31
+    uint32_t offset_3;        // offset bits 32..63
+    uint32_t zero;            // reserved
+}__attribute__((packed)) InterruptDescriptorTable64; 
 
 typedef struct IdtPointer{
     uint16_t limit;
-    uint64_t addr;
+    uint64_t base;
 } __attribute__((packed)) IdtPointer;
 
 typedef struct TrapFrame {
@@ -66,7 +66,7 @@ void vector32(void);
 void vector39(void);
 void init_idt(void);
 void eoi(void);
-void load_idt(struct IdtPtr *ptr);
+void load_idt(struct IdtPointer *g_idtPointer);
 unsigned char read_isr(void);
 
 #endif

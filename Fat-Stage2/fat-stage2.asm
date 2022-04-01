@@ -2,18 +2,49 @@
 [ORG    0x7e00]
 
 loader_start:
+    ; Check whether CPUID is supported or not
+    pushfd
+    pop eax
+    mov ecx, eax
+    xor eax, 0x200000
+    push eax
+    popfd
+    
+    pushfd 
+    pop eax
+    xor eax, ecx
+    shr eax, 21 
+    and eax, 1                        ; Check whether bit 21 is set or not. If EAX now contains 0, CPUID isn't supported.
+    push ecx
+    popfd
+    
+    test eax, eax
+    jz .NoLongMode
+
     mov [DRIVE], dl
 
     mov eax, 0x80000000 ; by passing this value we get CPU features
     cpuid ; Returns cpu information
     cmp eax, 0x80000001 ; We check for 64-bit support AKA long mode support, so if its below, then we jump to an error message
-    jb NotSupported ; if this isnt the case, then we tell them the OS isnt supported
+    jb .NoLongMode ; if this isnt the case, then we tell them the OS isnt supported
     mov eax, 0x80000001 ;
     cpuid
-    test edx, (1<<29)
+    test edx, 1 << 29
     jz NotSupported
-    test edx, (1<<26) ; We check for 1gb paging, if it isnt inside, then we jump
+    test edx, 1 << 26 ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
+
+    mov ah, 0x13 ; Function code
+    mov al, 1 ; Cursor gets placed at the end of the string
+    mov bx, 0xd ;0xa means it will be printed in green
+    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
+    mov bp, Message16bitmode ;Message displayed
+    mov cx, MessageLen16bitmode ; Copies the characters to cx
+    int 0x10 ;interrupt
+
+.NoLongMode:
+    stc
+    ret
 
 ReadKernel:
     mov si, ReadPacket
@@ -99,7 +130,7 @@ PMEntry:
     lgdt[Gdt64Pointer] ; load GDT register with start address of Global Descriptor Table
     mov eax, cr4
     or eax, 0x10 ; set PE (Protection Enable) bit in CR0 (Control Register 0)
-    or eax, 0x20
+    or eax, 0x20 ; 2mb pages
     mov cr4, eax
 
     ; Compatability mode
@@ -116,10 +147,13 @@ PMEntry:
     jmp 08h:PModeMain
 
 PModeMain:
+    ; load DS, ES, FS, GS, SS, ESP
     mov ax, 0x10
     mov ds, ax
     mov es, ax
+    mov fs, ax
     mov ss, ax
+    mov gs, ax
     mov esp, 0x7c00
 
     cld
@@ -155,7 +189,6 @@ LMEntry:
     ; clear out 64 bit parts of registers as we do not
     ; know the state of them, and we need to use them
     ; for passing state
-
     xor rax, rax
     xor rbx, rbx
     xor rcx, rcx
