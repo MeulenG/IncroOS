@@ -4,13 +4,13 @@ static struct InterruptDescriptorTable64 g_idtEntries[256] = { { 0 } };
 static struct IdtPointer g_idtPointer = { 0 };
 static struct TrapFrame trapFrame;
 
-static void init_idt_entry(struct InterruptDescriptorTable64 *IdtEntry, uint64_t addr, uint8_t attribute)
+static void init_idt_entry(struct InterruptDescriptorTable64 *IdtEntry, uint64_t offset, uint8_t type_attributes)
 {
-    IdtEntry->offset_1 = (uint16_t)addr;
+    IdtEntry->offset_1 = (uint16_t)offset;
     IdtEntry->selector = 8;
-    IdtEntry->type_attributes = attribute;
-    IdtEntry->offset_2 = (uint16_t)(addr>>16);
-    IdtEntry->offset_3 = (uint32_t)(addr>>32);
+    IdtEntry->type_attributes = type_attributes;
+    IdtEntry->offset_2 = (uint16_t)(offset>>16);
+    IdtEntry->offset_3 = (uint32_t)(offset>>32);
 }
 
 void init_idt(void)

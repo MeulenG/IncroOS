@@ -12,7 +12,7 @@
 #     partition VBR marked as legacy boot ('boot' attribute).
 #
 scheme: MBR
-size: 64MB
+size: 512MB
 
 # define partitions for disk
 partitions:
@@ -22,19 +22,11 @@ partitions:
     # in the partition being of FAT16. The minimum size of FAT is 64mb. 
     type: FAT
     guid: EA2CBEBB-2B4E-49B5-9A07-043EE82836E7
+    
     # Attributes can be: boot, readonly, shadow, noautomount.
     # If boot is specified, the 'vbr-image' and optionally the 'reserved-sectors-image'
     # must be specified.
     attributes:
       - boot
-    vbr-image: /home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin
-    reserved-sectors-image: /home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin
-
-    # Sources are the files that should be copied onto the filesystem partition
-    # and can be either 'file' or 'dir'. Both of these types expect a 'path' and
-    # a 'target' defined. The 'path' is the source of the file/directory. The
-    # 'target' attribute defines where on the filesystem it should be written.
-    #sources:
-    #  - type: dir
-    #    path: /home/puhaa/Desktop/DevProjects/OMOS/kernel.bin
-    #    target: /kernel.bin
+    vbr-image: Fat-Stage1/fat-stage1.bin
+    reserved-sectors-image: Fat-Stage2/fat-stage2.bin

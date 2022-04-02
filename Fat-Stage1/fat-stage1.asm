@@ -63,19 +63,36 @@ TestDiskExtention:
 
 
 Stage2:
+    ; DS:SI (segment:offset pointer to the DAP, Disk Address Packet)
+    ; DS is Data Segment, SI is Source Index
     mov si, ReadPacket
+    ; size of Disk Address Packet (set this to 0x10)
     mov word[si], 0x10
+    ; number of sectors(loader) to read
     mov word[si+2], 1
+    ; number of sectors to transfer
+    ; transfer buffer (16 bit segment:16 bit offset)
+    ; 16 bit offset=0x7e00 (stored in word[si+4])
+    ; 16 bit segment=0 (stored in word[si+6])
+    ; address => 0 * 16 + 0x7e00 = 0x7e00
     mov word[si+4], 0x7e00
     mov word[si+6], 0
+    ; absolute number of the start of the sectors to be read
+    ; LBA=1 (the 2nd sector) is the start of sector to be read
+    ; LBA=1 is start of loader sector
+    ; lower part of 64-bit starting LBA
     mov dword[si+8], 1
-    mov dword[si+0xc], 0
+    ; upper part of 64-bit starting LBA
+    mov dword[si+12], 0
+    ; dl=drive id
     mov dl, [DRIVE]
+    ; function code, 0x42 = Extended Read Sectors From Drive
     mov ah, 0x42
     int 0x13
-    jc BroadCastError
-
+    ; Set On Error, Clear If No Error
+    jc  BroadCastError
     mov dl, [DRIVE]
+    ; jump to bootloader
     jmp 0x7e00
 
 BroadCastError:
@@ -93,8 +110,8 @@ mbr_end:
     jmp mbr_end
 
 DRIVE: db 0
-Message: db "Error at bootsect"
-MessageLen: equ $-Message
+MessageError: db "Error at bootsect"
+MessageLen: equ $-MessageError
 ReadPacket: times 16 db 0
 
 times (0x1be-($-$$)) db 0 ;Starts at the address 0x1be and fills it with 0'es until the end of the message/start of our code
