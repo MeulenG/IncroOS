@@ -39,13 +39,12 @@ loader_start:
     cpuid
     test edx, 1 << 29
     jz NotSupported
-    test edx, 1 << 26 ; We check for 1gb paging, if it isnt inside, then we jump
-    jz NotSupported
+    ;test edx, 1 << 26 ; We check for 1gb paging, if it isnt inside, then we jump
+    ;jz NotSupported
 
 
 .NoLongMode:
-    stc
-    ret
+    jmp NotSupported
 
 ReadKernel:
     mov si, ReadPacket
@@ -149,12 +148,6 @@ PMEntry:
 
 PModeMain:
     ; load DS, ES, FS, GS, SS, ESP
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov ss, ax
-    mov gs, ax
     mov esp, 0x7c00
 
     cld

@@ -61,12 +61,12 @@ $(BUILD_DIR)/OMOS-image.img:
 	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=OMOS-image.img bs=512 count=5 seek=1 conv=notrunc
 	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=OMOS-image.img bs=512 count=100 seek=6 conv=notrunc
 
-#gonna use this later
+
 simulate:
 	$(osbuilder) "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
 
 run:
-	bochs -q -f os.bochsrc
+	bochs -q -f setup.bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
