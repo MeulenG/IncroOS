@@ -2,6 +2,14 @@
 [ORG    0x7e00]
 
 loader_start:
+    mov ah, 0x13 ; Function code
+    mov al, 1 ; Cursor gets placed at the end of the string
+    mov bx, 0xd ;0xa means it will be printed in green
+    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
+    mov bp, Message16bitmode ;Message displayed
+    mov cx, MessageLen16bitmode ; Copies the characters to cx
+    int 0x10 ;interrupt
+
     ; Check whether CPUID is supported or not
     pushfd
     pop eax
@@ -34,13 +42,6 @@ loader_start:
     test edx, 1 << 26 ; We check for 1gb paging, if it isnt inside, then we jump
     jz NotSupported
 
-    mov ah, 0x13 ; Function code
-    mov al, 1 ; Cursor gets placed at the end of the string
-    mov bx, 0xd ;0xa means it will be printed in green
-    xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
-    mov bp, Message16bitmode ;Message displayed
-    mov cx, MessageLen16bitmode ; Copies the characters to cx
-    int 0x10 ;interrupt
 
 .NoLongMode:
     stc

@@ -8,7 +8,7 @@ nop
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"OMOS    "
+szOemName					db		"OMOS   "
 wBytesPerSector				dw		0
 bSectorsPerCluster			db		0
 wReservedSectors			dw		0
@@ -91,6 +91,7 @@ Stage2:
     int 0x13
     ; Set On Error, Clear If No Error
     jc  BroadCastError
+    
     mov dl, [DRIVE]
     ; jump to bootloader
     jmp 0x7e00
@@ -101,7 +102,7 @@ NotSupported:
     mov al, 1 ; Cursor gets placed at the end of the string
     mov bx, 0xd ;0xa means it will be printed in green
     xor dx, dx ; Prints message at the beginning of the screen so we set it to 0
-    mov bp, Message ;Message displayed
+    mov bp, MessageError ;Message displayed
     mov cx, MessageLen ; Copies the characters to cx
     int 0x10 ;interrupt
 
