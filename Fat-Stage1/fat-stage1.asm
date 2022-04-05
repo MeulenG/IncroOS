@@ -46,11 +46,17 @@ szFSName					db		"FAT32   "
 
 
 mbr_start:
-    xor ax, ax
-    mov ds, ax
-    mov ss, ax
-    mov sp, 0x7c00
+    cli
 
+	xor 	ax, ax
+	mov		ds, ax
+	mov		es, ax
+
+	mov		ss, ax
+	mov		ax, 0x7C00
+	mov		sp, ax
+
+    sti
 
 TestDiskExtention:
     mov [DRIVE], dl
@@ -69,7 +75,7 @@ Stage2:
     ; size of Disk Address Packet (set this to 0x10)
     mov word[si], 0x10
     ; number of sectors(loader) to read
-    mov word[si+2], 1
+    mov word[si+2], 524288
     ; number of sectors to transfer
     ; transfer buffer (16 bit segment:16 bit offset)
     ; 16 bit offset=0x7e00 (stored in word[si+4])

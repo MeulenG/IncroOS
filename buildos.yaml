@@ -35,7 +35,7 @@ partitions:
     # and can be either 'file' or 'dir'. Both of these types expect a 'path' and
     # a 'target' defined. The 'path' is the source of the file/directory. The
     # 'target' attribute defines where on the filesystem it should be written.
-    #sources:
-    #  - type: dir
-     #   path: /home/puhaa/Desktop/DevProjects/OMOS/kernel.bin
-     #   target: /
+    sources:
+      - type: file
+        path: /home/puhaa/Desktop/DevProjects/OMOS/kernel.bin
+        target: kernel.bin
