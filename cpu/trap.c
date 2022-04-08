@@ -37,7 +37,7 @@ void init_idt(void)
     init_idt_entry(&g_idtEntries[39],(uint64_t)vector39,0x8e);
 
     g_idtPointer.limit = sizeof(g_idtEntries)-1;
-    g_idtPointer.base = &g_idtEntries[0];
+    g_idtPointer.base = (uint64_t)&g_idtEntries[0];
     load_idt(&g_idtPointer);
 }
 

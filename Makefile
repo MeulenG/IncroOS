@@ -24,9 +24,9 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	simulate
+all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	disk.img
 
-.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	simulate
+.PHONY		: 				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	disk.img
 
 Fat-Stage1:
 	make -C Fat-Stage1
@@ -56,17 +56,17 @@ $(BUILD_DIR)/kernel.bin:
 	objcopy -O binary kernel kernel.bin 
 
 #tmp way to build the OS and run it
-$(BUILD_DIR)/OMOS-image.img:
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=OMOS-image.img bs=512 count=1 conv=notrunc
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=OMOS-image.img bs=512 count=5 seek=1 conv=notrunc
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=OMOS-image.img bs=512 count=100 seek=6 conv=notrunc
+disk.img:
+	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=disk.img bs=512 count=1 conv=notrunc
+	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=disk.img bs=512 count=5 seek=1 conv=notrunc
+#	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=disk.img bs=512 count=100 seek=6 conv=notrunc
 
 
 simulate:
 	$(osbuilder) "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
 
 run:
-	bochs -q -f setup.bochsrc
+	bochs -q -f bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
