@@ -21,7 +21,7 @@ start:
     test eax, eax
     jz .NoLongMode
 
-    mov [DRIVE], dl
+    mov [DriveId], dl
 
     mov eax, 0x80000000 ; by passing this value we get CPU features
     cpuid ; Returns cpu information
@@ -30,11 +30,13 @@ start:
     mov eax, 0x80000001 ;
     cpuid
     test edx, 1 << 29
-    jz NotSupported
+    jz .NoLongMode
 
 
 .NoLongMode:
-    jmp NotSupported
+    stc
+    ret
+
 LoadKernel:
     mov si,ReadPacket
     mov word[si],0x10
