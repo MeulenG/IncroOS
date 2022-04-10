@@ -1,14 +1,20 @@
-[BITS 16]
-[ORG 0x7c00]
-
-; Jump Code, 3 Bytes
-jmp short mbr_start
-nop
-
+;*********************************************
+;	Boot1.asm
+;		- A Simple Bootloader
+;
+;	Operating Systems Development Tutorial
+;*********************************************
+ 
+bits	16							; We are still in 16 bit Real Mode
+ 
+org		0x7c00						; We are loaded by BIOS at 0x7C00
+ 
+start:          jmp loader					; jump over OEM block
+ 
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"OMOS    "
+szOemName					db		"Vali  OS"
 wBytesPerSector				dw		0
 bSectorsPerCluster			db		0
 wReservedSectors			dw		0
@@ -43,75 +49,57 @@ bBootSignature				db		0
 dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
-
-
-mbr_start:
-    cli
-    ; Fix segment registers to 0
-	xor 	ax, ax
-	mov		ds, ax
+ 
+;***************************************
+;	Prints a string
+;	DS=>SI: 0 terminated string
+;***************************************
+ 
+Print:
+			lodsb					; load next byte from string from SI to AL
+			or			al, al		; Does AL=0?
+			jz			PrintDone	; Yep, null terminator found-bail out
+			mov			ah,	0eh	; Nope-Print the character
+			int			10h
+			jmp			Print		; Repeat until null terminator found
+PrintDone:
+			ret					; we are done, so return
+ 
+;*************************************************;
+;	Bootloader Entry Point
+;*************************************************;
+ 
+loader:
+ 
+.Reset:
+	mov		ah, 0					; reset floppy disk function
+	mov		dl, 0					; drive 0 is floppy drive
+	int		0x13					; call BIOS
+	jc		.Reset					; If Carry Flag (CF) is set, there was an error. Try resetting again
+ 
+	mov		ax, 0x1000				; we are going to read sector to into address 0x1000:0
 	mov		es, ax
-
-	; Set stack
-	mov		ss, ax
-	mov		ax, 0x7C00
-	mov		sp, ax
-    sti
-
-TestDiskExtension:
-    mov [DriveId],dl
-    mov ah,0x41
-    mov bx,0x55aa
-    int 0x13
-    jc NotSupport
-    cmp bx,0xaa55
-    jne NotSupport
-
-LoadLoader:
-    mov si,ReadPacket
-    mov word[si],0x10
-    mov word[si+2],5
-    mov word[si+4],0x7e00
-    mov word[si+6],0
-    mov dword[si+8],1
-    mov dword[si+0xc],0
-    mov dl,[DriveId]
-    mov ah,0x42
-    int 0x13
-    jc  ReadError
-
-    mov dl,[DriveId]
-    jmp 0x7e00 
-
-ReadError:
-NotSupport:
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,Message
-    mov cx,MessageLen 
-    int 0x10
-
-End:
-    hlt    
-    jmp End
-    
-DriveId:    db 0
-Message:    db "Error in Stage1"
-MessageLen: equ $-Message
-ReadPacket: times 16 db 0
-
-times (0x1be-($-$$)) db 0
-
-    db 80h
-    db 0,2,0
-    db 0f0h
-    db 0ffh,0ffh,0ffh
-    dd 1
-    dd (20*16*63-1)
+	xor		bx, bx
+ 
+	mov		ah, 0x02				; read floppy sector function
+	mov		al, 1					; read 1 sector
+	mov		ch, 1					; we are reading the second sector past us, so its still on track 1
+	mov		cl, 2					; sector to read (The second sector)
+	mov		dh, 0					; head number
+	mov		dl, 0					; drive number. Remember Drive 0 is floppy drive.
+	int		0x13					; call BIOS - Read the sector
 	
-    times (16*3) db 0
-
-    db 0x55
-    db 0xaa
+ 
+	jmp		0x1000:0x0				; jump to execute the sector!
+ 
+ 
+times 510 - ($-$$) db 0						; We have to be 512 bytes. Clear the rest of the bytes with 0
+ 
+dw 0xAA55							; Boot Signiture
+ 
+; End of sector 1, beginning of sector 2 ---------------------------------
+ 
+ 
+org 0x1000							; This sector is loaded at 0x1000:0 by the bootsector
+ 
+cli								; just halt the system

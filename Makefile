@@ -24,7 +24,7 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	disk.img
+all			:				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	disk.img
 
 .PHONY		: 				Fat-Stage1 Fat-Stage2	cpu	Core	kernel_entry	libc	$(BUILD_DIR)/kernel	$(BUILD_DIR)/kernel.bin	disk.img
 
@@ -57,13 +57,16 @@ $(BUILD_DIR)/kernel.bin:
 
 #tmp way to build the OS and run it
 disk.img:
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage1/fat-stage1.bin of=disk.img bs=512 count=1 conv=notrunc
-	dd if=/home/puhaa/Desktop/DevProjects/OMOS/Fat-Stage2/fat-stage2.bin of=disk.img bs=512 count=5 seek=1 conv=notrunc
-#	dd if=/home/puhaa/Desktop/DevProjects/OMOS/build/kernel_entry.o of=disk.img bs=512 count=100 seek=6 conv=notrunc
+	dd if=/dev/zero of=myfloppy.img bs=512 count=2880
+	sudo losetup /dev/loop50 myfloppy.img 
+	sudo mkdosfs -F 12 /dev/loop50
+	sudo mount /dev/loop50 /media/myfloppy -t msdos -o "fat=12"
+	sudo dd if=Fat-Stage1/STAGE1.SYS of=/dev/loop50
+	sudo cp Fat-Stage2/KRNLDR.SYS myfloppy
 
 
 simulate:
-	$(osbuilder) "/home/puhaa/Desktop/DevProjects/OMOS/buildos.yaml" --target img
+	$(osbuilder) buildos.yaml --target img
 
 run:
 	bochs -q -f bochsrc
@@ -78,5 +81,8 @@ clean:
 	rm -rf kernel.bin
 	rm -rf kernel
 	rm -rf disk.img.lock
-	rm -rf log.txt
+	rm -rf myfloppy
+	rm -rf myfloppy.img
 	rm -rf bochsout.txt
+	sudo umount /media/myfloppy
+	sudo losetup -d /dev/loop50
