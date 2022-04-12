@@ -9,11 +9,7 @@ bits	16							; We are still in 16 bit Real Mode
 
 org		0x7c00						; We are loaded by BIOS at 0x7C00
 
-start:          jmp loader					; jump over OEM block
-; Jump Code, 3 Bytes
-jmp short Main
-nop
-
+start:          jmp Main					; jump over FAT block
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************

@@ -38,14 +38,10 @@ simulate:
 	$(osbuilder) buildos.yaml --target img
 
 run:
-	bochs -q -f bochsrc
+	bochs -q -f setup.bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
-	rm -rf disk.img
-	rm -rf kernel.bin
-	rm -rf kernel
 	rm -rf disk.img.lock
-	rm -rf myfloppy
-	rm -rf myfloppy.img
+	rm -rf disk.img
 	rm -rf bochsout.txt
