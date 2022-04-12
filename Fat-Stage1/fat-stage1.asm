@@ -4,17 +4,20 @@
 ;
 ;	Operating Systems Development Tutorial
 ;*********************************************
- 
+
 bits	16							; We are still in 16 bit Real Mode
- 
+
 org		0x7c00						; We are loaded by BIOS at 0x7C00
- 
+
 start:          jmp loader					; jump over OEM block
- 
+; Jump Code, 3 Bytes
+jmp short Main
+nop
+
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"Vali  OS"
+szOemName					db		"MY    OS"
 wBytesPerSector				dw		0
 bSectorsPerCluster			db		0
 wReservedSectors			dw		0
@@ -49,12 +52,14 @@ bBootSignature				db		0
 dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
- 
+
+msg	db	"Welcome to My Operating System!", 0		; the string to print
+
 ;***************************************
 ;	Prints a string
 ;	DS=>SI: 0 terminated string
 ;***************************************
- 
+
 Print:
 			lodsb					; load next byte from string from SI to AL
 			or			al, al		; Does AL=0?
@@ -64,42 +69,27 @@ Print:
 			jmp			Print		; Repeat until null terminator found
 PrintDone:
 			ret					; we are done, so return
- 
+
 ;*************************************************;
 ;	Bootloader Entry Point
 ;*************************************************;
- 
-loader:
- 
-.Reset:
-	mov		ah, 0					; reset floppy disk function
-	mov		dl, 0					; drive 0 is floppy drive
-	int		0x13					; call BIOS
-	jc		.Reset					; If Carry Flag (CF) is set, there was an error. Try resetting again
- 
-	mov		ax, 0x1000				; we are going to read sector to into address 0x1000:0
-	mov		es, ax
-	xor		bx, bx
- 
-	mov		ah, 0x02				; read floppy sector function
-	mov		al, 1					; read 1 sector
-	mov		ch, 1					; we are reading the second sector past us, so its still on track 1
-	mov		cl, 2					; sector to read (The second sector)
-	mov		dh, 0					; head number
-	mov		dl, 0					; drive number. Remember Drive 0 is floppy drive.
-	int		0x13					; call BIOS - Read the sector
+
+Main:
+
+	xor	ax, ax		; Setup segments to insure they are 0. Remember that
+	mov	ds, ax		; we have ORG 0x7c00. This means all addresses are based
+	mov	es, ax		; from 0x7c00:0. Because the data segments are within the same
+				; code segment, null em.
+
+	mov	si, msg						; our message to print
+	call	Print						; call our print function
+
+	xor	ax, ax						; clear ax
+	int	0x12						; get the amount of KB from the BIOS
+
+	cli							; Clear all Interrupts
+	hlt							; halt the system
 	
- 
-	jmp		0x1000:0x0				; jump to execute the sector!
- 
- 
 times 510 - ($-$$) db 0						; We have to be 512 bytes. Clear the rest of the bytes with 0
- 
+
 dw 0xAA55							; Boot Signiture
- 
-; End of sector 1, beginning of sector 2 ---------------------------------
- 
- 
-org 0x1000							; This sector is loaded at 0x1000:0 by the bootsector
- 
-cli								; just halt the system

@@ -1,5 +1,0 @@
-romimage: file="/usr/local/share/bochs/BIOS-bochs-latest"
-vgaromimage: file ="/usr/local/share/bochs/VGABIOS-lgpl-latest"
-floppya: image=myfloppy.img, status=inserted
-display_library: x, options="gui_debug"
-log: bochsout.txt
