@@ -13,7 +13,7 @@
       </ul>
     </li>
     <li>
-      <a href="#getting-started">Getting Started</a>
+      <a href="#Features">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
@@ -52,61 +52,14 @@ My first OS written in Assembly and C in order to learn OS Development. I dedica
 
 
 <!-- GETTING STARTED -->
-## Getting Started
-
-In order to setup this project, you need a cross-compiler, gcc compiler(C compiler) and NASM(assembly compiler) and an the emulator QEMU. 
-
+## Features
 ### Prerequisites
 
-
-* gcc (C/C++ compiler)
+* Prerequisites
   ```sh
   ./Dev.sh
   ./DotnetInstall.sh
   ```
-
-You can use an already written cross-compiler or write your own, if you dont want to write your own, follow this link to setup a cross-compiler[Cross-Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
-
-### Installation
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/MeulenG/OMOS.git
-   ```
-
-2. Make
-   ```sh
-   make all
-   ```
-
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-## Usage
-
-This project is purely for my own enjoyment and to learn.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Bootloader finished
-- [ ] File System
-- [ ] User mode
-- [ ] Text Editor
-- [ ] Multithreaded Kernel
-- [ ] Scheduling and Multiple Processes
-- [ ] Networking
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-
 
 
 <!-- CONTACT -->

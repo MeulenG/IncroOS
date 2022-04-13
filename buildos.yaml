@@ -29,7 +29,7 @@ partitions:
     attributes:
       - boot
     vbr-image: Fat-Stage1/STAGE1.SYS
-#    reserved-sectors-image: Fat-Stage2/KRNLDR.SYS
+    reserved-sectors-image: Fat-Stage2/KRNLDR.SYS
 
     # Sources are the files that should be copied onto the filesystem partition
     # and can be either 'file' or 'dir'. Both of these types expect a 'path' and

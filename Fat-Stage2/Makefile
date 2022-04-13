@@ -14,4 +14,4 @@ KRNLDR.SYS: fat-stage2.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 clean:
-	rm -rf LOADER.SYS
+	rm -rf KRNLDR.SYS
