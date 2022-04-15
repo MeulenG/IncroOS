@@ -1,4 +1,17 @@
+;   General x86 Real Mode Memory Map:
+;   0x00000000 - 0x000003FF - Real Mode Interrupt Vector Table
+;   0x00000400 - 0x000004FF - BIOS Data Area
+;   0x00000500 - 0x00007BFF - Unused
+;   0x00007C00 - 0x00007DFF - Our Bootloader
+;   0x00007E00 - 0x0009FFFF - Unused
+;   0x000A0000 - 0x000BFFFF - Video RAM (VRAM) Memory
+;   0x000B0000 - 0x000B7777 - Monochrome Video Memory
+;   0x000B8000 - 0x000BFFFF - Color Video Memory
+;   0x000C0000 - 0x000C7FFF - Video ROM BIOS
+;   0x000C8000 - 0x000EFFFF - BIOS Shadow Area
+;   0x000F0000 - 0x000FFFFF - System BIOS
 ; ASM = Right to left execution
+; I'm gonna have to make this code mega ultra idiot proof in-case i have to look at it more, sorry in advance haha
 bits	16							; We are still in 16 bit Real Mode
 
 org		0x7c00						; We are loaded by BIOS at 0x7C00
@@ -108,9 +121,22 @@ End:
     hlt    
     jmp End
 
+DriveId:    db 0
 msg	db	"Error at Stage1", 0		; the string to print
 ReadPacket: times 16 db 0
+msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7c00)....", 0x0D, 0x0A, 0x00
+msgStageTwo  db "Jumping to stage2 (0x500)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
 
-times 510 - ($-$$) db 0						; We have to be 512 bytes. Clear the rest of the bytes with 0
+times (0x1be-($-$$)) db 0
 
-dw 0xAA55							; Boot Signiture
+    db 80h
+    db 0,2,0
+    db 0f0h
+    db 0ffh,0ffh,0ffh
+    dd 1
+    dd (20*16*63-1)
+	
+    times (16*3) db 0
+
+    db 0x55
+    db 0xaa
