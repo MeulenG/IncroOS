@@ -10,9 +10,9 @@
 ;   0x000C0000 - 0x000C7FFF - Video ROM BIOS
 ;   0x000C8000 - 0x000EFFFF - BIOS Shadow Area
 ;   0x000F0000 - 0x000FFFFF - System BIOS
-; ASM = Right to left execution
-; I'm gonna have to make this code mega ultra idiot proof in-case i have to look at it more, sorry in advance haha
-bits	16							; We are still in 16 bit Real Mode
+;   ASM = Right to left execution
+;   I'm gonna have to make this code mega ultra idiot proof in-case i have to look at it more, sorry in advance haha
+bits	16							; We are loaded in 16-bit Real Mode
 
 org		0x7c00						; We are loaded by BIOS at 0x7C00
 
@@ -85,7 +85,13 @@ Main:
 	int	0x12		; get the amount of KB from the BIOS
 
 	mov sp,0x7c00	; Set the Stack	
-
+    mov ah,0x13
+    mov al,1
+    mov bx,0xa
+    xor dx,dx
+    mov bp,msgStart
+    mov cx,MessageLenmsgStart
+    int 0x10
 
 TestDiskExtension:
     mov [DriveId],dl
@@ -110,23 +116,44 @@ LoadLoader:
     jc  ReadStage1Error
 
     mov dl,[DriveId]
+    mov ah,0x13
+    mov al,1
+    mov bx,0xa
+    xor dx,dx
+    mov bp,msgStageTwo
+    mov cx,MessageLenmsgStageTwo
+    int 0x10
     jmp 0x7e00 
 
 ReadStage1Error:
 Stage1Error:
-    mov si, msg
-    call Print16bit
+    mov ah,0x13
+    mov al,1
+    mov bx,0xa
+    xor dx,dx
+    mov bp,msg
+    mov cx,MessageLenmsg
+    int 0x10
 
 End:
     hlt    
     jmp End
 
-DriveId:    db 0
-msg	db	"Error at Stage1", 0		; the string to print
-ReadPacket: times 16 db 0
-msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7c00)....", 0x0D, 0x0A, 0x00
-msgStageTwo  db "Jumping to stage2 (0x500)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
 
+;*******************************************************
+;	Data Section
+;*******************************************************
+DriveId:    db 0
+msg	db	"Error at Stage1", 0
+MessageLenmsg: equ $-msg
+ReadPacket: times 16 db 0
+msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
+MessageLenmsgStart: equ $-msgStart
+msgStageTwo  db "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
+MessageLenmsgStageTwo: equ $-msgStageTwo
+;*******************************************************
+;   Boot Signature
+;*******************************************************
 times (0x1be-($-$$)) db 0
 
     db 80h
