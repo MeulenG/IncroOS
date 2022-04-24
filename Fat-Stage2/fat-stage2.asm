@@ -16,8 +16,10 @@ Stage2_Main:
     cpuid
     cmp eax,0x80000001
     jb Stage2Error
-    
-	sti
+
+    mov eax,0x80000001
+    cpuid
+    sti
     ;-------------------------------;
 	;   Install our GDT         	;
 	;-------------------------------;
@@ -26,13 +28,13 @@ Stage2_Main:
 
 
 	;-------------------------------;
-	;   Enable A20			;
+	;   Enable A20			        ;
 	;-------------------------------;
 
 	call	A20MethodBios
 	
     ;-------------------------------;
-	;   Print loading message	;
+	;   Print loading message	    ;
 	;-------------------------------;
     mov ah,0x13
     mov al,1
@@ -45,9 +47,8 @@ Stage2_Main:
 
 EnterStage3:
     cli				; clear interrupts
-    mov	eax, cr0		; set bit 0 in cr0--enter pmode
-	or	eax, 1
-    mov	cr0, eax
+
+    
     mov ah,0x13
     mov al,1
     mov bx,0xa
@@ -56,12 +57,14 @@ EnterStage3:
     mov cx,MessageLenpmode
     int 0x10
 
+; enable 32 bit mode
+    mov	eax, cr0
+    or  eax, 1
+    mov	cr0, eax
+
     ; Perform far jump to selector 08h (offset into GDT, pointing at a 32bit PM code segment descriptor) 
     ; to load CS with proper PM32 descriptor)
     jmp 08h:Stage3
-
-	; Note: Do NOT re-enable interrupts! Doing so will triple fault!
-	; We will fix this in Stage 3.
 
 Stage2Error:
 End:
@@ -114,7 +117,7 @@ LoadingMsg db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 MessageLen: equ $-LoadingMsg
 Msg db  "Preparing to load operating system...",13,10,0
 MessageLenOS: equ $-Msg
-msgpmode db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
+msgpmode db  0x0A, 0x0A, 0x0A, "               <[ OMOS 10 ]>"
     db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
 MessageLenpmode: equ $-msgpmode
 
