@@ -19,10 +19,11 @@ Stage2_Main:
     
 	sti
     ;-------------------------------;
-	;   Install our GDT		;
+	;   Install our GDT         	;
 	;-------------------------------;
 
 	lgdt [InstallGDT]		; install our GDT
+
 
 	;-------------------------------;
 	;   Enable A20			;
@@ -41,31 +42,31 @@ Stage2_Main:
     mov cx,MessageLen 
     int 0x10
 
-Stage2Error:
-End:
-    hlt
-    jmp End
 
 EnterStage3:
-
-	cli				; clear interrupts
-	mov	eax, cr0		; set bit 0 in cr0--enter pmode
+    cli				; clear interrupts
+    mov	eax, cr0		; set bit 0 in cr0--enter pmode
 	or	eax, 1
-	mov	cr0, eax
-
-	mov ah,0x13
+    mov	cr0, eax
+    mov ah,0x13
     mov al,1
     mov bx,0xa
     xor dx,dx
-    mov bp,TestMsg
-    mov cx,MessageLenTest 
+    mov bp,msgpmode
+    mov cx,MessageLenpmode
     int 0x10
 
-	jmp	08h:Stage3	; far jump to fix CS
+    ; Perform far jump to selector 08h (offset into GDT, pointing at a 32bit PM code segment descriptor) 
+    ; to load CS with proper PM32 descriptor)
+    jmp 08h:Stage3
 
 	; Note: Do NOT re-enable interrupts! Doing so will triple fault!
 	; We will fix this in Stage 3.
 
+Stage2Error:
+End:
+    hlt
+    jmp End
 
 align 32
 bits  32
@@ -116,8 +117,6 @@ MessageLenOS: equ $-Msg
 msgpmode db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
     db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
 MessageLenpmode: equ $-msgpmode
-TestMsg:    db "Here"
-MessageLenTest: equ $-TestMsg
 
 ;*******************************************************
 ;	Preprocessor Critical Functions
@@ -141,17 +140,20 @@ Code32:
     dw 0
     db 0
     db 0x9a
-    db 0xcf
+    db 0b11001111	; high 4 bits (flags) low 4 bits (limit 4 last bits)(limit is 20 bit wide)
     db 0
 Data32:
     dw 0xffff
     dw 0
     db 0
     db 0x92
-    db 0xcf
+	db 0b11001111	; high 4 bits (flags) low 4 bits (limit 4 last bits)(limit is 20 bit wide)
     db 0
     
 Gdt32Len: equ $-InstallGDT
 
 InstallGDT: dw Gdt32Len-1
           	dd Gdt32
+
+Idt32Ptr: dw 0
+          dd 0
