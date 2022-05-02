@@ -3,8 +3,8 @@
 ;		-GDT Routines
 ;*************************************************
 
-%ifndef __GDT_INC_67343546FDCC56AAB872_INCLUDED__
-%define __GDT_INC_67343546FDCC56AAB872_INCLUDED__
+%ifndef __GDT_INC
+%define __GDT_INC
 
 bits	16
 
@@ -60,4 +60,4 @@ idt_real:
 %define CODE_DESC 0x8
 %define DATA_DESC 0x10
 
-%endif ;__GDT_INC_67343546FDCC56AAB872_INCLUDED__
+%endif ;__GDT_INC
