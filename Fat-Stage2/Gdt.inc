@@ -60,4 +60,4 @@ idt_real:
 %define CODE_DESC 0x8
 %define DATA_DESC 0x10
 
-%endif ;__GDT_INC
+%endif

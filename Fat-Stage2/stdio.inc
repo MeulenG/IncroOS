@@ -6,8 +6,8 @@
 ;	OS Development Series
 ;*************************************************
 
-%ifndef __STDIO_INC_67343546FDCC56AAB872_INCLUDED__
-%define __STDIO_INC_67343546FDCC56AAB872_INCLUDED__
+%ifndef __STDIO_INC
+%define __STDIO_INC
 
 
 ;==========================================================
@@ -295,4 +295,4 @@ GotoXY:
 
 
 
-%endif ;__STDIO_INC_67343546FDCC56AAB872_INCLUDED__
+%endif

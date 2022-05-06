@@ -2,6 +2,13 @@ bits	16							; We are loaded in 16-bit Real Mode
 
 org		0x7e00						; We are loaded by BIOS at 0x7C00
 
+;*******************************************************
+;	Preprocessor directives
+;*******************************************************
+%include "A20.inc"
+%include "Gdt.inc"
+%include "stdio.inc"
+
 ;******************************************************
 ;	ENTRY POINT FOR STAGE 2
 ;******************************************************
@@ -24,14 +31,14 @@ Stage2_Main:
 	;   Install our GDT         	;
 	;-------------------------------;
 
-	lgdt [InstallGDT]		; install our GDT
+	call [InstallGDT]		; install our GDT and set up for Pmode
 
 
 	;-------------------------------;
 	;   Enable A20			        ;
 	;-------------------------------;
 
-	call	A20MethodBios
+	call	A20MethodBios   ; Enable A20 if it isnt already
 	
     ;-------------------------------;
 	;   Print loading message	    ;
@@ -73,10 +80,6 @@ End:
 
 align 32
 bits  32
-;*******************************************************
-;	Preprocessor directives
-;*******************************************************
-%include "stdio.inc"
 ;******************************************************
 ;	ENTRY POINT FOR STAGE 3
 ;******************************************************

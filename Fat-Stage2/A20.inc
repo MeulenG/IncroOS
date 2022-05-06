@@ -3,9 +3,8 @@
 ;	Enable A20 address line
 ;********************************************
 
-%ifndef __A20_INC_67343546FDCC56AAB872_INCLUDED__
-%define __A20_INC_67343546FDCC56AAB872_INCLUDED__
-
+%ifndef __A20_INC
+%define __A20_INC
 bits	16
 
 ;----------------------------------------------

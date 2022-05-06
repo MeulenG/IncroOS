@@ -74,7 +74,7 @@ PrintDone16bitmode:
 ;*************************************************;
 ;	Bootloader Entry Point
 ;*************************************************;
-	; We are in 16-bit Real Mode, therefore we use the 16-bit registers : CS, DS, ES, FS, GS, and SS.
+	; We are in 16-bit Real Mode, therefore we can utilize the 16-bit registers : CS, DS, ES, FS, GS, and SS.
 Main:
 	xor	ax, ax		; Setup segments to insure they are 0. Remember that
 	mov	ds, ax		; we have ORG 0x7c00. This means all addresses are based
