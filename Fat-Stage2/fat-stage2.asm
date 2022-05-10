@@ -1,13 +1,15 @@
 bits	16							; We are loaded in 16-bit Real Mode
 
-org		0x7e00						; We are loaded by BIOS at 0x7C00
+org 0x7E00
 
+jmp Stage2_Main
 ;*******************************************************
 ;	Preprocessor directives
 ;*******************************************************
-%include "A20.inc"
-%include "Gdt.inc"
-%include "stdio.inc"
+%include "stdio.inc"		; basic i/o routines
+;%include "Gdt.inc"			; Gdt routines
+%include "A20.inc"			; A20 enabling
+
 
 ;******************************************************
 ;	ENTRY POINT FOR STAGE 2
@@ -17,61 +19,51 @@ Stage2_Main:
 	;   Setup segments and stack	;
 	;-------------------------------;
 	cli
-    mov [DriveId],dl
+    mov [DriveId], dl
+    
+    xor ax, ax
+    mov	ds, ax
+    mov	es, ax
+    mov	fs, ax
+    mov	gs, ax
 
-    mov eax,0x80000000
-    cpuid
-    cmp eax,0x80000001
-    jb Stage2Error
-
-    mov eax,0x80000001
-    cpuid
+    mov	ss, ax
+    mov	ax, 0x7c00
+    mov	sp, ax
     sti
     ;-------------------------------;
 	;   Install our GDT         	;
 	;-------------------------------;
-
-	call [InstallGDT]		; install our GDT and set up for Pmode
-
-
-	;-------------------------------;
+	lgdt    [gdt_descriptor]	; Load our GDT
+    mov si, msggdtMessage
+    call    Puts16
+    lidt    [Idt16]             ; Load our IDT
+    mov si, msgidtMessage
+    call    Puts16
+    
+    ;-------------------------------;
 	;   Enable A20			        ;
-	;-------------------------------;
-
-	call	A20MethodBios   ; Enable A20 if it isnt already
-	
+    ;-------------------------------;
+	call	A20MethodBios   ; Enable A20 gate through BIOS
+    mov si, msgA20Message
+    call    Puts16
     ;-------------------------------;
 	;   Print loading message	    ;
 	;-------------------------------;
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,LoadingMsg
-    mov cx,MessageLen 
-    int 0x10
+    mov si, LoadingMsg
+    call    Puts16
 
-
+    ;-------------------------------;
+	;   Go into pmode		        ;
+	;-------------------------------;
 EnterStage3:
-    cli				; clear interrupts
+	cli				    ; clear interrupts
+	mov	eax, cr0		; set bit 0 in cr0--enter pmode
+	or	eax, 1
+	mov	cr0, eax
 
-    
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,msgpmode
-    mov cx,MessageLenpmode
-    int 0x10
 
-; enable 32 bit mode
-    mov	eax, cr0
-    or  eax, 1
-    mov	cr0, eax
-
-    ; Perform far jump to selector 08h (offset into GDT, pointing at a 32bit PM code segment descriptor) 
-    ; to load CS with proper PM32 descriptor)
-    jmp 08h:Stage3
+	jmp 0x8:Stage3	; far jump to fix CS
 
 Stage2Error:
 End:
@@ -99,9 +91,9 @@ Stage3:
 	;   Clear screen and print success	;
 	;---------------------------------------;
 
-	CALL		ClrScr32
+	call		ClrScr32
 	mov		ebx, msgpmode
-	CALL		Puts32
+	call		Puts32
 
 	;---------------------------------------;
 	;   Stop execution			;
@@ -113,17 +105,16 @@ Stage3:
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-ErrorMsg db  "gg no re"
-MessageLenStage2Error: equ $-ErrorMsg
-DriveId:    db 0
-LoadingMsg db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
-MessageLen: equ $-LoadingMsg
-Msg db  "Preparing to load operating system...",13,10,0
-MessageLenOS: equ $-Msg
-msgpmode db  0x0A, 0x0A, 0x0A, "               <[ OMOS 10 ]>"
-    db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
-MessageLenpmode: equ $-msgpmode
-
+ErrorMsg        db  "gg no re"
+msgA20Message   db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
+msggdtMessage   db  "Installing gdt", 0x0D, 0x0A, 0x00
+msgidtMessage   db  "Installing idt", 0x0D, 0x0A, 0x00
+DriveId:        db 0
+ReadPacket:     times 16 db 0
+LoadingMsg      db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
+Msg             db  "Preparing to load operating system...",13,10,0
+msgpmode        db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
+                db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
 ;*******************************************************
 ;	Preprocessor Critical Functions
 ;*******************************************************
@@ -134,11 +125,46 @@ A20MethodBios:
 	mov ax, 0x2401
 	int 0x15
 	ret
+;--------------------------------------
+; GDT   AND    IDT
+;--------------------------------------
+gdt_start:
 
-;*******************************************
-; InstallGDT()
-;	- Install our GDT
-;*******************************************
+gdt_null:           ; The mandatory null descriptor
+    dd 0x0          ; dd = define double word (4 bytes)
+    dd 0x0
+
+gdt_code:           ; Code segment descriptor
+    dw 0xffff       ; Limit (bites 0-15)
+    dw 0x0          ; Base (bits 0-15)
+    db 0x0          ; Base (bits 16-23)
+    db 10011010b    ; 1st flags, type flags
+    db 11001111b    ; 2nd flags, limit (bits 16-19)
+    db 0x0          ; Base (bits 24-31)
+
+
+gdt_data:
+    dw 0xffff       ; Limit (bites 0-15)
+    dw 0x0          ; Base (bits 0-15)
+    db 0x0          ; Base (bits 16-23)
+    db 10010010b    ; 1st flags, type flags
+    db 11001111b    ; 2nd flags, limit (bits 16-19)
+    db 0x0
+
+gdt_end:            ; necessary so assembler can calculate gdt size below
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1  ; GDT size
+
+    dd gdt_start                ; Start adress of GDT
+
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
+
+InstallGDT:
+    lgdt [Gdt32Ptr]
+    ret
+
 Gdt32:
     dq 0
 Code32:
@@ -146,20 +172,22 @@ Code32:
     dw 0
     db 0
     db 0x9a
-    db 0b11001111	; high 4 bits (flags) low 4 bits (limit 4 last bits)(limit is 20 bit wide)
+    db 0xcf
     db 0
 Data32:
     dw 0xffff
     dw 0
     db 0
     db 0x92
-	db 0b11001111	; high 4 bits (flags) low 4 bits (limit 4 last bits)(limit is 20 bit wide)
+    db 0xcf
     db 0
     
-Gdt32Len: equ $-InstallGDT
+Gdt32Len: equ $-Gdt32
 
-InstallGDT: dw Gdt32Len-1
-          	dd Gdt32
+Gdt32Ptr: dw Gdt32Len-1
+          dd Gdt32
 
-Idt32Ptr: dw 0
-          dd 0
+; Interrupt Descriptor Table
+Idt16:
+    dw 0x3ff		; 256 entries, 4b each = 1K
+    dd 0			; Real Mode IVT @ 0x0000

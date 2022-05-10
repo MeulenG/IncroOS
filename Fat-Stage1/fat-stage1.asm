@@ -12,11 +12,11 @@
 ;   0x000F0000 - 0x000FFFFF - System BIOS
 ;   ASM = Right to left execution
 ;   I'm gonna have to make this code mega ultra idiot proof in-case i have to look at it more, sorry in advance haha
-bits	16							; We are loaded in 16-bit Real Mode
+bits	16							; We are still in 16 bit Real Mode
 
 org		0x7c00						; We are loaded by BIOS at 0x7C00
 
-start:          jmp Main					; jump over FAT block
+main:       jmp MBR_MAIN            ; Jump over the Fat32 Blocks
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
@@ -61,37 +61,32 @@ szFSName					db		"FAT32   "
 ;	DS=>SI: 0 terminated string
 ;***************************************
 
-Print16bitmode:
+Print16bit:
 			lodsb					; load next byte from string from SI to AL
 			or			al, al		; Does AL=0?
-			jz			PrintDone16bitmode	; Yep, null terminator found-bail out
+			jz			PrintDone16bit	; Yep, null terminator found-bail out
 			mov			ah,	0eh	; Nope-Print the character
 			int			10h
-			jmp			PrintDone16bitmode		; Repeat until null terminator found
-PrintDone16bitmode:
+			jmp			Print16bit		; Repeat until null terminator found
+PrintDone16bit:
 			ret					; we are done, so return
 
 ;*************************************************;
 ;	Bootloader Entry Point
 ;*************************************************;
-	; We are in 16-bit Real Mode, therefore we can utilize the 16-bit registers : CS, DS, ES, FS, GS, and SS.
-Main:
+
+MBR_MAIN:
 	xor	ax, ax		; Setup segments to insure they are 0. Remember that
 	mov	ds, ax		; we have ORG 0x7c00. This means all addresses are based
 	mov	es, ax		; from 0x7c00:0. Because the data segments are within the same
 					; code segment, null em.
 
-	xor	ax, ax		; clear ax
-	int	0x12		; get the amount of KB from the BIOS
+	xor	ax, ax						; clear ax
+	int	0x12						; get the amount of KB from the BIOS
 
-	mov sp,0x7c00	; Set the Stack	
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,msgStart
-    mov cx,MessageLenmsgStart
-    int 0x10
+    mov sp,0x7c00
+    mov si, msgStart
+    call Print16bit
 
 TestDiskExtension:
     mov [DriveId],dl
@@ -116,30 +111,19 @@ LoadLoader:
     jc  ReadStage1Error
 
     mov dl,[DriveId]
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,msgStageTwo
-    mov cx,MessageLenmsgStageTwo
-    int 0x10
+    mov si, msgStageTwo
+    call Print16bit
     jmp 0x7e00 
 
 ReadStage1Error:
 Stage1Error:
-    mov ah,0x13
-    mov al,1
-    mov bx,0xa
-    xor dx,dx
-    mov bp,msg
-    mov cx,MessageLenmsg
-    int 0x10
+    mov si, msg
+    call Print16bit
 
 End:
     hlt    
     jmp End
-
-
+    
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
@@ -151,9 +135,7 @@ msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
 MessageLenmsgStart: equ $-msgStart
 msgStageTwo  db "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
 MessageLenmsgStageTwo: equ $-msgStageTwo
-;*******************************************************
-;   Boot Signature
-;*******************************************************
+
 times (0x1be-($-$$)) db 0
 
     db 80h
