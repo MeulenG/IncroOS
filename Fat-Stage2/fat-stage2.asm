@@ -1,71 +1,113 @@
-bits	16							; We are loaded in 16-bit Real Mode
+[BITS 16]
+[ORG 0x7e00]
 
-org 0x7E00
-
-jmp Stage2_Main
+main_Stage2: jmp Stage2_Main
 ;*******************************************************
-;	Preprocessor directives
+;	Preprocessor directives 16-BIT MODE
 ;*******************************************************
-%include "stdio.inc"		; basic i/o routines
-;%include "Gdt.inc"			; Gdt routines
-%include "A20.inc"			; A20 enabling
-
+%include "asmlib16.inc"
 
 ;******************************************************
 ;	ENTRY POINT FOR STAGE 2
 ;******************************************************
+
 Stage2_Main:
+    ;-------------------------------;
+	;   CPU FEATURES	            ;
 	;-------------------------------;
-	;   Setup segments and stack	;
+    mov [DriveId],dl
+
+    mov eax,0x80000000
+    cpuid
+    cmp eax,0x80000001
+    jb NotSupport
+
+    mov eax,0x80000001
+    cpuid
+    test edx,(1<<29)
+    jz NotSupport
+    test edx,(1<<26)
+    jz NotSupport
+
 	;-------------------------------;
-	cli
-    mov [DriveId], dl
+	;   Load Kernel             	;
+	;-------------------------------;
+LoadKernel:
+    mov si,ReadPacket
+    mov word[si],0x10
+    mov word[si+2],100
+    mov word[si+4],0
+    mov word[si+6],0x1000
+    mov dword[si+8],6
+    mov dword[si+0xc],0
+    mov dl,[DriveId]
+    mov ah,0x42
+    int 0x13
+    jc  ReadError
+
+	;-------------------------------;
+	;   Memory Map              	;
+	;-------------------------------;
+GetMemInfoStart:
+    mov eax,0xe820
+    mov edx,0x534d4150
+    mov ecx,20
+    mov edi,0x9000
+    xor ebx,ebx
+    int 0x15
+    jc NotSupport
+
+GetMemInfo:
+    add edi,20
+    mov eax,0xe820
+    mov edx,0x534d4150
+    mov ecx,20
+    int 0x15
+    jc GetMemDone
+
+    test ebx,ebx
+    jnz GetMemInfo
+
+	;-------------------------------;
+	;   A20   Gate              	;
+	;-------------------------------;
+GetMemDone:
+TestA20:
+    mov ax,0xffff
+    mov es,ax
+    mov word[ds:0x7c00],0xa200
+    cmp word[es:0x7c10],0xa200
+    jne SetA20LineDone
+    mov word[0x7c00],0xb200
+    cmp word[es:0x7c10],0xb200
+    je End
     
-    xor ax, ax
-    mov	ds, ax
-    mov	es, ax
-    mov	fs, ax
-    mov	gs, ax
+SetA20LineDone:
+    xor ax,ax
+    mov es,ax
 
-    mov	ss, ax
-    mov	ax, 0x7c00
-    mov	sp, ax
-    sti
-    ;-------------------------------;
-	;   Install our GDT         	;
 	;-------------------------------;
-	lgdt    [gdt_descriptor]	; Load our GDT
-    mov si, msggdtMessage
-    call    Puts16
-    lidt    [Idt16]             ; Load our IDT
-    mov si, msgidtMessage
-    call    Puts16
+	;   Video Mode              	;
+	;-------------------------------;
+SetVideoMode:
+    mov ax,3
+    int 0x10
     
+    cli
     ;-------------------------------;
-	;   Enable A20			        ;
-    ;-------------------------------;
-	call	A20MethodBios   ; Enable A20 gate through BIOS
-    mov si, msgA20Message
-    call    Puts16
-    ;-------------------------------;
-	;   Print loading message	    ;
+	;   GDT and IDT             	;
 	;-------------------------------;
-    mov si, LoadingMsg
-    call    Puts16
+    lgdt [gdt_descriptor]
+    lidt [Idt32Ptr]
 
-    ;-------------------------------;
-	;   Go into pmode		        ;
-	;-------------------------------;
-EnterStage3:
-	cli				    ; clear interrupts
-	mov	eax, cr0		; set bit 0 in cr0--enter pmode
-	or	eax, 1
-	mov	cr0, eax
+    mov eax,cr0
+    or eax,1
+    mov cr0,eax
 
+    jmp 8:Stage3
 
-	jmp 0x8:Stage3	; far jump to fix CS
-
-Stage2Error:
+ReadError:
+NotSupport:
 End:
     hlt
     jmp End
@@ -75,59 +117,109 @@ bits  32
 ;******************************************************
 ;	ENTRY POINT FOR STAGE 3
 ;******************************************************
+;*******************************************************
+;	Preprocessor directives 32-BIT MODE
+;*******************************************************
+%include "asmlib32.inc"
+
 Stage3:
-
 	;-------------------------------;
-	;   Set registers		;
+	;   Setup segments and stack	;
 	;-------------------------------;
-
     mov ax,0x10
     mov ds,ax
     mov es,ax
     mov ss,ax
     mov esp,0x7c00
 
+    mov byte[0xb8000],'P'
+    mov byte[0xb8001],0xa
+
+    cld
+    mov edi,0x70000
+    xor eax,eax
+    mov ecx,0x10000/4
+    rep stosd
+    
+    mov dword[0x70000],0x71007
+    mov dword[0x71000],10000111b
+
+    lgdt [Gdt64Ptr]
+
+    mov eax,cr4
+    or eax,(1<<5)
+    mov cr4,eax
+
+    mov eax,0x70000
+    mov cr3,eax
+
+    mov ecx,0xc0000080
+    rdmsr
+    or eax,(1<<8)
+    wrmsr
+
+    mov eax,cr0
+    or eax,(1<<31)
+    mov cr0,eax
+
 	;---------------------------------------;
-	;   Clear screen and print success	;
+	;   Clear screen and print success	    ;
 	;---------------------------------------;
 
 	call		ClrScr32
-	mov		ebx, msgpmode
+	mov		    ebx, msgpmode
 	call		Puts32
+    call        ClrScr32
 
 	;---------------------------------------;
-	;   Stop execution			;
+	;   Jump to 64-BIT Mode			        ;
 	;---------------------------------------;
+    
+    jmp 8:Stage4
 
-	cli
-	hlt
+PEnd:
+    hlt
+    jmp PEnd
+
+
+[BITS 64]
+Stage4:
+	;-------------------------------;
+	;   Setup segments and stack	;
+	;-------------------------------;
+    mov rsp,0x7c00
+
+    cld
+    mov rdi,0x200000
+    mov rsi,0x10000
+    mov rcx,51200/8
+    rep movsq
+
+    mov byte[0xb8000],'L'
+    mov byte[0xb8001],0x0
+
+
+    jmp 0x200000
+    
+LEnd:
+    hlt
+    jmp LEnd
 
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-ErrorMsg        db  "gg no re"
-msgA20Message   db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
-msggdtMessage   db  "Installing gdt", 0x0D, 0x0A, 0x00
-msgidtMessage   db  "Installing idt", 0x0D, 0x0A, 0x00
-DriveId:        db 0
-ReadPacket:     times 16 db 0
-LoadingMsg      db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
-Msg             db  "Preparing to load operating system...",13,10,0
-msgpmode        db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
-                db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
-;*******************************************************
-;	Preprocessor Critical Functions
-;*******************************************************
-;--------------------------------------
-; Enables A20 line
-;--------------------------------------
-A20MethodBios:
-	mov ax, 0x2401
-	int 0x15
-	ret
-;--------------------------------------
-; GDT   AND    IDT
-;--------------------------------------
+DriveId:                    db 0
+ErrorMsg                    db  "Hahahaha, Fuck you"
+msgA20Message               db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
+msggdtMessage               db  "Installing gdt", 0x0D, 0x0A, 0x00
+msgidtMessage               db  "Installing idt", 0x0D, 0x0A, 0x00
+bPhysicalDriveNum			db		0
+ReadPacket:                 times 16 db 0
+LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
+Msg                         db  "Preparing to load operating system...",13,10,0
+msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
+                            db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
+
 gdt_start:
 
 gdt_null:           ; The mandatory null descriptor
@@ -141,7 +233,6 @@ gdt_code:           ; Code segment descriptor
     db 10011010b    ; 1st flags, type flags
     db 11001111b    ; 2nd flags, limit (bits 16-19)
     db 0x0          ; Base (bits 24-31)
-
 
 gdt_data:
     dw 0xffff       ; Limit (bites 0-15)
@@ -160,10 +251,6 @@ gdt_descriptor:
 
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
-
-InstallGDT:
-    lgdt [Gdt32Ptr]
-    ret
 
 Gdt32:
     dq 0
@@ -187,7 +274,16 @@ Gdt32Len: equ $-Gdt32
 Gdt32Ptr: dw Gdt32Len-1
           dd Gdt32
 
-; Interrupt Descriptor Table
-Idt16:
-    dw 0x3ff		; 256 entries, 4b each = 1K
-    dd 0			; Real Mode IVT @ 0x0000
+Idt32Ptr: dw 0
+          dd 0
+
+
+Gdt64:
+    dq 0
+    dq 0x0020980000000000
+
+Gdt64Len: equ $-Gdt64
+
+
+Gdt64Ptr: dw Gdt64Len-1
+          dd Gdt64

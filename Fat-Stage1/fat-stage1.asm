@@ -1,22 +1,9 @@
-;   General x86 Real Mode Memory Map:
-;   0x00000000 - 0x000003FF - Real Mode Interrupt Vector Table
-;   0x00000400 - 0x000004FF - BIOS Data Area
-;   0x00000500 - 0x00007BFF - Unused
-;   0x00007C00 - 0x00007DFF - Our Bootloader
-;   0x00007E00 - 0x0009FFFF - Unused
-;   0x000A0000 - 0x000BFFFF - Video RAM (VRAM) Memory
-;   0x000B0000 - 0x000B7777 - Monochrome Video Memory
-;   0x000B8000 - 0x000BFFFF - Color Video Memory
-;   0x000C0000 - 0x000C7FFF - Video ROM BIOS
-;   0x000C8000 - 0x000EFFFF - BIOS Shadow Area
-;   0x000F0000 - 0x000FFFFF - System BIOS
-;   ASM = Right to left execution
-;   I'm gonna have to make this code mega ultra idiot proof in-case i have to look at it more, sorry in advance haha
 bits	16							; We are still in 16 bit Real Mode
 
-org		0x7c00						; We are loaded by BIOS at 0x7C00
+ORG		0x7c00						; We are loaded by BIOS at 0x7C00
 
-main:       jmp MBR_MAIN            ; Jump over the Fat32 Blocks
+main:       jmp start               ; Jump over the Fat32 Blocks
+
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
@@ -75,27 +62,21 @@ PrintDone16bit:
 ;	Bootloader Entry Point
 ;*************************************************;
 
-MBR_MAIN:
-	xor	ax, ax		; Setup segments to insure they are 0. Remember that
-	mov	ds, ax		; we have ORG 0x7c00. This means all addresses are based
-	mov	es, ax		; from 0x7c00:0. Because the data segments are within the same
-					; code segment, null em.
-
-	xor	ax, ax						; clear ax
-	int	0x12						; get the amount of KB from the BIOS
-
+start:
+    xor ax,ax   
+    mov ds,ax
+    mov es,ax  
+    mov ss,ax
     mov sp,0x7c00
-    mov si, msgStart
-    call Print16bit
 
 TestDiskExtension:
     mov [DriveId],dl
     mov ah,0x41
     mov bx,0x55aa
     int 0x13
-    jc Stage1Error
+    jc NotSupport
     cmp bx,0xaa55
-    jne Stage1Error
+    jne NotSupport
 
 LoadLoader:
     mov si,ReadPacket
@@ -108,27 +89,24 @@ LoadLoader:
     mov dl,[DriveId]
     mov ah,0x42
     int 0x13
-    jc  ReadStage1Error
+    jc  ReadError
 
     mov dl,[DriveId]
-    mov si, msgStageTwo
-    call Print16bit
     jmp 0x7e00 
 
-ReadStage1Error:
-Stage1Error:
+ReadError:
+NotSupport:
     mov si, msg
     call Print16bit
 
 End:
     hlt    
     jmp End
-    
+
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-DriveId:    db 0
-msg	db	"Error at Stage1", 0
+msg	db	"Hahaha, Fuck you, but at stage1", 0
 MessageLenmsg: equ $-msg
 ReadPacket: times 16 db 0
 msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
