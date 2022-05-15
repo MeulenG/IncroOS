@@ -35,13 +35,12 @@ Fat-Stage2:
 	make -C Fat-Stage2
 
 simulate:
-	$(osbuilder) buildos.yaml --target img
-
-run:
-	bochs -q -f setup.bochsrc
+	dd if=Fat-Stage1/fat-stage1.bin of=boot.img bs=512 count=1 conv=notrunc
+	dd if=Fat-Stage2/fat-stage2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
+	bochs -q -f bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
-	rm -rf disk.img.lock
-	rm -rf disk.img
+	rm -rf boot.img.lock
+	rm -rf boot.img
 	rm -rf bochsout.txt
