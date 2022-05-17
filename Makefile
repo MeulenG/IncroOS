@@ -24,9 +24,9 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				Fat-Stage1 Fat-Stage2 simulate
+all			:				Fat-Stage1 Fat-Stage2 Core	simulate
 
-.PHONY		: 				Fat-Stage1 Fat-Stage2 simulate
+.PHONY		: 				Fat-Stage1 Fat-Stage2 Core	simulate
 
 Fat-Stage1:
 	make -C Fat-Stage1
@@ -34,13 +34,18 @@ Fat-Stage1:
 Fat-Stage2:
 	make -C Fat-Stage2
 
+Core:
+	make -C Core
+
 simulate:
-	dd if=Fat-Stage1/fat-stage1.bin of=boot.img bs=512 count=1 conv=notrunc
-	dd if=Fat-Stage2/fat-stage2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=Fat-Stage1/STAGE1.SYS of=boot.img bs=512 count=1 conv=notrunc
+	dd if=Fat-Stage2/KRNLDR.SYS of=boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=Core/kernel.bin of=boot.img bs=512 count=100 seek=6 conv=notrunc
 	bochs -q -f bochsrc
 
 clean:
 	make -C Fat-Stage1 clean
+	make -C Fat-Stage2 clean
+	make -C Core clean
 	rm -rf boot.img.lock
-	rm -rf boot.img
 	rm -rf bochsout.txt

@@ -2,7 +2,7 @@ bits	16							; We are still in 16 bit Real Mode
 
 ORG		0x7c00						; We are loaded by BIOS at 0x7C00
 
-main:       jmp start               ; Jump over the Fat32 Blocks
+main:       jmp Stage1              ; Jump over the Fat32 Blocks
 
 ; *************************
 ; FAT Boot Parameter Block
@@ -62,7 +62,7 @@ PrintDone16bit:
 ;	Bootloader Entry Point
 ;*************************************************;
 
-start:
+Stage1:
     xor ax,ax   
     mov ds,ax
     mov es,ax  
@@ -70,15 +70,15 @@ start:
     mov sp,0x7c00
 
 TestDiskExtension:
-    mov [DriveId],dl
+    mov [bPhysicalDriveNum],dl
     mov ah,0x41
     mov bx,0x55aa
     int 0x13
-    jc NotSupport
+    jc Deathmessage
     cmp bx,0xaa55
-    jne NotSupport
+    jne Deathmessage
 
-LoadLoader:
+Stage2Jump:
     mov si,ReadPacket
     mov word[si],0x10
     mov word[si+2],5
@@ -86,16 +86,16 @@ LoadLoader:
     mov word[si+6],0
     mov dword[si+8],1
     mov dword[si+0xc],0
-    mov dl,[DriveId]
+    mov dl,[bPhysicalDriveNum]
     mov ah,0x42
     int 0x13
-    jc  ReadError
+    jc  ReadErrorStage1
 
-    mov dl,[DriveId]
+    mov dl,[bPhysicalDriveNum]
     jmp 0x7e00 
 
-ReadError:
-NotSupport:
+ReadErrorStage1:
+Deathmessage:
     mov si, msg
     call Print16bit
 
@@ -106,13 +106,14 @@ End:
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-msg	db	"Hahaha, Fuck you, but at stage1", 0
-MessageLenmsg: equ $-msg
-ReadPacket: times 16 db 0
-msgStart     db 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
-MessageLenmsgStart: equ $-msgStart
-msgStageTwo  db "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
-MessageLenmsgStageTwo: equ $-msgStageTwo
+DriveId                     db  0
+msg	                        db	"Hahaha, Fuck you, but at stage1", 0
+MessageLenmsg:              equ $-msg
+ReadPacket:                 times 16 db 0
+msgStart                    db 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
+MessageLenmsgStart:         equ $-msgStart
+msgStageTwo                 db "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
+MessageLenmsgStageTwo:      equ $-msgStageTwo
 
 times (0x1be-($-$$)) db 0
 

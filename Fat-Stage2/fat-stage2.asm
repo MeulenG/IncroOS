@@ -15,19 +15,19 @@ Stage2_Main:
     ;-------------------------------;
 	;   CPU FEATURES	            ;
 	;-------------------------------;
-    mov [DriveId],dl
+    mov [bPhysicalDriveNum],dl
 
     mov eax,0x80000000
     cpuid
     cmp eax,0x80000001
-    jb NotSupport
+    jb Deathmessage16bit
 
     mov eax,0x80000001
     cpuid
     test edx,(1<<29)
-    jz NotSupport
+    jz Deathmessage16bit
     test edx,(1<<26)
-    jz NotSupport
+    jz Deathmessage16bit
 
 	;-------------------------------;
 	;   Load Kernel             	;
@@ -40,10 +40,10 @@ LoadKernel:
     mov word[si+6],0x1000
     mov dword[si+8],6
     mov dword[si+0xc],0
-    mov dl,[DriveId]
+    mov dl,[bPhysicalDriveNum]
     mov ah,0x42
     int 0x13
-    jc  ReadError
+    jc  ReadErrorStage216bit
 
 	;-------------------------------;
 	;   Memory Map              	;
@@ -55,7 +55,7 @@ GetMemInfoStart:
     mov edi,0x9000
     xor ebx,ebx
     int 0x15
-    jc NotSupport
+    jc Deathmessage16bit
 
 GetMemInfo:
     add edi,20
@@ -106,8 +106,8 @@ SetVideoMode:
 
     jmp 8:Stage3
 
-ReadError:
-NotSupport:
+ReadErrorStage216bit:
+Deathmessage16bit:
 End:
     hlt
     jmp End
@@ -166,10 +166,9 @@ Stage3:
 	;   Clear screen and print success	    ;
 	;---------------------------------------;
 
-	call		ClrScr32
-	mov		    ebx, msgpmode
-	call		Puts32
-    call        ClrScr32
+;	call		ClrScr32
+;	mov		    ebx, msgpmode
+;	call		Puts32
 
 	;---------------------------------------;
 	;   Jump to 64-BIT Mode			        ;
@@ -182,7 +181,11 @@ PEnd:
     jmp PEnd
 
 
-[BITS 64]
+align 64
+bits  64
+;******************************************************
+;	ENTRY POINT FOR STAGE 4
+;******************************************************
 Stage4:
 	;-------------------------------;
 	;   Setup segments and stack	;
@@ -208,16 +211,15 @@ LEnd:
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-DriveId:                    db 0
+bPhysicalDriveNum			db		0
 ErrorMsg                    db  "Hahahaha, Fuck you"
 msgA20Message               db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
 msggdtMessage               db  "Installing gdt", 0x0D, 0x0A, 0x00
 msgidtMessage               db  "Installing idt", 0x0D, 0x0A, 0x00
-bPhysicalDriveNum			db		0
 ReadPacket:                 times 16 db 0
 LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 Msg                         db  "Preparing to load operating system...",13,10,0
-msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[ OS Development Series Tutorial 10 ]>"
+msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[ OMOS 32-bit 10 ]>"
                             db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
 
 gdt_start:
