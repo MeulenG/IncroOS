@@ -5,13 +5,14 @@ ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 
 
-all			: 			$(BUILD_DIR)/fat-stage2.bin	KRNLDR.SYS
+all			: 			$(BUILD_DIR)/FAT-STAGE2.bin FAT-STAGE2.bin
 
-$(BUILD_DIR)/fat-stage2.bin: fat-stage2.asm
+$(BUILD_DIR)/FAT-STAGE2.bin: FAT-STAGE2.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
-KRNLDR.SYS: fat-stage2.asm
+FAT-STAGE2.bin: FAT-STAGE2.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 clean:
-	rm -rf KRNLDR.SYS
+	rm -rf $(BUILD_DIR)/FAT-STAGE2.bin
+	rm -rf FAT-STAGE2.bin

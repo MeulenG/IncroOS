@@ -1,7 +1,11 @@
 {
     "files.associations": {
         "screen.h": "c",
-        "random": "c"
+        "random": "c",
+        "printlib.h": "c",
+        "cputrap.h": "c",
+        "memlib.h": "c",
+        "debug.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }
