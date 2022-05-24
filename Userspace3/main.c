@@ -3,5 +3,7 @@
 
 int main(void)
 {
-    printf("User3");
+    while(1) {
+        waitu();
+    }
 }

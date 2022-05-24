@@ -33,13 +33,13 @@ void init_idt(void)
     init_idt_entry(&interruptDescriptor64_Vector[11],(uint64_t)INTERRUPT11,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[12],(uint64_t)INTERRUPT12,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[13],(uint64_t)INTERRUPT13,0x8E);
-    init_idt_entry(&interruptDescriptor64_Vector[14],(uint64_t)INTERRUPT4,0x8E);
+    init_idt_entry(&interruptDescriptor64_Vector[14],(uint64_t)INTERRUPT14,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[16],(uint64_t)INTERRUPT16,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[17],(uint64_t)INTERRUPT17,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[18],(uint64_t)INTERRUPT18,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[19],(uint64_t)INTERRUPT19,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[32],(uint64_t)INTERRUPT32,0x8E);
-    init_idt_entry(&interruptDescriptor64_Vector[32],(uint64_t)INTERRUPT33,0x8E);
+    init_idt_entry(&interruptDescriptor64_Vector[33],(uint64_t)INTERRUPT33,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[39],(uint64_t)INTERRUPT39,0x8E);
     init_idt_entry(&interruptDescriptor64_Vector[0x80],(uint64_t)sysint,0xee);
 

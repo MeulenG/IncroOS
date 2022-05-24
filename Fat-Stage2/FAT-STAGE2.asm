@@ -45,7 +45,7 @@ LoadKernel:
     jc  ReadErrorStage216bit
 
 
-Loaderuser:
+Loaduser:
     mov si,ReadPacket
     mov word[si],0x10
     mov word[si+2],10
@@ -58,6 +58,31 @@ Loaderuser:
     int 0x13
     jc  ReadErrorStage216bit
 
+Loaduser2:
+    mov si,ReadPacket
+    mov word[si],0x10
+    mov word[si+2],10
+    mov word[si+4],0
+    mov word[si+6],0x3000
+    mov dword[si+8],116
+    mov dword[si+0xc],0
+    mov dl,[bPhysicalDriveNum]
+    mov ah,0x42
+    int 0x13
+    jc  ReadErrorStage216bit
+
+Loaduser3:
+    mov si,ReadPacket
+    mov word[si],0x10
+    mov word[si+2],10
+    mov word[si+4],0
+    mov word[si+6],0x4000
+    mov dword[si+8],126
+    mov dword[si+0xc],0
+    mov dl,[bPhysicalDriveNum]
+    mov ah,0x42
+    int 0x13
+    jc  ReadErrorStage216bit
 	;-------------------------------;
 	;   Retrieve Memory Map         ;
 	;-------------------------------;

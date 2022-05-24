@@ -21,7 +21,7 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				STAGE1 STAGE2 CORE CPU LIBRARIES DRIVERS USERSPACE OSBUILD
+all			:				STAGE1 STAGE2 CORE CPU LIBRARIES DRIVERS USERSPACE USERSPACE2 USERSPACE3 OSBUILD
 
 .PHONY		: 				STAGE1 STAGE2 CORE CPU LIBRARIES DRIVERS USERSPACE USERSPACE2 USERSPACE3 OSBUILD
 
@@ -59,8 +59,8 @@ OSBUILD:
 	dd if=Fat-Stage2/FAT-STAGE2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
 	dd if=kernel.bin of=boot.img bs=512 count=100 seek=6 conv=notrunc
 	dd if=Userspace/user1.bin of=boot.img bs=512 count=10 seek=106 conv=notrunc
-#	dd if=Userspace2/user2.bin of=boot.img bs=512 count=10 seek=116 conv=notrunc
-#	dd if=Userspace3/user3.bin of=boot.img bs=512 count=10 seek=126 conv=notrunc
+	dd if=Userspace2/user2.bin of=boot.img bs=512 count=10 seek=116 conv=notrunc
+	dd if=Userspace3/user3.bin of=boot.img bs=512 count=10 seek=126 conv=notrunc
 
 OSRUN:
 	bochs -q -f bochsrc
@@ -76,5 +76,6 @@ clean:
 	make -C Userspace2 clean
 	make -C Userspace3 clean
 	rm -rf boot.img.lock
+	rm -rf bochsout.txt
 	rm -rf kernel
 	rm -rf kernel.bin
