@@ -5,7 +5,12 @@
         "printlib.h": "c",
         "cputrap.h": "c",
         "memlib.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "syscall.h": "c",
+        "keyboard.h": "c",
+        "kerneldebugger.h": "c",
+        "process.h": "c",
+        "lib.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }

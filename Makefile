@@ -1,8 +1,11 @@
+# Good Idea for smart compilation later on when there is too many files to compile so it doesnt look like absolute garbage
+C_SOURCES = $(wildcard SysCore/Core/*.c SysDrivers/*.c SysCore/cpu/*.c SysLib/libc/*.c)
+HEADERS = $(wildcard SysCore/Core/*.h SysDrivers/keyboard/*.h SysCore/cpu/*.h SysLib/libc/*.h)
+
 BUILD_DIR	=			build/OS
 
-# Environmental Variables
-CC  		= 			/home/puhaa/opt/cross/bin/i686-elf-gcc
-GDB 		= 			/home/puhaa/opt/cross/bin/i686-elf-gdb
+# C Compiler
+CC			=			gcc -std=c99
 
 # -g: Use debugging symbols in gcc
 CFLAGS 	 	= 			-g
@@ -15,33 +18,29 @@ CC_ARGS 	+= 			-m64
 CC_ARGS 	+= 			-fno-builtin
 CC_ARGS 	+= 			-fno-stack-protector
 
-
-#NASM - Assembly Compiler
+# NASM - Assembly Compiler
 AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				STAGE1 STAGE2 CORE CPU LIBRARIES DRIVERS USERSPACE USERSPACE2 USERSPACE3 OSBUILD
+all			:				SysBoot SysCalls SysCore SysDrivers SysLib USERSPACE build
 
-.PHONY		: 				STAGE1 STAGE2 CORE CPU LIBRARIES DRIVERS USERSPACE USERSPACE2 USERSPACE3 OSBUILD
+.PHONY		: 				SysBoot SysCalls SysCore SysDrivers SysLib USERSPACE build
 
-STAGE1:
-	make -C Fat-Stage1
+SysBoot:
+	make -C SysBoot
 
-STAGE2:
-	make -C Fat-Stage2
+SysCalls:
+	make -C SysCalls
 
-CORE:
-	make -C Core
+SysCore:
+	make -C SysCore
 
-CPU:
-	make -C cpu
+SysDrivers:
+	make -C SysDrivers
 
-DRIVERS:
-	make -C drivers
-
-LIBRARIES:
-	make -C Libraries
+SysLib:
+	make -C SysLib
 
 USERSPACE:
 	make -C Userspace
@@ -52,30 +51,29 @@ USERSPACE2:
 USERSPACE3:
 	make -C Userspace3
 
-OSBUILD:
-	ld -nostdlib -T link.lds -o kernel Core/kernel.o Core/main.o cpu/cputrapasm.o cpu/cputrap.o Libraries/libasm.o Libraries/printLib.o Core/kerneldebugger.o Libraries/memLib.o Core/process.o Core/syscall.o Libraries/lib.o drivers/Keyboard.o
-	objcopy -O binary kernel kernel.bin 
-	dd if=Fat-Stage1/FAT-STAGE1.bin of=boot.img bs=512 count=1 conv=notrunc
-	dd if=Fat-Stage2/FAT-STAGE2.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
-	dd if=kernel.bin of=boot.img bs=512 count=100 seek=6 conv=notrunc
-	dd if=Userspace/user1.bin of=boot.img bs=512 count=10 seek=106 conv=notrunc
-	dd if=Userspace2/user2.bin of=boot.img bs=512 count=10 seek=116 conv=notrunc
-	dd if=Userspace3/user3.bin of=boot.img bs=512 count=10 seek=126 conv=notrunc
+build:
+	ld -nostdlib -T linkers/link.lds -o $(BUILD_DIR)/kernel build/OS/kernel.o build/dependensies/main.o build/dependensies/cputrapasm.o build/dependensies/cputrap.o build/libasm.o build/dependensies/print.o build/dependensies/kerneldebugger.o build/dependensies/memory.o build/dependensies/process.o build/Syscall.o build/dependensies/lib.o build/dependensies/keyboard.o
+	objcopy -O binary $(BUILD_DIR)/kernel $(BUILD_DIR)/kernel.bin 
+	dd if=build/bootloader/FAT-STAGE1.bin of=$(BUILD_DIR)/boot.img bs=512 count=1 conv=notrunc
+	dd if=build/bootloader/FAT-STAGE2.bin of=$(BUILD_DIR)/boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=build/OS/kernel.bin of=$(BUILD_DIR)/boot.img bs=512 count=100 seek=6 conv=notrunc
+	dd if=Userspace/user1.bin of=$(BUILD_DIR)/boot.img bs=512 count=10 seek=106 conv=notrunc
+#	dd if=Userspace2/user2.bin of=boot.img bs=512 count=10 seek=116 conv=notrunc
+#	dd if=Userspace3/user3.bin of=boot.img bs=512 count=10 seek=126 conv=notrunc
 
-OSRUN:
+run:
 	bochs -q -f bochsrc
 
 clean:
-	make -C Fat-Stage1 clean
-	make -C Fat-Stage2 clean
-	make -C Core clean
-	make -C cpu clean
-	make -C drivers clean
-	make -C Libraries clean
+	make -C SysBoot clean
+	make -C SysCore clean
+	make -C SysDrivers clean
+	make -C SysLib clean
 	make -C Userspace clean
-	make -C Userspace2 clean
-	make -C Userspace3 clean
 	rm -rf boot.img.lock
 	rm -rf bochsout.txt
 	rm -rf kernel
 	rm -rf kernel.bin
+
+%.o: %.c ${HEADERS}
+	${CC} ${CFLAGS} -c $< -o $@

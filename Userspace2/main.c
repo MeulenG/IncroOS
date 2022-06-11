@@ -1,13 +1,19 @@
 #include "lib.h"
 #include "console.h"
 #include "stdint.h"
-    
+
+
 static void cmd_get_total_memory(void)
 {
     uint64_t total;
     
     total = get_total_memoryu();
     printf("Total Memory is %dMB\n", total);
+}
+
+static void cmd_help(void) {
+    printf("totalmem:       The Total Memory Available!\n");
+    printf("quit:           Quits the Terminal\n");
 }
 
 static int read_cmd(char *buffer)
@@ -74,7 +80,8 @@ int main(void)
         cmd = parse_cmd(buffer, buffer_size);
         
         if (cmd < 0) {
-            printf("Command Not Found!\n");
+            printf("That Command Doesn't Exist, here is some help!\n");
+            cmd_help();
         }
         else {
             execute_cmd(cmd);             
