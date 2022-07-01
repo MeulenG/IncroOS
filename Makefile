@@ -1,8 +1,8 @@
 # Good Idea for smart compilation later on when there is too many files to compile so it doesnt look like absolute garbage
-C_SOURCES = $(wildcard SysCore/Core/*.c SysDrivers/*.c SysCore/cpu/*.c SysLib/libc/*.c)
-HEADERS = $(wildcard SysCore/Core/*.h SysDrivers/keyboard/*.h SysCore/cpu/*.h SysLib/libc/*.h)
+C_SOURCES 	= $(wildcard SysCore/Core/*.c SysDrivers/*.c SysCore/cpu/*.c SysLib/libc/*.c)
+HEADERS 	= $(wildcard SysCore/Core/*.h SysDrivers/keyboard/*.h SysCore/cpu/*.h SysLib/libc/*.h)
 
-BUILD_DIR	=			build/OS
+BUILD_DIR	=			/SysImage/boot.img
 
 # C Compiler
 CC			=			gcc -std=c99
@@ -23,30 +23,29 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				SysBoot
+all			:				SysBoot SysCore build
 
-.PHONY		: 				SysBoot
+.PHONY		: 				SysBoot SysCore build
 
 SysBoot:
-	make -C SysBoot
+	make 	-C 				SysBoot
+
+SysCore:
+	make	-C				SysCore
 
 build:
-	dd if=build/bootloader/FAT-STAGE1.bin of=$(BUILD_DIR)/boot.img bs=512 count=1 conv=notrunc
-	dd if=build/bootloader/FAT-STAGE2.bin of=$(BUILD_DIR)/boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=build/bootloader/FAT-STAGE1.bin of=SysImage/boot.img bs=512 count=1 conv=notrunc
+	dd if=build/bootloader/FAT-STAGE2.bin of=SysImage/boot.img bs=512 count=5 seek=1 conv=notrunc
+#	dd if=build/bootloader/Kernel_X86.bin of=SysImage/boot.img bs=512 count=100 seek=6 conv=notrunc
 
 run:
-	bochs -q -f bochsrc
+	bochs -q -f SysEmulation/bochsrc
 
 clean:
 	make -C SysBoot clean
 	make -C SysCore clean
-	make -C SysDrivers clean
-	make -C SysLib clean
-	make -C Userspace clean
-	rm -rf boot.img.lock
+	rm -rf SysImage/boot.img.lock
 	rm -rf bochsout.txt
-	rm -rf kernel
-	rm -rf kernel.bin
 
 %.o: %.c ${HEADERS}
 	${CC} ${CFLAGS} -c $< -o $@
