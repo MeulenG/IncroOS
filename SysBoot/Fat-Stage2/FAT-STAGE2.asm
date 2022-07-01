@@ -1,226 +1,201 @@
 ; *************************
+; General x86 Real Mode Memory Map:
+;   - 0x00000000 - 0x000003FF - Real Mode Interrupt Vector Table
+;   - 0x00000400 - 0x000004FF - BIOS Data Area
+;   - 0x00000500 - 0x00007BFF - Unused
+;   - 0x00007C00 - 0x00007DFF - Our Stage 1
+;   - 0x00007E00 - 0x0009FFFF - Our Stage 2
+;   - 0x000A0000 - 0x000BFFFF - Video RAM (VRAM) Memory
+;   - 0x000B0000 - 0x000B7777 - Monochrome Video Memory
+;   - 0x000B8000 - 0x000BFFFF - Color Video Memory
+;   - 0x000C0000 - 0x000C7FFF - Video ROM BIOS
+;   - 0x000C8000 - 0x000EFFFF - BIOS Shadow Area
+;   - 0x000F0000 - 0x000FFFFF - System BIOS
+; *************************
+; *************************
 ;    Real Mode 16-Bit
 ; - Uses the native Segment:offset memory model
 ; - Limited to 1MB of memory
 ; - No memory protection or virtual memory
 ; *************************
-bits	16							; We are still in 16 bit Real Mode
+BITS	16							; We are still in 16 bit Real Mode
 
-ORG     0x7e00
+ORG     0x7E00
 
-main_Stage2: jmp Stage2_Main
+main_Stage2: JMP Stage2_Main
+
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
 ;*******************************************************
 %include "../SysBoot/Fat-Stage2/asmlib16.inc"
 
-;******************************************************
-;	ENTRY POINT FOR STAGE 2
-;******************************************************
+;*******************************************************
+;	Preprocessor Descriptor Tables
+;*******************************************************
+%include "../SysBoot/Fat-Stage2/Gdt.inc"
+%include "../SysBoot/Fat-Stage2/Idt.inc"
 
+;*******************************************************
+;	Preprocessor A20
+;*******************************************************
+%include "../SysBoot/Fat-Stage2/A20.inc"
+
+;******************************************************
+;	ENTRY POINT For STAGE 2
+;******************************************************
 Stage2_Main:
-    ;-------------------------------;
-	;   CPU FEATURES	            ;
-	;-------------------------------;
-    mov [bPhysicalDriveNum],dl
-    mov eax,0x80000000
-    cpuid
-    cmp eax,0x80000001
-    jb Deathmessage16bit
 
-    mov eax,0x80000001
-    cpuid
-    test edx,(1<<29)
-    jz Deathmessage16bit
-    test edx,(1<<26)
-    jz Deathmessage16bit
+    MOV [bPhysicalDriveNum],dl
+    ; "cpuid" retrieve the information about your cpu
+    ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
+    ; 0x80000000 = 2^31
+    MOV eax,0x80000000
+    
+    CPUID
+    ; Long mode can only be detected using the extended functions of CPUID (> 0x80000000)
+    ; It is less, there is no long mode.
+    CMP eax,0x80000001
+    ; if eax < 0x80000001 => CF=1 => jb
+    ; jb, jump if below for unsigned number
+    ; (jl, jump if less for signed number)
+    JB DEATH
+    ; eax=0x80000001: Extended Processor Info and Feature Bits
+    MOV eax,0x80000001
+    CPUID
+    ; check if long mode is supported
+    ; test => edx & (1<<29), if result=0, CF=1, then jump
+    ; long mode is at bit-29
+    TEST edx,(1<<29) ; We test to check whether it supports long mode
+    ; jz, jump if zero => CF=1
+    JZ DEATH
+    ; check if 1g huge page support
+    ; test => edx & (1<<26), if result=0, CF=1, then jump
+    ; Gigabyte pages is at bit-26
+    TEST edx,(1<<26)
+    ; jz, jump if zero => CF=1
+    JZ DEATH
 
-	;-------------------------------;
-	;   Load Kernel             	;
-	;-------------------------------;
 LoadKernel:
-    mov si,ReadPacket
-    mov word[si],0x10
-    mov word[si+2],100
-    mov word[si+4],0
-    mov word[si+6],0x1000
-    mov dword[si+8],6
-    mov dword[si+0xc],0
-    mov dl,[bPhysicalDriveNum]
-    mov ah,0x42
-    int 0x13
-    jc  ReadErrorStage216bit
-
-	;-------------------------------;
-	;   Retrieve Memory Map         ;
-	;-------------------------------;
-GetMemInfoStart:
-    mov eax,0xe820
-    mov edx,0x534d4150
-    mov ecx,20
-    mov dword[0x9000],0
-    mov edi,0x9008
-    xor ebx,ebx
-    int 0x15
-    jc Deathmessage16bit
-
-GetMemInfo:
-    add edi,20
-    inc dword[0x9000] 
-    test ebx,ebx
-    jz GetMemDone
-
-    mov eax,0xe820
-    mov edx,0x534d4150
-    mov ecx,20
-    int 0x15
-    jnc GetMemInfo
-
-	;-------------------------------;
-	;   A20   Gate              	;
-	;-------------------------------;
-GetMemDone:
-TestA20:
-    mov ax,0xffff
-    mov es,ax
-    mov word[ds:0x7c00],0xa200
-    cmp word[es:0x7c10],0xa200
-    jne SetA20LineDone
-    mov word[0x7c00],0xb200
-    cmp word[es:0x7c10],0xb200
-    je End
+    ; DS:SI (segment:offset pointer to the DAP, Disk Address Packet)
+    ; DS is Data Segment, SI is Source Index
+    MOV si,ReadPacket
+    ; size of Disk Address Packet (set this to 0x10)
+    MOV word[si],0x10
+    ; number of sectors(loader) to read(in this case its 100 sectors for our kernel)
+    MOV word[si+2],100
+    ; number of sectors to transfer
+    ; transfer buffer (16 bit segment:16 bit offset)
+    ; 16 bit offset=0 (stored in word[si+4])
+    ; 16 bit segment=0x1000 (stored in word[si+6])
+    ; address => 0x1000 * 16 + 0 = 0x10000
+    MOV word[si+4],0
     
-SetA20LineDone:
-    xor ax,ax
-    mov es,ax
+    MOV word[si+6],0x1000
+    ; LBA=6 is the start of kernel sector
+    MOV dword[si+8],6
+    
+    MOV dword[si+0xc],0
+    ; dl=pysicaldrivenum
+    MOV dl,[bPhysicalDriveNum]
+    ; function code, 0x42 = Extended Read Sectors From Drive
+    MOV ah,0x42
+    
+    INT 0x13
+    
+    JC  DEATH
 
-	;-------------------------------;
-	;   Video Mode              	;
-	;-------------------------------;
+
+;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it through BIOS
+SetA20:
+    CALL EnableA20_Bios
+
 SetVideoMode:
-    mov ax,3
-    int 0x10
+    MOV ax,3
+    INT 0x10
     
-    cli
-    ;-------------------------------;
-	;   GDT and IDT             	;
-	;-------------------------------;
-    lgdt [gdt_descriptor]
-    lidt [Idt32Ptr]
+    CLI
+    LGDT [gdt_descriptor]
+    LIDT [idt_real]
 
-    mov eax,cr0
-    or eax,1
-    mov cr0,eax
+    MOV eax,cr0
+    OR eax,1
+    MOV cr0,eax
 
-    jmp 8:Stage3
+    JMP 8:ProtectedMode_Stage3
 
-ReadErrorStage216bit:
-Deathmessage16bit:
-End:
-    mov si, ErrorMsg
-    call Puts16
-    hlt
-    jmp End
-
-align 32
-bits  32
-;******************************************************
-;	ENTRY POINT FOR STAGE 3
-;******************************************************
+DEATH:
+DEATHSCREEN:
+    MOV         si, ErrorMsg
+    
+    CALL        Puts16                     ; Error message
+    
+    MOV         ah, 0x00
+    
+    INT         0x16                           ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
+    
+    INT         0x19                           ; Reboot and try again, bios uses int 0x19 to find a bootable device
 ;*******************************************************
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
 %include "../SysBoot/Fat-Stage2/asmlib32.inc"
-
-Stage3:
-	;-------------------------------;
+ALIGN   32
+BITS    32
+;******************************************************
+;	ENTRY POINT For STAGE 3
+;******************************************************
+ProtectedMode_Stage3:
+    ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    mov ax,0x10
-    mov ds,ax
-    mov es,ax
-    mov ss,ax
-    mov esp,0x7c00
+    MOV ax,0x10
+    MOV ds,ax
+    MOV es,ax
+    MOV ss,ax
+    MOV esp,0x7c00
 
-    cld
-    mov edi,0x70000
-    xor eax,eax
-    mov ecx,0x10000/4
-    rep stosd
+    CLD
+    MOV edi,0x70000
+    XOR eax,eax
+    MOV ecx,0x10000/4
+    REP stosd
     
-    mov dword[0x70000],0x71003
-    mov dword[0x71000],10000011b
+    MOV dword[0x70000],0x71007
+    MOV dword[0x71000],10000111b
 
-    mov eax, (0xffff800000000000>>39)
-    and eax, 0x1ff
-    mov dword[0x70000+eax*8], 0x72003
-    mov dword[0x72000], 10000011b
+    LGDT [gdt_descriptor_64]
 
-    lgdt [Gdt64Ptr]
+    MOV eax,cr4
+    OR eax,(1<<5)
+    MOV cr4,eax
 
-    mov eax,cr4
-    or eax,(1<<5)
-    mov cr4,eax
+    MOV eax,0x70000
+    MOV cr3,eax
 
-    mov eax,0x70000
-    mov cr3,eax
+    MOV ecx,0xc0000080
+    RDMSR
+    OR eax,(1<<8)
+    WRMSR
 
-    mov ecx,0xc0000080
-    rdmsr
-    or eax,(1<<8)
-    wrmsr
+    MOV eax,cr0
+    OR eax,(1<<31)
+    MOV cr0,eax
 
-    mov eax,cr0
-    or eax,(1<<31)
-    mov cr0,eax
-
-	;---------------------------------------;
-	;   Clear screen and print success	    ;
-	;---------------------------------------;
-
-;	call		ClrScr32
-;	mov		    ebx, msgpmode
-;	call		Puts32
-;    call        ClrScr32
-
-	;---------------------------------------;
-	;   Jump to 64-BIT Mode			        ;
-	;---------------------------------------;
-    
-    jmp 8:Stage4
+    JMP 8:LMEntry
 
 PEnd:
-    hlt
-    jmp PEnd
+    HLT
+    JMP PEnd
 
+[BITS 64]
+LMEntry:
+    MOV rsp,0x7c00
 
-align 64
-bits  64
-;******************************************************
-;	ENTRY POINT FOR STAGE 4
-;******************************************************
-Stage4:
-	;-------------------------------;
-	;   Setup segments and stack	;
-	;-------------------------------;
-    mov rsp,0x7c00
+    MOV byte[0xb8000],'L'
+    MOV byte[0xb8001],0xa
 
-    cld
-    mov rdi,0x200000
-    mov rsi,0x10000
-    mov rcx,51200/8
-    rep movsq
-
-    mov byte[0xb8000],'L'
-    mov byte[0xb8001],0x0
-
-    mov rax, 0xffff800000200000
-    jmp rax
-    
 LEnd:
-    hlt
-    jmp LEnd
-
+    HLT
+    JMP LEnd
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
@@ -234,70 +209,3 @@ LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 Msg                         db  "Preparing to load operating system...",13,10,0
 msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[ OMOS 32-bit 10 ]>"
                             db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
-gdt_start:
-
-gdt_null:           ; The mandatory null descriptor
-    dd 0x0          ; dd = define double word (4 bytes)
-    dd 0x0
-
-gdt_code:           ; Code segment descriptor
-    dw 0xffff       ; Limit (bites 0-15)
-    dw 0x0          ; Base (bits 0-15)
-    db 0x0          ; Base (bits 16-23)
-    db 10011010b    ; 1st flags, type flags
-    db 11001111b    ; 2nd flags, limit (bits 16-19)
-    db 0x0          ; Base (bits 24-31)
-
-gdt_data:
-    dw 0xffff       ; Limit (bites 0-15)
-    dw 0x0          ; Base (bits 0-15)
-    db 0x0          ; Base (bits 16-23)
-    db 10010010b    ; 1st flags, type flags
-    db 11001111b    ; 2nd flags, limit (bits 16-19)
-    db 0x0
-
-gdt_end:            ; necessary so assembler can calculate gdt size below
-
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1  ; GDT size
-
-    dd gdt_start                ; Start adress of GDT
-
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
-
-Gdt32:
-    dq 0
-Code32:
-    dw 0xffff
-    dw 0
-    db 0
-    db 0x9a
-    db 0xcf
-    db 0
-Data32:
-    dw 0xffff
-    dw 0
-    db 0
-    db 0x92
-    db 0xcf
-    db 0
-    
-Gdt32Len: equ $-Gdt32
-
-Gdt32Ptr: dw Gdt32Len-1
-          dd Gdt32
-
-Idt32Ptr: dw 0
-          dd 0
-
-
-Gdt64:
-    dq 0
-    dq 0x0020980000000000
-
-Gdt64Len: equ $-Gdt64
-
-
-Gdt64Ptr: dw Gdt64Len-1
-          dd Gdt64

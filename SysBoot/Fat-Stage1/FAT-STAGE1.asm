@@ -56,13 +56,20 @@ szFSName					DB		"FAT32   "
 
 PRINT16BIT:
 			LODSB					        ; load next byte from string from SI to AL
+
 			OR			al, al		        ; Does AL=0?
-			JZ			PRINTDONE16BIT	    ; Yep, null terminator found-bail out
-			MOV			ah,	0eh	            ; Nope-Print the character
-			INT			10h
-			jmp			PRINT16BIT		    ; Repeat until null terminator found
+			
+            JZ			PRINTDONE16BIT	    ; Yep, null terminator found-bail out
+			
+            MOV			ah,	0eh	            ; Nope-Print the character
+			
+            INT			10h
+			
+            JMP			PRINT16BIT		    ; Repeat until null terminator found
+
 PRINTDONE16BIT:
-			ret					            ; we are done, so return
+			
+            RET					            ; we are done, so return
 
 ;*************************************************;
 ;	Bootloader Entry Point
@@ -139,7 +146,7 @@ STAGE2LOADER:
 DEATH:
 DEATHSCREEN:
     
-    MOV         SI, msg
+    MOV         si, msg
     
     CALL        PRINT16BIT                     ; Error message
     
@@ -165,20 +172,38 @@ MessageLenmsgStart:         equ $-msgStart
 msgStageTwo                 DB "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
 MessageLenmsgStageTwo:      equ $-msgStageTwo
 
+; 0x1be = 446 bytes, which is bootloader code size
+; $-$$ is current section size (in bytes)
 TIMES (0x1BE-($-$$)) DB 0
-
+    ; here are partition table entries (which is total 64 bytes)
+    ; there are 4 entries and only define the first entry
+    ; each entry has 16 bytes (64/4=16)
+    ; this is the first partition entry format
+    ; boot indicator, 0x80=bootable partition
     DB 80H
-    
+    ; starting CHS
+    ; C=cylinder, H=head, S=sector
+    ; the range for cylinder is 0 through 1023
+    ; the range for head is 0 through 255 inclusive
+    ; The range for sector is 1 through 63
+    ; address of the first sector in partition
+    ; 0(head),2(sector),0(cylinder)
     DB 0,2,0
-    
+    ; partition type
     DB 0F0H
-    
+    ; ending of CHS
+    ; address of last absolute sector in partition
     DB 0FFH,0FFH,0FFH
-    
+    ; LBA of the first absolute sector
+    ; LBA = (C × HPC + H) × SPT + (S − 1)
+    ; S(sector)=2, C(cylinder)=0, H(head)=0 => LBA=1
     DD 1
-    
+    ; size (number of sectors in partition)
+    ; here is (20*16*63-1) * 512 bytes/ (1024 * 1024) = 10 mb
     DD (20*16*63-1)
-	
+	; other 3 entries are set to 0
     TIMES (16*3) DB 0
-
+    ; Boot Record signature
+    ; here is the same as dw 0aa55h
+    ; little endian
     DW 0xAA55                              ; fill out the last 2 bytes of our stage1 bootloader
