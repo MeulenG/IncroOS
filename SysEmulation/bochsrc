@@ -10,7 +10,7 @@ floppy_bootsig_check: disabled=0
 floppya: type=1_44
 # no floppyb
 ata0: enabled=true, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=disk, path="boot.img", mode=flat, cylinders=20, heads=16, spt=63, sect_size=512, model="Generic 1234", biosdetect=auto, translation=auto
+ata0-master: type=disk, path="../OMOS/SysImage/boot.img", mode=flat, cylinders=20, heads=16, spt=63, sect_size=512, model="Generic 1234", biosdetect=auto, translation=auto
 ata0-slave: type=none
 ata1: enabled=true, ioaddr1=0x170, ioaddr2=0x370, irq=15
 ata1-master: type=none
@@ -35,7 +35,7 @@ cpuid: 1g_pages=true, pcid=false, fsgsbase=false, smep=false, smap=false, mwait=
 cpuid: vmx=1
 print_timestamps: enabled=0
 debugger_log: -
-magic_break: enabled=0
+magic_break: enabled=1
 port_e9_hack: enabled=0
 private_colormap: enabled=0
 clock: sync=none, time0=local, rtc_sync=0
