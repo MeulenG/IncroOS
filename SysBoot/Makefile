@@ -4,14 +4,14 @@ BUILD_DIR	=			../build/bootloader
 ASMC 	  	= 			nasm
 ASMC_ARGS 	= 			-f
 
-all			: 			$(BUILD_DIR)/FAT-STAGE1.bin $(BUILD_DIR)/FAT-STAGE2.bin
+all			: 			$(BUILD_DIR)/Stage1_X86.bin $(BUILD_DIR)/Stage2_X86.bin
 
-$(BUILD_DIR)/FAT-STAGE1.bin: Fat-Stage1/FAT-STAGE1.asm
+$(BUILD_DIR)/Stage1_X86.bin: Fat-Stage1/Stage1_X86.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
-$(BUILD_DIR)/FAT-STAGE2.bin: Fat-Stage2/FAT-STAGE2.asm
+$(BUILD_DIR)/Stage2_X86.bin: Fat-Stage2/Stage2_X86.asm
 	${ASMC} $< ${ASMC_ARGS} bin -o $@
 
 clean:
-	rm -rf $(BUILD_DIR)/FAT-STAGE1.bin
-	rm -rf $(BUILD_DIR)/FAT-STAGE2.bin
+	rm -rf $(BUILD_DIR)/Stage1_X86.bin
+	rm -rf $(BUILD_DIR)/Stage2_X86.bin

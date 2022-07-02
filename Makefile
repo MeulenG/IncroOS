@@ -34,8 +34,8 @@ SysCore:
 	make	-C				SysCore
 
 build:
-	dd if=build/bootloader/FAT-STAGE1.bin of=SysImage/boot.img bs=512 count=1 conv=notrunc
-	dd if=build/bootloader/FAT-STAGE2.bin of=SysImage/boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd if=build/bootloader/Stage1_X86.bin of=SysImage/boot.img bs=512 count=1 conv=notrunc
+	dd if=build/bootloader/Stage2_X86.bin of=SysImage/boot.img bs=512 count=5 seek=1 conv=notrunc
 #	dd if=build/bootloader/Kernel_X86.bin of=SysImage/boot.img bs=512 count=100 seek=6 conv=notrunc
 
 run:
