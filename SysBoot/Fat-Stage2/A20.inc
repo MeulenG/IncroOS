@@ -2,9 +2,6 @@
 %define __A20_INC
 
 bits	16
-
-%ifndef __A20_INC
-%define __A20_INC
 ;--------------------------------------
 ; Enables a20 line through bios
 ;--------------------------------------

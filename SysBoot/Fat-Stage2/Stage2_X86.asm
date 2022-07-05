@@ -67,6 +67,36 @@ Stage2_Main:
     STI
     ; Save Drive Number in DL
     MOV     [bPhysicalDriveNum],dl
+    ; Time to check whether or not your processor supports CPUID
+    ; Check if CPUID is supported by attempting to flip the ID bit (bit 21) in
+    ; the FLAGS register. If we can flip it, CPUID is available.
+    ; Copy FLAGS in to EAX via stack
+    PUSHFD
+    POP     eax
+ 
+    ; Copy to ECX as well for comparing later on
+    MOV     ecx, eax
+ 
+    ; Flip the ID bit
+    XOR     eax, 1 << 21
+ 
+    ; Copy EAX to FLAGS via the stack
+    PUSH    eax
+    POPFD
+ 
+    ; Copy FLAGS back to EAX (with the flipped bit if CPUID is supported)
+    PUSHFD
+    POP     eax
+ 
+    ; Restore FLAGS from the old version stored in ECX (i.e. flipping the ID bit
+    ; back if it was ever flipped).
+    PUSH    ecx
+    POPFD
+ 
+    ; Compare EAX and ECX. If they are equal then that means the bit wasn't
+    ; flipped, and CPUID isn't supported.
+    XOR     eax, ecx
+    JZ  NoCPUID
     ; "cpuid" retrieve the information about your cpu
     ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
     ; 0x80000000 = 2^31
@@ -79,7 +109,7 @@ Stage2_Main:
     ; if eax < 0x80000001 => CF=1 => jb
     ; jb, jump if below for unsigned number
     ; (jl, jump if less for signed number)
-    JB  DEATH
+    JB      NoLongMode
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
     CPUID
@@ -88,16 +118,14 @@ Stage2_Main:
     ; long mode is at bit-29
     TEST    edx,(1<<29) ; We test to check whether it supports long mode
     ; jz, jump if zero => CF=1
-    JZ  DEATH
+    JZ      NoLongMode
     ; check if 1g huge page support
     ; test => edx & (1<<26), if result=0, CF=1, then jump
     ; Gigabyte pages is at bit-26
     TEST    edx,(1<<26)
     ; jz, jump if zero => CF=1
-    JZ  DEATH
+    JZ      NoLongMode
 
-.NoLongMode
-    JMP     DEATHSCREEN
 
 LoadKernel:
     ; DS:SI (segment:offset pointer to the DAP, Disk Address Packet)
@@ -125,7 +153,8 @@ LoadKernel:
     
     INT     0x13
     
-    JC      DEATH
+    JC      NoKernel
+
 
 
 ;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it through BIOS
@@ -140,8 +169,11 @@ SetA20:
     CALL        Puts16
 
 SetVideoMode:
+    ;-------------------------------;
+	;   Set Video Mode  	        ;
+	;-------------------------------;
     MOV     ax,3
-    ; Sets the Video Mode to Text Mode
+
     INT     0x10
 
     MOV         si, msgVideoMode
@@ -168,13 +200,13 @@ SetVideoMode:
 	;-------------------------------;
 	;   Go into PMode		        ;
 	;-------------------------------;
-    MOV     eax,cr0
+    MOV     eax,cr0             ; Set the A-register to control register 0.
     
-    OR  eax,1
+    OR  eax,01111111111111111111111111111111b  ; Clear the PG-bit, which is bit 31.
     
-    MOV     cr0,eax
+    MOV     cr0,eax             ; Set control register 0 to the A-register.
 
-    JMP 8:ProtectedMode_Stage3 ; Get outta this cursed Real Mode
+    JMP 8:ProtectedMode_Stage3  ; Get outta this cursed Real Mode
 
 DEATH:
 DEATHSCREEN:
@@ -187,6 +219,21 @@ DEATHSCREEN:
     INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
     
     INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
+
+NoCPUID:
+    MOV     si, ErrorMsgCPUID
+
+    CALL    Puts16
+
+NoLongMode:
+    MOV     si, ErrorMsgLongMode
+
+    CALL    Puts16
+
+NoKernel:
+    MOV     si, ErrorMsgKernel
+
+    CALL    Puts16
 
 ALIGN   32
 BITS    32
@@ -224,14 +271,24 @@ ProtectedMode_Stage3:
     MOV     dword[0x80000],0x81007
     
     MOV     dword[0x81000],10000111b
+
+	;---------------------------------------;
+	;   Protected Mode Reached	            ;
+	;---------------------------------------;
+    xchg bx,bx
+
+	CALL		ClrScr32
+	
+    MOV		    ebx, msgpmode
+	
+    CALL		Puts32
+
     ;-------------------------------;
 	;   Install our new GDT		    ;
 	;-------------------------------;
-    CALL    ClrScr32
-
     LGDT    [gdt_descriptor_64]
     
-    MOV     si, msgNewgdt
+    MOV     ebx, msgNewgdt
     
     CALL    Puts32
     ;-------------------------------;
@@ -290,15 +347,22 @@ LEnd:
 ;	Data Section
 ;*******************************************************
 bPhysicalDriveNum			db		0
-ErrorMsg                    db  "Hahahaha, Fuck you, but at Stage2"
 msgA20                      db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
-msggdt                      db  "Installing gdt", 0x0D, 0x0A, 0x00
-msgNewgdt                   db  "Installing gdt", 0x0D, 0x0A, 0x00
-msgidt                      db  "Installing idt", 0x0D, 0x0A, 0x00
-msgKernelLoaded             db  "Loading the Kernel In", 0x0D, 0x0A, 0x00
-msgVideoMode                db  "Setting up Video Mode", 0x0D, 0x0A, 0x00
+msggdt                      db  "Installing GDT", 0x0D, 0x0A, 0x00
+msgNewgdt                   db  "Installing New GDT", 0x0A
+msgidt                      db  "Installing IDT", 0x0A
+msgKernelLoaded             db  "Loading Kernel", 0x0A
+msgVideoMode                db  "Video Mode Set", 0x0A
 ReadPacket:                 times 16 db 0
 LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 Msg                         db  "Preparing to load operating system...",13,10,0
-msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[ OMOS 32-bit 10 ]>"
-                            db  0x0A, 0x0A,             "           Basic 32 bit graphics demo in Assembly Language", 0
+msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
+                            db  0x0A, 0x0A   "     Welcome To Protected Mode", 0
+;*******************************************************
+;	Data Error Section
+;*******************************************************
+ErrorMsg                    db  "Hahahaha, Fuck you, but at Stage2"
+ErrorMsgLongMode            db  "Long Mode Is Not Supported On This Machine"
+ErrorMsgKernel              db  "Unable To Load Kernel"
+ErrorMsgA20                 db  "Unable To Set The A20 Line"
+ErrorMsgCPUID               db  "Processor does not support CPUID"
