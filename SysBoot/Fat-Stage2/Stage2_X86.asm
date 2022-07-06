@@ -78,7 +78,7 @@ Stage2_Main:
     MOV     ecx, eax
  
     ; Flip the ID bit
-    XOR     eax, 1 << 21
+    XOR     eax, (1 << 21)
  
     ; Copy EAX to FLAGS via the stack
     PUSH    eax
@@ -96,7 +96,7 @@ Stage2_Main:
     ; Compare EAX and ECX. If they are equal then that means the bit wasn't
     ; flipped, and CPUID isn't supported.
     XOR     eax, ecx
-    JZ  NoCPUID
+    JZ  DEATHSCREEN.NoCPUID
     ; "cpuid" retrieve the information about your cpu
     ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
     ; 0x80000000 = 2^31
@@ -109,7 +109,7 @@ Stage2_Main:
     ; if eax < 0x80000001 => CF=1 => jb
     ; jb, jump if below for unsigned number
     ; (jl, jump if less for signed number)
-    JB      NoLongMode
+    JB      DEATHSCREEN.NoLongMode
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
     CPUID
@@ -118,13 +118,23 @@ Stage2_Main:
     ; long mode is at bit-29
     TEST    edx,(1<<29) ; We test to check whether it supports long mode
     ; jz, jump if zero => CF=1
-    JZ      NoLongMode
+    JZ      DEATHSCREEN.NoLongMode
     ; check if 1g huge page support
     ; test => edx & (1<<26), if result=0, CF=1, then jump
     ; Gigabyte pages is at bit-26
     TEST    edx,(1<<26)
     ; jz, jump if zero => CF=1
-    JZ      NoLongMode
+    JZ      DEATHSCREEN.NoLongMode
+
+    MOV     eax, 0x7
+    
+    XOR     ecx, ecx
+    
+    CPUID
+    
+    TEST    ecx, (1<<16)
+    
+    JNZ     DEATHSCREEN.5_level_paging
 
 
 LoadKernel:
@@ -153,9 +163,7 @@ LoadKernel:
     
     INT     0x13
     
-    JC      NoKernel
-
-
+    JC      DEATHSCREEN.NoKernel
 
 ;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it through BIOS
 SetA20:
@@ -202,13 +210,12 @@ SetVideoMode:
 	;-------------------------------;
     MOV     eax,cr0             ; Set the A-register to control register 0.
     
-    OR  eax,01111111111111111111111111111111b  ; Clear the PG-bit, which is bit 31.
+    OR  eax, 1 << 0             ; Set The PM-bit, which is the 0th bit.
     
     MOV     cr0,eax             ; Set control register 0 to the A-register.
 
     JMP 8:ProtectedMode_Stage3  ; Get outta this cursed Real Mode
 
-DEATH:
 DEATHSCREEN:
     MOV         si, ErrorMsg
     
@@ -220,20 +227,24 @@ DEATHSCREEN:
     
     INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
 
-NoCPUID:
-    MOV     si, ErrorMsgCPUID
+    .NoCPUID:
+        MOV     si, ErrorMsgCPUID
 
-    CALL    Puts16
+        CALL    Puts16
 
-NoLongMode:
-    MOV     si, ErrorMsgLongMode
+    .NoLongMode:
+        MOV     si, ErrorMsgLongMode
 
-    CALL    Puts16
+        CALL    Puts16
 
-NoKernel:
-    MOV     si, ErrorMsgKernel
+    .NoKernel:
+        MOV     si, ErrorMsgKernel
 
-    CALL    Puts16
+        CALL    Puts16
+    .5_level_paging:
+        MOV     si, ErrorMsgLevel5Paging
+
+        CALL    Puts16
 
 ALIGN   32
 BITS    32
@@ -275,8 +286,6 @@ ProtectedMode_Stage3:
 	;---------------------------------------;
 	;   Protected Mode Reached	            ;
 	;---------------------------------------;
-    xchg bx,bx
-
 	CALL		ClrScr32
 	
     MOV		    ebx, msgpmode
@@ -294,31 +303,79 @@ ProtectedMode_Stage3:
     ;-------------------------------;
 	;   Get Ready For Long Mode		;
 	;-------------------------------;
-    MOV     eax,cr4
+    ; Disable Paging
+    MOV     eax, cr0                                   ; Set the A-register to control register 0.
     
-    OR  eax,(1<<5)
+    AND     eax, 01111111111111111111111111111111b     ; Clear the PG-bit, which is bit 31.
     
-    MOV     cr4,eax
+    MOV     cr0, eax                                   ; Set control register 0 to the A-register.
+    
+    MOV     edi, 0x1000    ; Set the destination index to 0x1000.
+    
+    MOV     cr3, edi       ; Set control register 3 to the destination index.
+    
+    XOR     eax, eax       ; Nullify the A-register.
+    
+    MOV     ecx, 4096      ; Set the C-register to 4096.
+    
+    REP     stosd          ; Clear the memory.
+    
+    MOV     edi, cr3       ; Set the destination index to control register 3.
+    
+    MOV     DWORD [edi], 0x2003      ; Set the uint32_t at the destination index to 0x2003.
+    
+    ADD     edi, 0x1000              ; Add 0x1000 to the destination index.
+    
+    MOV     DWORD [edi], 0x3003      ; Set the uint32_t at the destination index to 0x3003.
+    
+    ADD     edi, 0x1000              ; Add 0x1000 to the destination index.
+    
+    MOV     DWORD [edi], 0x4003      ; Set the uint32_t at the destination index to 0x4003.
+    
+    ADD     edi, 0x1000              ; Add 0x1000 to the destination index.
+    
+    MOV     ebx, 0x00000003          ; Set the B-register to 0x00000003.
+    
+    MOV     ecx, 512                 ; Set the C-register to 512.
+ 
+.SetEntry:
+    MOV     DWORD [edi], ebx         ; Set the uint32_t at the destination index to the B-register.
+    
+    ADD     ebx, 0x1000              ; Add 0x1000 to the B-register.
+    
+    ADD     edi, 8                   ; Add eight to the destination index.
+    
+    LOOP    .SetEntry                ; Set the next entry.
+    
+    xchg bx,bx
 
-    MOV     eax,0x80000
+    MOV     eax,cr4                  ; Set the A-register to control register 4.
     
-    MOV     cr3,eax
+    OR  eax,(1<<5)                   ; Set the PAE-bit, which is the 6th bit (bit 5).
+    
+    MOV     cr4,eax                  ; Set control register 4 to the A-register.
+    
+    MOV     eax, cr4
+    
+    OR  eax, (1<<12)                 ; CR4.LA57
+    
+    MOV     cr4, eax
+    ; cookie crumbles here, lets try to enable it all in real mode instead?
+    MOV     ecx, 0xC0000080          ; Set the C-register to 0xC0000080, which is the EFER MSR.
+    
+    RDMSR                            ; Read from the model-specific register.
+    
+    OR  eax, (1 << 8)                ; Set the LM-bit which is the 9th bit (bit 8).
+    
+    WRMSR                            ; Write to the model-specific register.
 
-    MOV     ecx,0xc0000080
+    MOV     eax, cr0                 ; Set the A-register to control register 0.
     
-    RDMSR
+    OR  eax, (1 << 31)               ; Set the PG-bit, which is the 32nd bit (bit 31).
     
-    OR  eax,(1<<8)
-    
-    WRMSR
+    MOV     cr0, eax                 ; Set control register 0 to the A-register.
 
-    MOV     eax,cr0
-    
-    OR  eax,(1<<31)
-    
-    MOV     cr0,eax
-
-    JMP     8:LMEntry ; Juuummpppppp
+    JMP     8:Stage4_Long_Mode       ; Juuummpppppp
 
 PEnd:
     HLT
@@ -326,23 +383,39 @@ PEnd:
     JMP     PEnd
 ALIGN   64
 BITS    64
-LMEntry:
-    ; clear out upper 32 bits of stack to make sure
-    ; no intended bits are left up there
+;*******************************************************
+;	Preprocessor directives 32-BIT MODE
+;*******************************************************
+%include "../SysBoot/Fat-Stage2/asmlib64.inc"
+;******************************************************
+;	ENTRY POINT For STAGE 4
+;******************************************************
+Stage4_Long_Mode:
+    ;---------------------------------------;
+	;   Disable Interrupt And Clear Screen	;
+	;---------------------------------------;
+    CLI                               ; Clear The Interrupt Flag
+
+    CALL    ClrScr64
+    ;-------------------------------;
+	;   Setup segments and stack	;
+	;-------------------------------;
     MOV     eax, esp
     
     XOR     rsp, rsp
     
     MOV     rsp, rax
-    ;-------------------------------;
-	;   Setup segments and stack	;
-	;-------------------------------;
+    
     MOV     rsp, 0x7C00
 
 LEnd:
     HLT
     
     JMP LEnd
+
+MAIN_LONG:
+
+
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
@@ -355,9 +428,11 @@ msgKernelLoaded             db  "Loading Kernel", 0x0A
 msgVideoMode                db  "Video Mode Set", 0x0A
 ReadPacket:                 times 16 db 0
 LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
-Msg                         db  "Preparing to load operating system...",13,10,0
+Msg                         db  "Preparing to load 64-bit operating system...",13,10,0
 msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
                             db  0x0A, 0x0A   "     Welcome To Protected Mode", 0
+msglongmode                 db  0x0A, 0x0A, 0x0A, "               <[ OMOS Long Mode 10 ]>"
+                            db  0x0A, 0x0A,             "           Welcome to 64-Bit Mode", 0
 ;*******************************************************
 ;	Data Error Section
 ;*******************************************************
@@ -366,3 +441,4 @@ ErrorMsgLongMode            db  "Long Mode Is Not Supported On This Machine"
 ErrorMsgKernel              db  "Unable To Load Kernel"
 ErrorMsgA20                 db  "Unable To Set The A20 Line"
 ErrorMsgCPUID               db  "Processor does not support CPUID"
+ErrorMsgLevel5Paging        db  "Level 5 Paging Not Avilable"
