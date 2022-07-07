@@ -44,6 +44,7 @@ main_Stage2: JMP Stage2_Main
 ;	ENTRY POINT For STAGE 2
 ;******************************************************
 Stage2_Main:
+	; Clear Interrupts
     CLI
     ;-------------------------------;
 	;   Setup segments and stack	;
@@ -63,7 +64,7 @@ Stage2_Main:
     MOV	    ax, 0x7C00
     
     MOV	    sp, ax
-    
+    ; Enable Interrupts
     STI
     ; Save Drive Number in DL
     MOV     [bPhysicalDriveNum],dl
@@ -72,30 +73,35 @@ Stage2_Main:
     ; the FLAGS register. If we can flip it, CPUID is available.
     ; Copy FLAGS in to EAX via stack
     PUSHFD
+    
     POP     eax
  
     ; Copy to ECX as well for comparing later on
     MOV     ecx, eax
  
     ; Flip the ID bit
-    XOR     eax, (1 << 21)
+    XOR     eax, ( 1 << 21 )
  
     ; Copy EAX to FLAGS via the stack
     PUSH    eax
+    
     POPFD
  
     ; Copy FLAGS back to EAX (with the flipped bit if CPUID is supported)
     PUSHFD
+    
     POP     eax
  
     ; Restore FLAGS from the old version stored in ECX (i.e. flipping the ID bit
     ; back if it was ever flipped).
     PUSH    ecx
+    
     POPFD
  
     ; Compare EAX and ECX. If they are equal then that means the bit wasn't
     ; flipped, and CPUID isn't supported.
     XOR     eax, ecx
+    
     JZ  DEATHSCREEN.NoCPUID
     ; "cpuid" retrieve the information about your cpu
     ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
@@ -112,17 +118,18 @@ Stage2_Main:
     JB      DEATHSCREEN.NoLongMode
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
+    
     CPUID
     ; check if long mode is supported
     ; test => edx & (1<<29), if result=0, CF=1, then jump
     ; long mode is at bit-29
-    TEST    edx,(1<<29) ; We test to check whether it supports long mode
+    TEST    edx,( 1 << 29 ) ; We test to check whether it supports long mode
     ; jz, jump if zero => CF=1
     JZ      DEATHSCREEN.NoLongMode
     ; check if 1g huge page support
     ; test => edx & (1<<26), if result=0, CF=1, then jump
     ; Gigabyte pages is at bit-26
-    TEST    edx,(1<<26)
+    TEST    edx,( 1 << 26 )
     ; jz, jump if zero => CF=1
     JZ      DEATHSCREEN.NoLongMode
 
@@ -132,7 +139,7 @@ Stage2_Main:
     
     CPUID
     
-    TEST    ecx, (1<<16)
+    TEST    ecx, ( 1 << 16 )
     
     JNZ     DEATHSCREEN.5_level_paging
 
@@ -172,9 +179,9 @@ SetA20:
 	;-------------------------------;
     CALL EnableA20_Bios
     
-    MOV         si, msgA20
+;    MOV         si, msgA20
     
-    CALL        Puts16
+;    CALL        Puts16
 
 SetVideoMode:
     ;-------------------------------;
@@ -184,9 +191,9 @@ SetVideoMode:
 
     INT     0x10
 
-    MOV         si, msgVideoMode
+;    MOV         si, msgVideoMode
     
-    CALL        Puts16
+;    CALL        Puts16
     
     CLI
     ;-------------------------------;
@@ -194,23 +201,23 @@ SetVideoMode:
 	;-------------------------------;
     LGDT    [gdt_descriptor]
     
-    MOV         si, msggdt
+;    MOV         si, msggdt
     
-    CALL        Puts16
+;    CALL        Puts16
     ;-------------------------------;
 	;   Install our IDT		        ;
 	;-------------------------------;
     LIDT    [idt_real]
     
-    MOV         si, msgidt
+;    MOV         si, msgidt
     
-    CALL        Puts16
+;    CALL        Puts16
 	;-------------------------------;
-	;   Go into PMode		        ;
+	;   Get Ready For PMode		    ;
 	;-------------------------------;
     MOV     eax,cr0             ; Set the A-register to control register 0.
     
-    OR  eax, 1 << 0             ; Set The PM-bit, which is the 0th bit.
+    OR  eax, (1 << 0)           ; Set The PM-bit, which is the 0th bit.
     
     MOV     cr0,eax             ; Set control register 0 to the A-register.
 
@@ -286,23 +293,53 @@ ProtectedMode_Stage3:
 	;---------------------------------------;
 	;   Protected Mode Reached	            ;
 	;---------------------------------------;
-	CALL		ClrScr32
+	CALL	ClrScr32
 	
-    MOV		    ebx, msgpmode
+    MOV		ebx, PrepareMsg64
 	
-    CALL		Puts32
+    CALL	Puts32
+	
+	MOV		ebx, LoadingMsg
+	
+    CALL	Puts32
+
+    MOV		ebx, msgpmode
+	
+    CALL	Puts32
 
     ;-------------------------------;
 	;   Install our new GDT		    ;
 	;-------------------------------;
     LGDT    [gdt_descriptor_64]
     
-    MOV     ebx, msgNewgdt
+    MOV     ebx, msggdt
     
     CALL    Puts32
+	;-------------------------------;
+	;   Messages From Real Mode	    ;
+	;-------------------------------;
+	MOV 	ebx, msgA20
+
+	CALL 	Puts32
+
+	MOV 	ebx, msgidt
+
+	CALL 	Puts32
+
+	MOV 	ebx, msgKernelLoaded
+
+	CALL 	Puts32
+
+	MOV 	ebx, msgVideoMode
+
+	CALL 	Puts32
     ;-------------------------------;
 	;   Get Ready For Long Mode		;
 	;-------------------------------;
+	
+	MOV		ebx, msglongmode
+	
+    CALL	Puts32
     ; Disable Paging
     MOV     eax, cr0                                   ; Set the A-register to control register 0.
     
@@ -337,7 +374,7 @@ ProtectedMode_Stage3:
     MOV     ebx, 0x00000003          ; Set the B-register to 0x00000003.
     
     MOV     ecx, 512                 ; Set the C-register to 512.
- 
+
 .SetEntry:
     MOV     DWORD [edi], ebx         ; Set the uint32_t at the destination index to the B-register.
     
@@ -346,20 +383,13 @@ ProtectedMode_Stage3:
     ADD     edi, 8                   ; Add eight to the destination index.
     
     LOOP    .SetEntry                ; Set the next entry.
-    
-    xchg bx,bx
 
     MOV     eax,cr4                  ; Set the A-register to control register 4.
     
-    OR  eax,(1<<5)                   ; Set the PAE-bit, which is the 6th bit (bit 5).
+    OR  eax,(1 << 5)                   ; Set the PAE-bit, which is the 6th bit (bit 5).
     
     MOV     cr4,eax                  ; Set control register 4 to the A-register.
-    
-    MOV     eax, cr4
-    
-    OR  eax, (1<<12)                 ; CR4.LA57
-    
-    MOV     cr4, eax
+
     ; cookie crumbles here, lets try to enable it all in real mode instead?
     MOV     ecx, 0xC0000080          ; Set the C-register to 0xC0000080, which is the EFER MSR.
     
@@ -375,8 +405,7 @@ ProtectedMode_Stage3:
     
     MOV     cr0, eax                 ; Set control register 0 to the A-register.
 
-    JMP     8:Stage4_Long_Mode       ; Juuummpppppp
-
+    JMP     8:Stage4_Long_Mode
 PEnd:
     HLT
     
@@ -388,26 +417,45 @@ BITS    64
 ;*******************************************************
 %include "../SysBoot/Fat-Stage2/asmlib64.inc"
 ;******************************************************
-;	ENTRY POINT For STAGE 4
+;	ENTRY POINT For STAGE 5
 ;******************************************************
+%define DATA_SEG     0x0010
 Stage4_Long_Mode:
     ;---------------------------------------;
-	;   Disable Interrupt And Clear Screen	;
+	;   Disable Interrupts					;
 	;---------------------------------------;
+    xchg bx, bx
+    
     CLI                               ; Clear The Interrupt Flag
-
-    CALL    ClrScr64
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    MOV     eax, esp
-    
-    XOR     rsp, rsp
-    
-    MOV     rsp, rax
-    
-    MOV     rsp, 0x7C00
+    MOV     ax, DATA_SEG
 
+    MOV     ds, ax
+
+    MOV     fs, ax
+
+    MOV     gs, ax
+
+    MOV     ss, ax
+
+    MOV     es, ax
+    
+    MOV 	rsp,0x7c00
+
+    CLD
+    
+	MOV    	rdi,0x200000
+    
+	MOV     rsi,0x10000
+    
+	MOV     rcx,51200/8
+    
+	REP     movsq
+
+    JMP 	0x200000
+    
 LEnd:
     HLT
     
@@ -420,25 +468,39 @@ MAIN_LONG:
 ;	Data Section
 ;*******************************************************
 bPhysicalDriveNum			db		0
-msgA20                      db  "Enabling A20 Gate", 0x0D, 0x0A, 0x00
-msggdt                      db  "Installing GDT", 0x0D, 0x0A, 0x00
-msgNewgdt                   db  "Installing New GDT", 0x0A
-msgidt                      db  "Installing IDT", 0x0A
-msgKernelLoaded             db  "Loading Kernel", 0x0A
-msgVideoMode                db  "Video Mode Set", 0x0A
+
+msgA20                      db  0xA, 0xD, "Enabling A20 Gate", 0x00
+
+msggdt                      db  0xA, 0xD, "Installing GDT", 0x00
+
+msgidt                      db  0xA, 0xD, "Installing IDT", 0x00
+
+msgKernelLoaded             db  0xA, 0xD, "Loading Kernel", 0x00
+
+msgVideoMode                db  0xA, 0xD, "Video Mode Set", 0x00
+
+PrepareMsg64:				db  0xA, 0xD,"Preparing To Load 64-Bit Operating System...",  0x00
+
 ReadPacket:                 times 16 db 0
+
 LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
-Msg                         db  "Preparing to load 64-bit operating system...",13,10,0
-msgpmode                    db  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
-                            db  0x0A, 0x0A   "     Welcome To Protected Mode", 0
-msglongmode                 db  0x0A, 0x0A, 0x0A, "               <[ OMOS Long Mode 10 ]>"
-                            db  0x0A, 0x0A,             "           Welcome to 64-Bit Mode", 0
+
+msgpmode:                   db  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
+                            db  0x0A, 0x0A   		"            Welcome To Protected Mode", 0
+
+msglongmode:                db  0x0A, 0x0A, 0x0A, "               <[OMOS Long Mode]>"
+                            db  0x0A, 0x0A   		"            Welcome To 64-Bit Mode Long Mode", 0
 ;*******************************************************
 ;	Data Error Section
 ;*******************************************************
 ErrorMsg                    db  "Hahahaha, Fuck you, but at Stage2"
+
 ErrorMsgLongMode            db  "Long Mode Is Not Supported On This Machine"
+
 ErrorMsgKernel              db  "Unable To Load Kernel"
+
 ErrorMsgA20                 db  "Unable To Set The A20 Line"
+
 ErrorMsgCPUID               db  "Processor does not support CPUID"
+
 ErrorMsgLevel5Paging        db  "Level 5 Paging Not Avilable"
