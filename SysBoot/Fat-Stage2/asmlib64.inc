@@ -91,13 +91,13 @@ _CurY64 db 0
 
 Putch64:
 	SAVE_STATE				; macro for pusha
-	MOV	    edi, VIDMEM		; get pointer to video memory
+	MOV	    rdi, VIDMEM		; get pointer to video memory
 
 	;-------------------------------;
 	;   Get current position	    ;
 	;-------------------------------;
 
-	XOR	    eax, eax	    ; clear eax
+	XOR	    rax, rax	    ; clear eax
 
 		;--------------------------------
 		; Remember: currentPos = x + y * COLS! x and y are in _CurX64 and _CurY64.
@@ -106,11 +106,11 @@ Putch64:
 		; so multiply screen with * _CurY64 to get current line
 		;--------------------------------
 
-		MOV	    ecx, COLS*2		    ; Mode 7 has 2 bytes per char, so its COLS*2 bytes per line
+		MOV	    rcx, COLS*2		    ; Mode 7 has 2 bytes per char, so its COLS*2 bytes per line
 		
         MOV	    al, byte [_CurY64]	; get y pos
 		
-        MUL	    ecx			        ; multiply y*COLS
+        MUL	    rcx			        ; multiply y*COLS
 		
         PUSH    rax			        ; save eax--the multiplication
 
@@ -128,16 +128,16 @@ Putch64:
 		
         POP	    rcx			        ; pop y*COLS result
 		
-        ADD	    eax, ecx
+        ADD	    rax, rcx
 
 		;-------------------------------
 		; Now eax contains the offset address to draw the character at, so just add it to the base address
 		; of video memory (Stored in edi)
 		;-------------------------------
 
-		XOR	    ecx, ecx
+		XOR	    rcx, rcx
 		
-        ADD	    edi, eax		    ; add it to the base address
+        ADD	    rdi, rax		    ; add it to the base address
 
 	;-------------------------------;
 	;   Watch for new line          ;
@@ -155,7 +155,7 @@ Putch64:
 	
     MOV	    dh, CHAR_ATTRIB		    ; the character attribute
 	
-    MOV	    word [edi], dx		    ; write to video display
+    MOV	    word [rdi], dx		    ; write to video display
 
 	;-------------------------------;
 	;   Update next position        ;
@@ -224,7 +224,7 @@ Puts64:
 	;   Go to next character        ;
 	;-------------------------------;
 
-	INC	    edi			            ; go to next character
+	INC	    rdi			            ; go to next character
 	JMP	    .loop
 
 .done:
@@ -267,17 +267,17 @@ MovCur64:
 	; That is, we don't need to worry about the byte alignment we do when displaying characters,
 	; so just follow the forumla: location = _CurX64 + _CurY64 * COLS
 
-	XOR	    eax, eax
+	XOR	    rax, rax
 	
-    MOV	    ecx, COLS
+    MOV	    rcx, COLS
 	
     MOV	    al, bh			        ; get y pos
 	
-    MUL	    ecx			            ; multiply y*COLS
+    MUL	    rcx			            ; multiply y*COLS
 	
     ADD	    al, bl			        ; Now add x
 	
-    MOV	    ebx, eax
+    MOV	    rbx, rax
 
 	;--------------------------------------;
 	;   Set low byte index to VGA register ;
@@ -299,7 +299,7 @@ MovCur64:
 	;   Set high byte index to VGA register ;
 	;---------------------------------------;
 
-	XOR	eax, eax
+	XOR	rax, rax
 
 	MOV	al, 0x0e
 	
@@ -330,13 +330,13 @@ ClrScr64:
 	
     CLD
 	
-    MOV	    edi, VIDMEM
+    MOV	    rdi, VIDMEM 	;0xb8000
 	
-    MOV	    cx, 2000
+    MOV	    rcx, 2000
 	
     MOV	    ah, CHAR_ATTRIB
 	
-    MOV	    al, ' '	
+    MOV	    al, ' '
 	
     REP	    stosw
 
