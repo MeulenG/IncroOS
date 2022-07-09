@@ -4,7 +4,7 @@
 ; - Limited to 1MB of memory
 ; - No memory protection or virtual memory
 ; *************************
-BITS	16							; We are still in 16 bit Real Mode
+BITS	16							; We are in 16 bit Real Mode
 
 ORG		0x7C00						; We are loaded by BIOS at 0x7C00
 
@@ -96,6 +96,10 @@ STAGE1:
     
     MOV sp,0x7c00
     
+    MOV         si, msgStart
+    
+    CALL        PRINT16BIT                     ; Error message
+    
     STI                                    ; restore interrupts
 
 
@@ -116,23 +120,31 @@ TESTDISKEXTENTION:
     JNE DEATHSCREEN
 
 STAGE2LOADER:
-
+    ; DS:SI (segment:offset pointer to the DAP, Disk Address Packet)
+    ; DS is Data Segment, SI is Source Index
     MOV         si,ReadPacket
-    
+    ; size of Disk Address Packet (set this to 0x10)
     MOV         word[si],0x10
-    
+    ; number of sectors(loader) to read
     MOV         word[si+2],5
-    
+    ; number of sectors to transfer
+    ; transfer buffer (16 bit segment:16 bit offset)
+    ; 16 bit offset=0x7e00 (stored in word[si+4])
+    ; 16 bit segment=0 (stored in word[si+6])
+    ; address => 0 * 16 + 0x7e00 = 0x7e00
     MOV         word[si+4],0x7e00
     
     MOV         word[si+6],0
-    
+    ; absolute number of the start of the sectors to be read
+    ; LBA=1 (the 2nd sector) is the start of sector to be read
+    ; LBA=1 is start of loader sector
+    ; lower part of 64-bit starting LBA
     MOV         DWord[si+8],1
-    
+    ; upper part of 64-bit starting LBA
     MOV         DWord[si+0xc],0
-    
+    ; dl=drive id
     MOV         dl,[bPhysicalDriveNum]
-    
+    ; function code, 0x42 = Extended Read Sectors From Drive
     MOV         ah,0x42
     
     INT         0x13
@@ -140,6 +152,10 @@ STAGE2LOADER:
     JC          DEATH
 
     MOV         dl,[bPhysicalDriveNum]
+
+    MOV         si, msgStageTwo
+    
+    CALL        PRINT16BIT                     ; Error message
     
     JMP         0x7e00
 
@@ -168,9 +184,7 @@ msg	                        DB	"Hahaha, Fuck you, but at stage1", 0
 MessageLenmsg:              equ $-msg
 ReadPacket:                 TIMES 16 DB 0
 msgStart                    DB 0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x0D, 0x0A, 0x00
-MessageLenmsgStart:         equ $-msgStart
 msgStageTwo                 DB "Jumping to stage2 (0x7E00)", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
-MessageLenmsgStageTwo:      equ $-msgStageTwo
 
 ; 0x1be = 446 bytes, which is bootloader code size
 ; $-$$ is current section size (in bytes)
