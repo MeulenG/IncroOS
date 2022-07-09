@@ -3,8 +3,8 @@
 ;   - 0x00000000 - 0x000003FF - Real Mode Interrupt Vector Table
 ;   - 0x00000400 - 0x000004FF - BIOS Data Area
 ;   - 0x00000500 - 0x00007BFF - Unused
-;   - 0x00007C00 - 0x00007DFF - Our Stage 1
-;   - 0x00007E00 - 0x0009FFFF - Our Stage 2
+;   - 0x00007C00 - 0x00007DFF - Stage 1 (512 Bytes)
+;   - 0x00007E00 - 0x0009FFFF - Stage 2
 ;   - 0x000A0000 - 0x000BFFFF - Video RAM (VRAM) Memory
 ;   - 0x000B0000 - 0x000B7777 - Monochrome Video Memory
 ;   - 0x000B8000 - 0x000BFFFF - Color Video Memory
@@ -239,19 +239,44 @@ DEATHSCREEN:
 
         CALL    Puts16
 
+        MOV         ah, 0x00
+    
+        INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
+    
+        INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
+
     .NoLongMode:
         MOV     si, ErrorMsgLongMode
 
         CALL    Puts16
+        
+        MOV         ah, 0x00
+    
+        INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
+    
+        INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
 
     .NoKernel:
         MOV     si, ErrorMsgKernel
 
         CALL    Puts16
+
+        MOV         ah, 0x00
+    
+        INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
+    
+        INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
+    
     .5_level_paging:
         MOV     si, ErrorMsgLevel5Paging
 
         CALL    Puts16
+        
+        MOV         ah, 0x00
+    
+        INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
+    
+        INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
 
 ALIGN   32
 BITS    32
@@ -299,6 +324,14 @@ ProtectedMode_Stage3:
 	
     CALL	Puts32
 	
+	MOV		ebx, msgStart
+	
+    CALL	Puts32
+
+	MOV		ebx, msgStageTwo
+	
+    CALL	Puts32
+
 	MOV		ebx, LoadingMsg
 	
     CALL	Puts32
@@ -336,17 +369,24 @@ ProtectedMode_Stage3:
     ;-------------------------------;
 	;   Get Ready For Long Mode		;
 	;-------------------------------;
-	
 	MOV		ebx, msglongmode
 	
     CALL	Puts32
-    ; Disable Paging
+
+    MOV     ebx, PrepareMsgKernel64
+
+    CALL    Puts32
+    ;-------------------------------;
+	;   Disable Paging	            ;
+	;-------------------------------;
     MOV     eax, cr0                                   ; Set the A-register to control register 0.
     
     AND     eax, 01111111111111111111111111111111b     ; Clear the PG-bit, which is bit 31.
     
     MOV     cr0, eax                                   ; Set control register 0 to the A-register.
-    
+    ;-------------------------------;
+	;   Re-Enable 2MB Paging        ;
+	;-------------------------------;
     MOV     edi, 0x1000    ; Set the destination index to 0x1000.
     
     MOV     cr3, edi       ; Set control register 3 to the destination index.
@@ -386,11 +426,10 @@ ProtectedMode_Stage3:
 
     MOV     eax,cr4                  ; Set the A-register to control register 4.
     
-    OR  eax,(1 << 5)                   ; Set the PAE-bit, which is the 6th bit (bit 5).
+    OR  eax,(1 << 5)                 ; Set the PAE-bit, which is the 6th bit (bit 5).
     
     MOV     cr4,eax                  ; Set control register 4 to the A-register.
 
-    ; cookie crumbles here, lets try to enable it all in real mode instead?
     MOV     ecx, 0xC0000080          ; Set the C-register to 0xC0000080, which is the EFER MSR.
     
     RDMSR                            ; Read from the model-specific register.
@@ -406,6 +445,7 @@ ProtectedMode_Stage3:
     MOV     cr0, eax                 ; Set control register 0 to the A-register.
 
     JMP     8:Stage4_Long_Mode
+
 PEnd:
     HLT
     
@@ -421,12 +461,12 @@ BITS    64
 ;******************************************************
 %define DATA_SEG     0x0010
 Stage4_Long_Mode:
-    ;---------------------------------------;
-	;   Disable Interrupts					;
-	;---------------------------------------;
+    ;-------------------------------;
+	;   Disable Interrupts			;
+	;-------------------------------;
     xchg bx, bx
     
-    CLI                               ; Clear The Interrupt Flag
+    CLI                             ; Clear The Interrupt Flag
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
@@ -467,40 +507,47 @@ MAIN_LONG:
 ;*******************************************************
 ;	Data Section
 ;*******************************************************
-bPhysicalDriveNum			db		0
+bPhysicalDriveNum			DB		0
 
-msgA20                      db  0xA, 0xD, "Enabling A20 Gate", 0x00
+msgA20                      DB  0x0A, 0x0D, "Enabling A20 Gate", 0x00
 
-msggdt                      db  0xA, 0xD, "Installing GDT", 0x00
+msggdt                      DB  0x0A, 0x0D, "Installing GDT", 0x00
 
-msgidt                      db  0xA, 0xD, "Installing IDT", 0x00
+msgidt                      DB  0x0A, 0x0D, "Installing IDT", 0x00
 
-msgKernelLoaded             db  0xA, 0xD, "Loading Kernel", 0x00
+msgKernelLoaded             DB  0x0A, 0x0D, "Loading Kernel", 0x00
 
-msgVideoMode                db  0xA, 0xD, "Video Mode Set", 0x00
+msgVideoMode                DB  0x0A, 0x0D, "Video Mode Set", 0x00
 
-PrepareMsg64:				db  0xA, 0xD,"Preparing To Load 64-Bit Operating System...",  0x00
+PrepareMsg64:				DB  0x0A, 0x0D,"Preparing To Load 64-Bit Operating System...",  0x00
+
+PrepareMsgKernel64:			DB  0x0A, 0x0D,"Handing Control To The Kernel, Stand By...",  0x00
+
+msgStart                    DB  0x0D,0x0A, "Boot Loader starting (0x7C00)....", 0x00
+
+msgStageTwo                 DB  0x0D, 0x0A, "Jumping to stage2 (0x7E00)", 0x00
+
 
 ReadPacket:                 times 16 db 0
 
-LoadingMsg                  db 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
+LoadingMsg                  DB 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 
-msgpmode:                   db  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
-                            db  0x0A, 0x0A   		"            Welcome To Protected Mode", 0
+msgpmode:                   DB  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
+                            DB  0x0A, 0x0A   		"            Welcome To Protected Mode", 0
 
-msglongmode:                db  0x0A, 0x0A, 0x0A, "               <[OMOS Long Mode]>"
-                            db  0x0A, 0x0A   		"            Welcome To 64-Bit Mode Long Mode", 0
+msglongmode:                DB  0x0A, 0x0A, 0x0A, "               <[OMOS Long Mode]>"
+                            DB  0x0A, 0x0A   		"            Welcome To 64-Bit Mode Long Mode", 0
 ;*******************************************************
 ;	Data Error Section
 ;*******************************************************
-ErrorMsg                    db  "Hahahaha, Fuck you, but at Stage2"
+ErrorMsg                    DB  "Hahahaha, Fuck you, but at Stage2"
 
-ErrorMsgLongMode            db  "Long Mode Is Not Supported On This Machine"
+ErrorMsgLongMode            DB  "Long Mode Is Not Supported On This Machine"
 
-ErrorMsgKernel              db  "Unable To Load Kernel"
+ErrorMsgKernel              DB  "Unable To Load Kernel"
 
-ErrorMsgA20                 db  "Unable To Set The A20 Line"
+ErrorMsgA20                 DB  "Unable To Set The A20 Line"
 
-ErrorMsgCPUID               db  "Processor does not support CPUID"
+ErrorMsgCPUID               DB  "Processor does not support CPUID"
 
-ErrorMsgLevel5Paging        db  "Level 5 Paging Not Avilable"
+ErrorMsgLevel5Paging        DB  "Level 5 Paging Not Avilable"
