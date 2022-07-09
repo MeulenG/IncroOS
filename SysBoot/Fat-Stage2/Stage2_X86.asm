@@ -155,10 +155,10 @@ LoadKernel:
     ; number of sectors to transfer
     ; transfer buffer (16 bit segment:16 bit offset)
     ; 16 bit offset=0 (stored in word[si+4])
-    MOV     word[si+4],0
+    MOV     word[si+4],0xA000
     ; 16 bit segment=0x1000 (stored in word[si+6])
-    ; address => 0x1000 * 16 + 0 = 0x10000
-    MOV     word[si+6],0x1000
+    ; address => 0 * 16 + 0xA000 = 0xA000
+    MOV     word[si+6],0
     ; LBA=6 is the start of kernel sector
     MOV     dword[si+8],6
     
@@ -459,42 +459,17 @@ BITS    64
 ;******************************************************
 ;	ENTRY POINT For STAGE 5
 ;******************************************************
-%define DATA_SEG     0x0010
+%define DATA_SEG     0x0030
 Stage4_Long_Mode:
     ;-------------------------------;
 	;   Disable Interrupts			;
 	;-------------------------------;
-    xchg bx, bx
-    
     CLI                             ; Clear The Interrupt Flag
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    MOV     ax, DATA_SEG
 
-    MOV     ds, ax
-
-    MOV     fs, ax
-
-    MOV     gs, ax
-
-    MOV     ss, ax
-
-    MOV     es, ax
-    
-    MOV 	rsp,0x7c00
-
-    CLD
-    
-	MOV    	rdi,0x200000
-    
-	MOV     rsi,0x10000
-    
-	MOV     rcx,51200/8
-    
-	REP     movsq
-
-    JMP 	0x200000
+    JMP 	0xA000
     
 LEnd:
     HLT
