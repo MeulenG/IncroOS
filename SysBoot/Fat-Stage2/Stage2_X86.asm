@@ -24,6 +24,12 @@ ORG     0x7E00
 
 main_Stage2: JMP Stage2_Main
 
+
+;*******************************************************
+;	Defines
+;*******************************************************
+%define DATA_SEGMENT    0x10
+
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
 ;*******************************************************
@@ -291,7 +297,7 @@ ProtectedMode_Stage3:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    MOV     ax,0x10
+    MOV     ax,DATA_SEGMENT
     
     MOV     ds,ax
     
@@ -453,13 +459,12 @@ PEnd:
 ALIGN   64
 BITS    64
 ;*******************************************************
-;	Preprocessor directives 32-BIT MODE
+;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
 %include "../SysBoot/Fat-Stage2/asmlib64.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 5
 ;******************************************************
-%define DATA_SEG     0x0030
 Stage4_Long_Mode:
     ;-------------------------------;
 	;   Disable Interrupts			;
@@ -468,13 +473,26 @@ Stage4_Long_Mode:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-
+    xchg bx,bx
+    
+    MOV     ax, DATA_SEGMENT
+    
+    MOV     ds, ax
+    
+    MOV     es, ax
+    
+    MOV     fs, ax
+    
+    MOV     gs, ax
+    
+    MOV     ss, ax
+ 
     JMP 	0xA000
     
 LEnd:
     HLT
     
-    JMP LEnd
+    JMP     LEnd
 
 MAIN_LONG:
 
