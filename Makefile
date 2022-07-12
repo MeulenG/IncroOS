@@ -23,29 +23,32 @@ AS 	  		= 			nasm
 AS_ARGS 	= 			-f
 
 
-all			:				SysBoot SysCore build
+all			:			SysBoot SysCore build
 
-.PHONY		: 				SysBoot SysCore build
+.PHONY		: 			SysBoot SysCore build
 
 SysBoot:
-	make 	-C 				SysBoot
+	make 	-C 			SysBoot
 
 SysCore:
-	make	-C				SysCore
+	make	-C			SysCore
 
 build:
-	dd if=build/bootloader/Stage1_X86.bin of=SysImage/boot.img bs=512 count=1 conv=notrunc
-	dd if=build/bootloader/Stage2_X86.bin of=SysImage/boot.img bs=512 count=5 seek=1 conv=notrunc
-	dd if=build/bootloader/Kernel_X86.bin of=SysImage/boot.img bs=512 count=100 seek=6 conv=notrunc
+	dd 		if=build/bootloader/Stage1_X86.bin of=SysImage/boot.img bs=512 count=1 conv=notrunc
+	dd 		if=build/bootloader/Stage2_X86.bin of=SysImage/boot.img bs=512 count=5 seek=1 conv=notrunc
+	dd 		if=build/bootloader/Kernel_X86.bin of=SysImage/boot.img bs=512 count=100 seek=6 conv=notrunc
 
 run:
-	bochs -q -f SysEmulation/bochsrc
+	bochs 	-q -f SysEmulation/bochsrc
 
 clean:
-	make -C SysBoot clean
-	make -C SysCore clean
-	rm -rf SysImage/boot.img.lock
-	rm -rf bochsout.txt
+	make 	-C SysBoot clean
+	make 	-C SysCore clean
+	rm 		-rf SysImage/boot.img.lock
+	rm 		-rf bochsout.txt
+	rm 		-rf .vscode/configurationCache.log
+	rm 		-rf .vscode/dryrun.log
+	rm		-rf .vscode/targets.log
 # Gotta Figure out how tf this line works when i start working with C files
 %.o: %.c ${HEADERS}
 	${CC} ${CFLAGS} -c $< -o $@
