@@ -472,9 +472,7 @@ Stage4_Long_Mode:
     CLI                             ; Clear The Interrupt Flag
     ;-------------------------------;
 	;   Setup segments and stack	;
-	;-------------------------------;
-    xchg bx,bx
-    
+	;-------------------------------;    
     MOV     ax, DATA_SEGMENT
     
     MOV     ds, ax

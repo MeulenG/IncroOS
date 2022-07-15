@@ -20,6 +20,8 @@ Kernel_32:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
+    xchg bx,bx
+
     MOV     ax,DATA_SEGMENT
     
     MOV     ds,ax
@@ -48,6 +50,7 @@ BITS    64
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
 %include "../SysBoot/Fat-Stage2/asmlib64.inc"
+%include "../SysBoot/Fat-Stage2/Gdt.inc"
 ;******************************************************
 ;	ENTRY POINT For Kernel 64-Bit Mode
 ;******************************************************
@@ -67,9 +70,8 @@ Kernel_64_Main:
     
     MOV     ss, ax
 
-    MOV     rsp,0x7C00
-
-
+    MOV     rsp,0xA000
+    
 Kernel_64_End:
     HLT
     

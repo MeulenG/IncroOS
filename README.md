@@ -1,6 +1,6 @@
 # OMOS
 Project Tree: <br />
-![Screenshot](./docs/ProjectTree.png) <br />
+![Screenshot](./docs/OSTree.png) <br />
 <div id="top"></div>
 
 <details>
