@@ -1,0 +1,2 @@
+project(assembler C ASM)
+
