@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 WORKDIR /OS
 
-COPY . . /OS/
+COPY . /OS
 
 RUN sed -i 's/\r$//' ./SysDependensies/Dev.sh && chmod +x ./SysDependensies/Dev.sh && chmod +x ./SysDependensies/dotnet-install.sh && \
-    ./SysDependensies/Dev.sh && mkdir build && cd build && cmake -G "Unix Makefiles" -B . && make && make install
+    ./SysDependensies/Dev.sh && mkdir build && cd build && cmake --build .
