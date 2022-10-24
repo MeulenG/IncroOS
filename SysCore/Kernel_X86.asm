@@ -12,7 +12,7 @@ main:       JMP Kernel_32
 ;*******************************************************
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/asmlib32.inc"
+%include "asmlib32.inc"
 ;******************************************************
 ;	ENTRY POINT For Kernel 32-Bit Mode
 ;******************************************************
@@ -49,8 +49,8 @@ BITS    64
 ;*******************************************************
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/asmlib64.inc"
-%include "../SysBoot/Fat-Stage2/Gdt.inc"
+%include "asmlib64.inc"
+%include "Gdt.inc"
 ;******************************************************
 ;	ENTRY POINT For Kernel 64-Bit Mode
 ;******************************************************

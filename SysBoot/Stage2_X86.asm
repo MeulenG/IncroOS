@@ -33,18 +33,18 @@ main_Stage2: JMP Stage2_Main
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/asmlib16.inc"
+%include "asmlib16.inc"
 
 ;*******************************************************
 ;	Preprocessor Descriptor Tables
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/Gdt.inc"
-%include "../SysBoot/Fat-Stage2/Idt.inc"
+%include "Gdt.inc"
+%include "Idt.inc"
 
 ;*******************************************************
 ;	Preprocessor A20
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/A20.inc"
+%include "A20.inc"
 
 ;******************************************************
 ;	ENTRY POINT For STAGE 2
@@ -289,7 +289,7 @@ BITS    32
 ;*******************************************************
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/asmlib32.inc"
+%include "asmlib32.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
@@ -461,7 +461,7 @@ BITS    64
 ;*******************************************************
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
-%include "../SysBoot/Fat-Stage2/asmlib64.inc"
+%include "asmlib64.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 5
 ;******************************************************
