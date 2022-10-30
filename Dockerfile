@@ -2,13 +2,21 @@ FROM ubuntu:latest AS build
 
 WORKDIR /os-deps
 
-COPY . .
+COPY SysDependensies .
 
+RUN sed -i 's/\r$//' ./Dev.sh && chmod +x ./Dev.sh && chmod +x ./dotnet-install.sh && \
+    ./Dev.sh
 
-RUN sed -i 's/\r$//' ./SysDependensies/Dev.sh && chmod +x ./SysDependensies/Dev.sh && chmod +x ./SysDependensies/dotnet-install.sh && \
-    ./SysDependensies/Dev.sh
+FROM build AS build-compiler
 
-FROM build
+WORKDIR /os-compiler
+
+COPY ./LLVM-Clang/llvm-project .
+
+RUN cmake -S llvm -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release && cmake --build build
+
+# multistage
+FROM build AS build-os
 
 WORKDIR /os
 
