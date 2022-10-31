@@ -16,12 +16,32 @@ set(C_SOURCES
     SysKernel/kernel.c
 )
 
+set(boot-dir
+    SysBoot
+)
+set(core-dir
+    SysCore
+)
+
+message(CHECK_START "Attempting to find system bootloaders")
+if(EXISTS "${boot-dir}" AND IS_DIRECTORY "${boot-dir}")
+    message("Found System BootLoaders")
+else()
+    message(CHECK_FAIL "${boot-dir} doesn't exist")
+endif()
 add_subdirectory(SysBoot)
 
+message(CHECK_START "Attempting to find system core")
+if(EXISTS "${core-dir}" AND IS_DIRECTORY "${core-dir}")
+    message("Found System Core")
+else()
+    message(CHECK_FAIL "${core-dir} doesn't exist")
+endif()
 add_subdirectory(SysCore)
 
 add_subdirectory(SysKernel)
 
-add_executable(${PROJECT_NAME} ${C_SOURCES})
+add_executable(${PROJECT_NAME} ${C_SOURCES} ${ASM_BIN})
 
+message(STATUS "Linking Libraries With Project")
 TARGET_LINK_LIBRARIES(${PROJECT_NAME})
