@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project(assembler C ASM)
+project("OS")
+
+enable_language(ASM_NASM)
 
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
 
-set (ASM_SOURCES
-    SysBoot/Stage1_X86.asm
-    SysBoot/Stage2_X86.asm
-    SysCore/Kernel_X86.asm
+set (ASM_BIN
+    SysBoot/stage1.sys
+    SysBoot/stage2.sys
+    SysCore/KRNLDR.sys
 )
 
 set(C_SOURCES
@@ -20,4 +22,6 @@ add_subdirectory(SysCore)
 
 add_subdirectory(SysKernel)
 
-add_executable(OMOS)
+add_executable(${PROJECT_NAME} ${C_SOURCES})
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME})
