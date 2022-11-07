@@ -123,10 +123,12 @@ ReadSectors:
     ; FATClusterMask = 0x0FFFFFFF
     mov eax, 0x0FFFFFFF
     push eax
-
-    ;; FATEoFMask = FATClusterMask & 0xFFFFFFF8
 	and al, 0xF8
 	push eax
+
+    ; CurrentCluster = BPB_RootClus
+    mov eax, [BPB_RootClus]
+    push eax
 
 ImageName   db "KRNLDR  SYS"
 times 510-($-$$) DB 0
