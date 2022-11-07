@@ -75,14 +75,14 @@ partitions:
 
     #####################
     # reserved-sectors-image
-    reserved-sectors-image: SysBoot/Stage2.sys
+    #reserved-sectors-image: SysBoot/Stage2.sys
     
     #####################
     # sources
     # Sources are the files/directories that should be installed onto
     # the disk partition as a part of the build process.
     #
-    sources:
+    #sources:
 
         #####################
         # source.type
@@ -100,14 +100,14 @@ partitions:
         # Osbuilder supports chef packages, and can download and install those directly to the partition
         # if specified. The 'target' key specifies where on the partition the package should be copied to,
         # this can be either a full file path (must contain an extension) or a directory path.
-      - type: file
+      #- type: file
 
         #####################
         # source.path
         # If the path is a relative path, it will be resolved from where osbuilder is invoked.
         #
-        path: SysCore/KRNLDR.sys
-        target: /KRNLDR.sys
+        #path: SysCore/KRNLDR.sys
+        #target: /KRNLDR.sys
 
         #####################
         # source.target
