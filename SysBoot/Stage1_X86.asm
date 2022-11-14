@@ -8,6 +8,8 @@
     pop bp
 %endmacro
 
+IMGADDR     equ 0x60
+
 %define ARG0 [bp + 4]
 %define ARG1 [bp + 6]
 %define ARG2 [bp + 8]
@@ -116,8 +118,11 @@ loadCS:
     
     ; Save drive number in dl
     mov byte[bPhysicalDriveNum], dl
-    
-    ; Lets calculate the first data sector = bNumFATs * dSectorsPerFat32 + wReservedSectors + Partitiontable
+
+    ; Lets calculate the first data sector = bNumFATs * dSectorsPerFat32 + wReservedSectors + Partitiontable 
+    mov di, PartitionTableData    
+    mov cx, 0x0008 ; 8 words = 16 bytes
+    repnz movsw
     ; clear ax
     xor ax, ax
     mov al, byte [bNumFATs]
@@ -128,7 +133,47 @@ loadCS:
     mov dword [dReserved0], ax
     ; save result
     push ax
-    
+
+
+FindFile:
+    mov cx, 11
+
+findFileLoop:
+    cmp byte [es : di], ch
+    je findFileError
+
+    pusha
+    repe cmpsb
+    popa
+    je .findFileLoopFound
+
+    add di, 32
+    dec dx
+    jnz .findFileLoop
+    popf
+    pop esi
+
+    jc readRootDir
+    jmp .findFileError
+
+fNameFound:
+    push word [es : di + 0x14]
+    push word [es : di + 0x1A]
+
+    pop esi
+
+    pop eax
+    pop es
+    jmp loadFile16
+
+
+loadFile16:
+
+
+findFileError:
+
+
+findFileLoop
 ; IN (es:bx is DestinationBuffer, esi is ClusterNumber!)
 ReadCluster:
     ; We calculate our Fat32 data sector number
@@ -166,8 +211,14 @@ ReadSectorLBA:
 ;   Global Variables
 ;*************************************************;
 PartitionTableData dq 0
-dBaseSector       dd 0
-dSectorCount      dd 0
 FileName   db "STAGE2  SYS"
+
+
+;*************************************************;
+;   Data
+;*************************************************;
+loadFileError db "Can't load file"
+findFileError db "Unable to find your file"
+
 times 510-($-$$) DB 0
 dw 0xAA55
