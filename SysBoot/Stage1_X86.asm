@@ -134,79 +134,51 @@ loadCS:
     ; save result
     push ax
 
+    ; calculate RootDirSectors = ((BPB_RootEntCnt * 32) + (BPB_BytsPerSec - 1) / BPB_BytsPerSec), It is always 0
+    ; RootEntCnt is always 0 too
+    ; clear out ebx, lets save the result here
+    xor ebx, ebx
+    mov eax, word [wRootEntries]
+    imul eax, 32
+    mov ecx, word [wBytesPerSector]
+    sub ecx, 1
+    add eax, ecx
+    xor ecx, ecx
+    mov ecx, word [wBytesPerSector]
+    mov ebx, eax
+    idiv ebx, ecx
+    ; save the result
+    push ebx
 
-FindFile:
-    mov cx, 11
-
-findFileLoop:
-    cmp byte [es : di], ch
-    je findFileError
-
-    pusha
-    repe cmpsb
-    popa
-    je .findFileLoopFound
-
-    add di, 32
-    dec dx
-    jnz .findFileLoop
-    popf
-    pop esi
-
-    jc readRootDir
-    jmp .findFileError
-
-fNameFound:
-    push word [es : di + 0x14]
-    push word [es : di + 0x1A]
-
-    pop esi
-
-    pop eax
-    pop es
-    jmp loadFile16
-
-
-loadFile16:
-
-
-findFileError:
-
-
-findFileLoop
-; IN (es:bx is DestinationBuffer, esi is ClusterNumber!)
-ReadCluster:
-    ; We calculate our Fat32 data sector number
-    ; bpbHiddenSectors + bpbReservedSectors + bpbNumberOfFATs * bsSectorsPerFAT32 + (N - 2) * bpbSectorsPerCluster
+FirstSectorofCluster:
+    ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
+    xor ecx, ecx
+    xor eax, eax
     lea edi, [esi-2]
     mov eax, byte [bSectorsPerCluster]
     imul edi, eax
+    add edi, ax
+    ; save result in edi
+    push edi
 
-    movzx eax, byte [bNumFATs]
-    imul eax, dword [dSectorsPerFat32]
-    add edi, eax
+DataSec:
+    ; DataSec = TotSec – (BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors)
+    xor eax, eax
+    mov eax, byte [bNumFATs]
+    mov edx, byte [bMediaType]
+    imul eax, edx
+    mov edx, word [wReservedSectors]
+    add eax, edx
+    mov edx, word [wTotalSectors]
+    sub eax, edx
 
-    movzx eax, edi
-    add eax, edi
-    add eax, dword [dHiddenSectors]
+CountofCluster:
+    ; CountofClusters = DataSec / BPB_SecPerClus
+    mov eax, eax
+    mov edx, byte [bSectorsPerCluster]
+    idiv edx, eax
 
-    push dx
-    mov cx, 1
-    call ReadSectorLBA
 
-    mov ax, word [wBytesPerSector]
-    shr ax, 4
-    mul cx
-    
-    mov cx, es
-    add cx, ax
-    mov es, cx
-    cmp esi, 0x0FFFFFF8
-    ret
-
-ReadSectorLBA:
-    ; save states
-    pushad
 ;*************************************************;
 ;   Global Variables
 ;*************************************************;
