@@ -1,0 +1,1 @@
+rm -rf SysBoot/STAGE1.SYS ; rm -rf SysBoot/STAGE2.SYS ; cd build ; make ; cd .. ; rm -rf disk.img ; rm -rf disk.img.lock ; ../diskbuilder/build/osbuilder os.yaml --target img ; bochs -q -f SysEmulation/bochsrc

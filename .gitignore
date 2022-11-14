@@ -1,3 +1,7 @@
 Books/
 tests/
 .gitignore
+bochsout.txt
+build/
+.sys
+.SYS

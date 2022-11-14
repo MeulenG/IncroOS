@@ -1,3 +1,25 @@
+; Calling convention helpers
+%macro STACK_FRAME_BEGIN 0
+    push bp
+    mov bp, sp
+%endmacro
+%macro STACK_FRAME_END 0
+    mov sp, bp
+    pop bp
+%endmacro
+
+%define ARG0 [bp + 4]
+%define ARG1 [bp + 6]
+%define ARG2 [bp + 8]
+%define ARG3 [bp + 10]
+%define ARG4 [bp + 12]
+%define ARG5 [bp + 14]
+
+%define LVAR0 word [bp - 2]
+%define LVAR1 word [bp - 4]
+%define LVAR2 word [bp - 6]
+%define LVAR3 word [bp - 8]
+
 ; *************************
 ;    Real Mode 16-Bit
 ; - Uses the native Segment:offset memory model
@@ -8,46 +30,48 @@ BITS	16							; We are in 16 bit Real Mode
 
 ORG		0x7C00						; We are loaded by BIOS at 0x7C00
 
-MAIN:       JMP Entry              ; Jump over the Fat32 Blocks
+MAIN:       
+    JMP Entry              ; Jump over the Fat32 Blocks
+    nop
 
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					DB		"MY    OS"
-BPB_BytesPerSec				DW		257   ; Bytes Per Sector ; Offset 0x0B ; 16 Bits ; Value: Always 512 Bytes
-BPB_SecPerClus  			DB		1   ; Sectors Per Cluster ; Offset 0x0D ; 8 Bits ; Value: 1, 2, 4, 8, 16, 32, 64, 128
-BPB_RsvdSecCnt  			DW		257   ; Number of Reserved Sectors ; Offset 0x0E ; 16 Bits ; Value: 0x20
-BPB_NumFATs					DB		1   ; Number of FATs ; Offset 0x10 ; 8 Bits ; Value: Always 2
-wRootEntries				DW		0
-BPB_TotSec32				DD		16843009 ; Total Sectors
-BPB_Media					DB		1
-BPB_FATSz32 				DD		16843009   ; Sectors Per FAT ; Offset 0x24 ; 32 Bits ; Depends On Disk Size
-BPB_SecPerTrk   			DW		257
-BPB_NumHeads    			DW		257
-BPB_HiddSec 				DD 		16843009
-dTotalSectors				DD 		0
+szOemName					db		"My    OS"
+wBytesPerSector				dw		0
+bSectorsPerCluster			db		0
+wReservedSectors			dw		0
+bNumFATs					db		0
+wRootEntries				dw		0
+wTotalSectors				dw		0
+bMediaType					db		0
+wSectorsPerFat				dw		0
+wSectorsPerTrack			dw		0
+wHeadsPerCylinder			dw		0
+dHiddenSectors				dd 		0
+dTotalSectors				dd 		0
 
 ; *************************
 ; FAT32 Extension Block
 ; *************************
-dSectorsPerFat32			DD 		0
-wFlags						DW		0
-wVersion					DW		0
-BPB_RootClus				DD 		16843009   ; Root Directory First Cluster ; Offset 0x2C ; 32 Bits ; Value: 0x00000002
-wFSInfoSector				DW		0
-wBackupBootSector			DW		0
+dSectorsPerFat32			dd 		0
+wFlags						dw		0
+wVersion					dw		0
+dRootDirStart				dd 		0
+wFSInfoSector				dw		0
+wBackupBootSector			dw		0
 
 ; Reserved 
-dReserved0					DD		0 	;FirstDataSector
-dReserved1					DD		0 	;ReadCluster
-dReserved2					DD 		0 	;ReadCluster
+dReserved0					dd		0 	;FirstDataSector
+dReserved1					dd		0 	;ReadCluster
+dReserved2					dd 		0 	;ReadCluster
 
-bPhysicalDriveNum			DB		0
-bReserved3					DB		0
-bBootSignature				DB		0
-dVolumeSerial				DD 		0
-szVolumeLabel				DB		"NO NAME    "
-szFSName					DB		"FAT32   "
+bPhysicalDriveNum			db		0
+bReserved3					db		0
+bBootSignature				db		0
+dVolumeSerial				dd 		0
+szVolumeLabel				db		"NO NAME    "
+szFSName					db		"FAT32   "
 
 ;***************************************
 ;	Prints a string
@@ -77,7 +101,6 @@ PRINTDONE16BIT:
 ; dl = drive number
 ; si = partition table entry
 Entry:
-    xchg bx, bx
     cli ;disable interrupts
     jmp 0:loadCS
 
@@ -90,46 +113,61 @@ loadCS:
     mov sp, 0x7C00
     mov sp, ax
     sti
-    cld
-
-
-
-ReadSectors:
-    mov bp, sp
-    push dx
     
-    ; Lets calculate the first data sector = bNumFATs * BPB_FATSZ32 + BPB_ResvdSecCnt
-    mov al, [BPB_NumFATs]
-    mov ebx, [BPB_FATSz32]
-    mul ebx
-    xor ebx, ebx
-    mov bx, [BPB_RsvdSecCnt]
-    add eax, ebx
-    ; Our ax register is our first data sector
-    push eax
-
-    ; We need to get the location of the first FAT
-    ; FATsector = BPB_ResvdSecCnt
-    xor eax, eax
-    mov ax, [BPB_RsvdSecCnt]
-    push eax
-
-    ; BytsPerCluster = BPB_BytsPerSec * BPB_SecPerClus
-    mov ax, [BPB_BytesPerSec]
-    mov bx, [BPB_SecPerClus]
+    ; Save drive number in dl
+    mov byte[bPhysicalDriveNum], dl
+    
+    ; Lets calculate the first data sector = bNumFATs * dSectorsPerFat32 + wReservedSectors + Partitiontable
+    ; clear ax
+    xor ax, ax
+    mov al, byte [bNumFATs]
+    mov bx, dword [dSectorsPerFat32]
     mul bx
-    push eax
+    mov ax, word [wReservedSectors]
+    add ax, bx
+    mov dword [dReserved0], ax
+    ; save result
+    push ax
     
-    ; FATClusterMask = 0x0FFFFFFF
-    mov eax, 0x0FFFFFFF
-    push eax
-	and al, 0xF8
-	push eax
+; IN (es:bx is DestinationBuffer, esi is ClusterNumber!)
+ReadCluster:
+    ; We calculate our Fat32 data sector number
+    ; bpbHiddenSectors + bpbReservedSectors + bpbNumberOfFATs * bsSectorsPerFAT32 + (N - 2) * bpbSectorsPerCluster
+    lea edi, [esi-2]
+    mov eax, byte [bSectorsPerCluster]
+    imul edi, eax
 
-    ; CurrentCluster = BPB_RootClus
-    mov eax, [BPB_RootClus]
-    push eax
+    movzx eax, byte [bNumFATs]
+    imul eax, dword [dSectorsPerFat32]
+    add edi, eax
 
-ImageName   db "KRNLDR  SYS"
+    movzx eax, edi
+    add eax, edi
+    add eax, dword [dHiddenSectors]
+
+    push dx
+    mov cx, 1
+    call ReadSectorLBA
+
+    mov ax, word [wBytesPerSector]
+    shr ax, 4
+    mul cx
+    
+    mov cx, es
+    add cx, ax
+    mov es, cx
+    cmp esi, 0x0FFFFFF8
+    ret
+
+ReadSectorLBA:
+    ; save states
+    pushad
+;*************************************************;
+;   Global Variables
+;*************************************************;
+PartitionTableData dq 0
+dBaseSector       dd 0
+dSectorCount      dd 0
+FileName   db "STAGE2  SYS"
 times 510-($-$$) DB 0
 dw 0xAA55

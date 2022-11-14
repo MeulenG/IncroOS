@@ -7,8 +7,8 @@ enable_language(ASM_NASM)
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
 
 set (ASM_BIN
-    SysBoot/stage1.sys
-    SysBoot/stage2.sys
+    SysBoot/STAGE1.SYS
+    SysBoot/STAGE2.SYS
     SysCore/KRNLDR.sys
 )
 

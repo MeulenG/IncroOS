@@ -21,7 +21,6 @@
 BITS	16							; We are still in 16 bit Real Mode
 
 ORG     0x7E00
-
 main_Stage2: JMP Stage2_Main
 
 
@@ -50,6 +49,7 @@ main_Stage2: JMP Stage2_Main
 ;	ENTRY POINT For STAGE 2
 ;******************************************************
 Stage2_Main:
+    xchg bx, bx
 	; Clear Interrupts
     CLI
     ;-------------------------------;
@@ -124,30 +124,30 @@ Stage2_Main:
     JB      DEATHSCREEN.NoLongMode
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
-    
+    xchg bx, bx
     CPUID
     ; check if long mode is supported
     ; test => edx & (1<<29), if result=0, CF=1, then jump
     ; long mode is at bit-29
-    TEST    edx,( 1 << 29 ) ; We test to check whether it supports long mode
+;    TEST    edx,( 1 << 29 ) ; We test to check whether it supports long mode
     ; jz, jump if zero => CF=1
-    JZ      DEATHSCREEN.NoLongMode
+;    JZ      DEATHSCREEN.NoLongMode
     ; check if 1g huge page support
     ; test => edx & (1<<26), if result=0, CF=1, then jump
     ; Gigabyte pages is at bit-26
-    TEST    edx,( 1 << 26 )
+;    TEST    edx,( 1 << 26 )
     ; jz, jump if zero => CF=1
-    JZ      DEATHSCREEN.NoLongMode
+;    JZ      DEATHSCREEN.NoLongMode
 
-    MOV     eax, 0x7
+;    MOV     eax, 0x7
     
-    XOR     ecx, ecx
+;    XOR     ecx, ecx
     
-    CPUID
+;    CPUID
     
-    TEST    ecx, ( 1 << 16 )
+;    TEST    ecx, ( 1 << 16 )
     
-    JNZ     DEATHSCREEN.5_level_paging
+;    JNZ     DEATHSCREEN.5_level_paging
 
 
 LoadKernel:
@@ -166,7 +166,7 @@ LoadKernel:
     ; address => 0 * 16 + 0xA000 = 0xA000
     MOV     word[si+6],0
     ; LBA=6 is the start of kernel sector
-    MOV     dword[si+8],6
+    MOV     dword[si+8],41
     
     MOV     dword[si+0xc],0
     ; dl=pysicaldrivenum

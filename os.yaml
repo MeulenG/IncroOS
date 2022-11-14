@@ -55,7 +55,7 @@ partitions:
     # or be larger than the disk size. For the last partition its not required to specify
     # the partition size, as this will resize the partition to the last remaining disk capacity.
     # 
-    size: 128MB
+    size: 512MB
     
     #####################
     # attributes
@@ -71,11 +71,11 @@ partitions:
 
     #####################
     # vbr-image
-    vbr-image: SysBoot/stage1.sys
+    vbr-image: SysBoot/STAGE1.SYS
 
     #####################
     # reserved-sectors-image
-    #reserved-sectors-image: SysBoot/Stage2.sys
+    reserved-sectors-image: SysBoot/STAGE2.SYS
     
     #####################
     # sources
