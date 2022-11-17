@@ -39,41 +39,47 @@ MAIN:
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"My    OS"
-wBytesPerSector				dw		0
-bSectorsPerCluster			db		0
-wReservedSectors			dw		0
-bNumFATs					db		0
-wRootEntries				dw		0
-wTotalSectors				dw		0
-bMediaType					db		0
-wSectorsPerFat				dw		0
-wSectorsPerTrack			dw		0
-wHeadsPerCylinder			dw		0
-dHiddenSectors				dd 		0
-dTotalSectors				dd 		0
+BS_OEMName					db		"MSWIN4.1"
+BPB_BytsPerSec				dw		0
+BPB_SecPerClus  			db		0
+BPB_RsvdSecCnt  			dw		0
+BPB_NumFATs					db		0
+BPB_RootEntCnt				dw		0
+BPB_TotSec16				dw		0
+BPB_Media					db		0
+BPB_FatSz16 				dw		0
+BPB_SecPerTrk   			dw		0
+BPB_NumHeads    			dw		0
+BPB_HiddSec 				dd 		0
+BPB_TotSec32				dd 		0
 
 ; *************************
 ; FAT32 Extension Block
 ; *************************
-dSectorsPerFat32			dd 		0
-wFlags						dw		0
-wVersion					dw		0
-dRootDirStart				dd 		0
-wFSInfoSector				dw		0
-wBackupBootSector			dw		0
+BPB_FATSz32     			dd 		0
+BPB_ExtFlags				dw		0
+BPB_FSVer					dw		0
+BPB_RootClus				dd 		0
+BPB_FSInfo  				dw		0
+BPB_BkBootSec   			dw		0
 
 ; Reserved 
 dReserved0					dd		0 	;FirstDataSector
+
+BS_DrvNum       			db		0
+
 dReserved1					dd		0 	;ReadCluster
+
+BS_BootSig  				db		0
 dReserved2					dd 		0 	;ReadCluster
 
-bPhysicalDriveNum			db		0
 bReserved3					db		0
-bBootSignature				db		0
-dVolumeSerial				dd 		0
-szVolumeLabel				db		"NO NAME    "
-szFSName					db		"FAT32   "
+
+BS_VolID    				dd 		0
+
+BS_VolLab   				db		"NO NAME    "
+
+BS_FilSysType				db		"FAT32   "
 
 ;***************************************
 ;	Prints a string
@@ -107,83 +113,109 @@ Entry:
     jmp 0:loadCS
 
 loadCS:
+    cli ; Disable Interrupts
     xor ax, ax
+    mov ds, ax
     mov es, ax
     mov ss, ax
-
-    ; we setup our stack, this is temporary for our stage1(512 bytes)
     mov sp, 0x7C00
-    mov sp, ax
-    sti
-    
-    ; Save drive number in dl
-    mov byte[bPhysicalDriveNum], dl
+    push ax
 
-    ; Lets calculate the first data sector = bNumFATs * dSectorsPerFat32 + wReservedSectors + Partitiontable 
-    mov di, PartitionTableData    
+; Read the disk using INT13h
+read_Disk:
+    pushad ; preserve registers
+    mov dl, byte [BS_DrvNum] ; DL = Drive Number
+    mov ah, 0x42 ; Extended Read Sectors from Drive
+    lea si, [DAP_Size] ; DI:SI = Offset of DAP
+    int 0x13 ; Read Disk
+    popa ; restore registers
+    ret ; return
+;---------------------------------------------------------------------------------------------------------------------------------;
+
+Dir_Entry_Struct:
+DE_Short_Name times 11 		db 0x00			;8.3(short) File Name
+DE_Attrib					db 0x00			;File attributes
+DE_Reserved					db 0x00			;Reserved by NT
+DE_Create_Time_Tenth		db 0x00			;Creation time in 10ths of a second
+DE_Create_Time				dw 0x0000		;Creation time
+DE_Create_Date				dw 0x0000		;Creation date
+DE_Last_Access_Date			dw 0x0000		;Date that file was last accessed
+DE_Cluster_MSW				dw 0x0000		;MSW of first cluster in chain
+DE_Last_Mod_Time			dw 0x0000		;Last modification time
+DE_Last_Mod_Date			dw 0x0000		;Last modification date
+DE_Cluster_LSW				dw 0x0000		;LSW of first cluster in chain
+DE_Size						dd 0x00000000	;Size of file in bytes
+;Finally there is the start cluster for the current directory, it is set to the root directory upon initilization.
+Current_Dir_Cluster			dd 0x00000000	;Used to change directories
+;---------------------------------------------------------------------------------------------------------------------------------;
+Stage2:
+    ; Lets calculate the FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors + Partitiontable
+    mov di, PartitionTableData
     mov cx, 0x0008 ; 8 words = 16 bytes
     repnz movsw
     ; clear ax
-    xor ax, ax
-    mov al, byte [bNumFATs]
-    mov bx, dword [dSectorsPerFat32]
+    xor edx, edx
+    movzx eax, byte [BPB_NumFATs]
+    ;movzx ebx, dword [BPB_FATSz32]
     mul bx
-    mov ax, word [wReservedSectors]
+    ;mov ax, dword [BPB_RsvdSecCnt]
     add ax, bx
-    mov dword [dReserved0], ax
     ; save result
     push ax
 
-    ; calculate RootDirSectors = ((BPB_RootEntCnt * 32) + (BPB_BytsPerSec - 1) / BPB_BytsPerSec), It is always 0
-    ; RootEntCnt is always 0 too
-    ; clear out ebx, lets save the result here
-    xor ebx, ebx
-    mov eax, word [wRootEntries]
-    imul eax, 32
-    mov ecx, word [wBytesPerSector]
-    sub ecx, 1
-    add eax, ecx
-    xor ecx, ecx
-    mov ecx, word [wBytesPerSector]
-    mov ebx, eax
-    idiv ebx, ecx
-    ; save the result
-    push ebx
+    mov eax, dword [BPB_RootClus] 
+    lea si, [FileName]
+    mov bx, STAGE2_SYS_ADDRESS
+    call read_File
+    ;jc STAGE2_SYS_MISSING
+    push cs
+    push STAGE2_SYS_ADDRESS
+    retf ; let our stage 2 take over hopefully lol
 
-FirstSectorofCluster:
-    ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-    xor ecx, ecx
-    xor eax, eax
-    lea edi, [esi-2]
-    mov eax, byte [bSectorsPerCluster]
-    imul edi, eax
-    add edi, ax
-    ; save result in edi
-    push edi
+read_File:
+    pushad ; preserve registers
+    ;call read_Directory
+    jc read_File_Return
+    mov ax, word [DE_Cluster_MSW]
+    shl eax, 16
+    mov ax, word [DE_Cluster_LSW]
+    ;call read_Chain
 
-DataSec:
-    ; DataSec = TotSec – (BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors)
-    xor eax, eax
-    mov eax, byte [bNumFATs]
-    mov edx, byte [bMediaType]
-    imul eax, edx
-    mov edx, word [wReservedSectors]
-    add eax, edx
-    mov edx, word [wTotalSectors]
-    sub eax, edx
+read_File_Return:
+    popad ;restore registers
+    ret
 
-CountofCluster:
-    ; CountofClusters = DataSec / BPB_SecPerClus
-    mov eax, eax
-    mov edx, byte [bSectorsPerCluster]
-    idiv edx, eax
+Disk_Error:
+    mov si, Disk_Error
+    call PRINT16BIT
 
+ColdReboot:
+    mov si, HALT_MSG
+    call PRINT16BIT
+    cli
+    hlt
 
 ;*************************************************;
 ;   Global Variables
 ;*************************************************;
 PartitionTableData dq 0
 FileName   db "STAGE2  SYS"
+FAT_BUFFER  				EQU 0x8600		;Pointer to buffer to hold FAT sectors ; hvor satan starter den henne and how to see
+DIR_BUFFER					EQU 0x8800		;Pointer to buffer to hold sectors of Directory ; hvor satan starter den henne
+STAGE2_SYS_ADDRESS			EQU 0x4B8D		;Base address and entry point for Stage3
+;DAP - Disk Address Packet, Used by INT13h Extensions	
+DAP_Size					db 0x10			;Size of packet, always 16 BYTES
+DAP_Reserved				db 0x00			;Reserved
+DAP_Sectors					dw 0x0000		;Number of sectors to read
+DAP_Offset					dw 0x0000		;Offset to read data to
+DAP_Segment 				dw 0x0000		;Segment to read data to
+DAP_LBA_LSD					dd 0x00000000	;QWORD with LBA of where to start reading from
+DAP_LBA_MSD					dd 0x00000000
+;*************************************************;
+;   Error Messages
+;*************************************************;
+DISK_ERROR	db "Error reading from disk!",0
+HALT_MSG	db 0x0D,0x0A,"Halting machine. Power off and reboot.",0
 
 
 ;*************************************************;

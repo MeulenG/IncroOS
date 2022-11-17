@@ -55,7 +55,7 @@ partitions:
     # or be larger than the disk size. For the last partition its not required to specify
     # the partition size, as this will resize the partition to the last remaining disk capacity.
     # 
-    size: 512MB
+    size: 128MB
     
     #####################
     # attributes
