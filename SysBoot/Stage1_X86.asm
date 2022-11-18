@@ -130,60 +130,57 @@ read_Disk:
     int 0x13 ; Read Disk
     popa ; restore registers
     ret ; return
-;---------------------------------------------------------------------------------------------------------------------------------;
-
-Dir_Entry_Struct:
-DE_Short_Name times 11 		db 0x00			;8.3(short) File Name
-DE_Attrib					db 0x00			;File attributes
-DE_Reserved					db 0x00			;Reserved by NT
-DE_Create_Time_Tenth		db 0x00			;Creation time in 10ths of a second
-DE_Create_Time				dw 0x0000		;Creation time
-DE_Create_Date				dw 0x0000		;Creation date
-DE_Last_Access_Date			dw 0x0000		;Date that file was last accessed
-DE_Cluster_MSW				dw 0x0000		;MSW of first cluster in chain
-DE_Last_Mod_Time			dw 0x0000		;Last modification time
-DE_Last_Mod_Date			dw 0x0000		;Last modification date
-DE_Cluster_LSW				dw 0x0000		;LSW of first cluster in chain
-DE_Size						dd 0x00000000	;Size of file in bytes
-;Finally there is the start cluster for the current directory, it is set to the root directory upon initilization.
-Current_Dir_Cluster			dd 0x00000000	;Used to change directories
-;---------------------------------------------------------------------------------------------------------------------------------;
-Stage2:
-    ; Lets calculate the FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors + Partitiontable
+Stage1:
+    ; Lets calculate the FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors(Its zero) + Partitiontable
     mov di, PartitionTableData
     mov cx, 0x0008 ; 8 words = 16 bytes
     repnz movsw
-    ; clear ax
-    xor edx, edx
-    movzx eax, byte [BPB_NumFATs]
-    ;movzx ebx, dword [BPB_FATSz32]
-    mul bx
-    ;mov ax, dword [BPB_RsvdSecCnt]
-    add ax, bx
-    ; save result
-    push ax
+    
+    ; clear eax and ebx
+    xor eax, eax
+    xor ebx, ebx
+    
+    movzx eax, byte [BPB_NumFATs] ; (BPB_NumFATs * FATSz)
+    movzx ebx, dword [BPB_FATSz32]
+    imul eax, ebx
+    
+    xor ebx, ebx ; clear it from previous value
+    movzx ebx, dword [BPB_RsvdSecCnt] ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz)
+    add eax, ebx
 
-    mov eax, dword [BPB_RootClus] 
+    xor ebx, ebx
+    mov ebx, dword [dBaseSector]
+    add eax, ebx ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + Partitiontable
+
+    ; save result
+    push eax
+
+    ; Find the file in the root cluster
+    mov eax, dword [BPB_RootClus]
+    ; 11 character long filename
     lea si, [FileName]
-    mov bx, STAGE2_SYS_ADDRESS
-    call read_File
-    ;jc STAGE2_SYS_MISSING
-    push cs
-    push STAGE2_SYS_ADDRESS
-    retf ; let our stage 2 take over hopefully lol
+    ; Read the root cluster
+    call FirstSectorofCluster
+    ; Now we read the file into memory and jump to the location
+
+FirstSectorofCluster:
+    ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
+    ; clear registers
+    xor ebx, ebx
+    xor eax, eax
+    
+    lea edi, [esi-2]
+    movzx eax, byte [BPB_SecPerClus]
+    imul edi, eax
+    
+    pop ebx ; pop the stack value into register ebx from ax
+    add edi, ebx
+    
+    ; save result in edi
+    push edi
+    mov cx, [BPB_SecPerClus] ; read Cluster
 
 read_File:
-    pushad ; preserve registers
-    ;call read_Directory
-    jc read_File_Return
-    mov ax, word [DE_Cluster_MSW]
-    shl eax, 16
-    mov ax, word [DE_Cluster_LSW]
-    ;call read_Chain
-
-read_File_Return:
-    popad ;restore registers
-    ret
 
 Disk_Error:
     mov si, Disk_Error
@@ -199,6 +196,10 @@ ColdReboot:
 ;   Global Variables
 ;*************************************************;
 PartitionTableData dq 0
+dBaseSector       dd 0
+
+dSectorCount      dd 0
+
 FileName   db "STAGE2  SYS"
 FAT_BUFFER  				EQU 0x8600		;Pointer to buffer to hold FAT sectors ; hvor satan starter den henne and how to see
 DIR_BUFFER					EQU 0x8800		;Pointer to buffer to hold sectors of Directory ; hvor satan starter den henne
