@@ -121,16 +121,9 @@ loadCS:
     mov sp, 0x7C00
     push ax
 
-; Read the disk using INT13h
-read_Disk:
-    pushad ; preserve registers
-    mov dl, byte [BS_DrvNum] ; DL = Drive Number
-    mov ah, 0x42 ; Extended Read Sectors from Drive
-    lea si, [DAP_Size] ; DI:SI = Offset of DAP
-    int 0x13 ; Read Disk
-    popa ; restore registers
-    ret ; return
 Stage1:
+    mov dl, byte [BS_DrvNum] ; DL = Drive Number
+    
     ; Lets calculate the FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors(Its zero) + Partitiontable
     mov di, PartitionTableData
     mov cx, 0x0008 ; 8 words = 16 bytes
@@ -141,11 +134,11 @@ Stage1:
     xor ebx, ebx
     
     movzx eax, byte [BPB_NumFATs] ; (BPB_NumFATs * FATSz)
-    movzx ebx, dword [BPB_FATSz32]
+    mov ebx, dword [BPB_FATSz32]
     imul eax, ebx
     
     xor ebx, ebx ; clear it from previous value
-    movzx ebx, dword [BPB_RsvdSecCnt] ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz)
+    mov ebx, dword [BPB_RsvdSecCnt] ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz)
     add eax, ebx
 
     xor ebx, ebx
@@ -156,31 +149,51 @@ Stage1:
     push eax
 
     ; Find the file in the root cluster
+    xchg bx, bx
     mov eax, dword [BPB_RootClus]
     ; 11 character long filename
     lea si, [FileName]
     ; Read the root cluster
     call FirstSectorofCluster
     ; Now we read the file into memory and jump to the location
+    call read_File
+
+read_File:
+    ; Read the cluster of the file
+    call FirstSectorofCluster
+
+    mov cx, 11 ; find file name, 11 spaces long
+
+    cmp byte [es : di], ch
+
+    pusha
+    repe cmpsb
+    popa
+
+    ; lets jump
+    jmp 0x0:0x7E00
 
 FirstSectorofCluster:
     ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
     ; clear registers
-    xor ebx, ebx
-    xor eax, eax
+    pushad
     
-    lea edi, [esi-2]
-    movzx eax, byte [BPB_SecPerClus]
-    imul edi, eax
-    
-    pop ebx ; pop the stack value into register ebx from ax
-    add edi, ebx
-    
-    ; save result in edi
-    push edi
-    mov cx, [BPB_SecPerClus] ; read Cluster
+    lea   edi, [esi-2]
+    movzx   eax, byte [BPB_SecPerClus]
+    imul  edi, eax
 
-read_File:
+    movzx eax, byte [BPB_NumFATs]
+    imul  eax, [BPB_FATSz32]
+    add   edi, eax
+
+    movzx eax, word [BPB_RsvdSecCnt]
+    add   eax, edi
+    add   eax, [BPB_HiddSec]
+        
+    push  dx
+    mov   cx, [BPB_SecPerClus]
+
+    ret
 
 Disk_Error:
     mov si, Disk_Error
@@ -193,6 +206,15 @@ ColdReboot:
     hlt
 
 ;*************************************************;
+;   TODO
+; 1) Fix the stack mistakes
+; 2) Properly read file
+; 3) Test
+;*************************************************;
+
+
+
+;*************************************************;
 ;   Global Variables
 ;*************************************************;
 PartitionTableData dq 0
@@ -201,17 +223,15 @@ dBaseSector       dd 0
 dSectorCount      dd 0
 
 FileName   db "STAGE2  SYS"
-FAT_BUFFER  				EQU 0x8600		;Pointer to buffer to hold FAT sectors ; hvor satan starter den henne and how to see
-DIR_BUFFER					EQU 0x8800		;Pointer to buffer to hold sectors of Directory ; hvor satan starter den henne
-STAGE2_SYS_ADDRESS			EQU 0x4B8D		;Base address and entry point for Stage3
 ;DAP - Disk Address Packet, Used by INT13h Extensions	
-DAP_Size					db 0x10			;Size of packet, always 16 BYTES
-DAP_Reserved				db 0x00			;Reserved
-DAP_Sectors					dw 0x0000		;Number of sectors to read
-DAP_Offset					dw 0x0000		;Offset to read data to
-DAP_Segment 				dw 0x0000		;Segment to read data to
-DAP_LBA_LSD					dd 0x00000000	;QWORD with LBA of where to start reading from
-DAP_LBA_MSD					dd 0x00000000
+disk_Address_Packet:
+    DAP_Size					db 0x10			;Size of packet, always 16 BYTES
+    DAP_Reserved				db 0x00			;Reserved
+    DAP_Sectors					dw 0x0000		;Number of sectors to read
+    DAP_Offset					dw 0x0000		;Offset to read data to
+    DAP_Segment 				dw 0x0000		;Segment to read data to
+    DAP_LBA_LSD					dd 0x00000000	;QWORD with LBA of where to start reading from
+    DAP_LBA_MSD					dd 0x00000000
 ;*************************************************;
 ;   Error Messages
 ;*************************************************;
