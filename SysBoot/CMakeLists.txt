@@ -19,10 +19,10 @@ add_custom_command(OUTPUT STAGE2.SYS POST_BUILD
     DEPENDS Stage2_X86.asm
 )
 
-add_custom_target(stage3 ALL DEPENDS STAGE3.SYS)
-add_custom_command(OUTPUT STAGE3.SYS POST_BUILD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND nasm -f bin -o STAGE3.SYS Stage3_X86.asm
-    COMMENT "Compiling bootloader (stage2)"
-    DEPENDS Stage3_X86.asm
-)
+#add_custom_target(stage3 ALL DEPENDS STAGE3.SYS)
+#add_custom_command(OUTPUT STAGE3.SYS POST_BUILD
+#    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#    COMMAND nasm -f bin -o STAGE3.SYS Stage3_X86.asm
+#    COMMENT "Compiling bootloader (stage2)"
+#    DEPENDS Stage3_X86.asm
+#)

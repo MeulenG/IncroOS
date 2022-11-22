@@ -128,7 +128,7 @@ Stage1:
     mov di, PartitionTableData
     mov cx, 0x0008 ; 8 words = 16 bytes
     repnz movsw
-    
+
     ; clear eax and ebx
     xor eax, eax
     xor ebx, ebx
@@ -147,35 +147,44 @@ Stage1:
 
     ; save result
     push eax
+    pop eax
 
-    ; Find the file in the root cluster
+find_File:
     xchg bx, bx
-    mov eax, dword [BPB_RootClus]
-    ; 11 character long filename
-    lea si, [FileName]
-    ; Read the root cluster
-    call FirstSectorofCluster
-    ; Now we read the file into memory and jump to the location
-    call read_File
+    mov dx, word [BPB_RootClus]
+    push di
+
+search_Root_Files:
+    push di
+    mov si, FileName
+    mov cx, 11
+    rep cmpsb
+    pop di
+    je read_File
+
+    add di, 32
+    dec dx
+
+    call ColdReboot
+        
 
 read_File:
-    ; Read the cluster of the file
+    push di
+    push es
+    pop ds
+    pop si
+
+    mov di, 0x7E00
+    mov es, di
+
+    pop ax
     call FirstSectorofCluster
 
-    mov cx, 11 ; find file name, 11 spaces long
-
-    cmp byte [es : di], ch
-
-    pusha
-    repe cmpsb
-    popa
-
-    ; lets jump
     jmp 0x0:0x7E00
 
 FirstSectorofCluster:
     ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-    ; clear registers
+    ; preserve registers
     pushad
     
     lea   edi, [esi-2]

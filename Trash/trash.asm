@@ -45,3 +45,18 @@ CountofCluster:
     mov eax, eax
     movzx eax, byte [BPB_SecPerClus]
     div eax
+
+FirstSectorofCluster2:
+    xor ebx, ebx
+    xor eax, eax
+    
+    lea edi, [esi-2]
+    movzx eax, byte [BPB_SecPerClus]
+    imul edi, eax
+    
+    pop ebx ; pop the stack value into register ebx from eax
+    add edi, ebx
+    
+    ; save result in edi
+    push edi
+    mov cx, [BPB_SecPerClus] ; read Cluster
