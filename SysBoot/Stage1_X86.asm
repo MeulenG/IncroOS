@@ -8,7 +8,7 @@
     pop bp
 %endmacro
 
-IMGADDR     equ 0x60
+ImageLoadSeg EQU 60h     ; <=07Fh because of "push byte ImageLoadSeg" instructions
 
 %define ARG0 [bp + 4]
 %define ARG1 [bp + 6]
@@ -113,146 +113,77 @@ Entry:
     jmp 0:loadCS
 
 loadCS:
-    cli ; Disable Interrupts
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov sp, 0x7C00
-    push ax
+    cli                        ; Disable Interrupts
+    
+    mov ax, 0x0000             ; Set ax to 0
+
+    mov ds, ax                 ; Set segment ds to 0
+    
+    mov es, ax                 ; Set segment es to 0
+    
+    mov ss, ax                 ; Set segment ss to 0
+    
+    mov sp, 0x7C00             ; Set stack-pointer to 0
+
+checkStack:
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; How much RAM is there? ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    int 12h                    ; Get size in KB
+    
+    shl ax, 6                  ; convert it to 16-byte paragraphs
+
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; Reserve memory for the boot sector and its stack ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    sub ax, 512/16             ; reserve 512 bytes for the bootsector
+
+    mov es, ax                 ; es:0 -> top - 512
+
+    sub     ax, 2048 / 16      ; reserve 2048 bytes for the stack
+    
+    mov     ss, ax             ; ss:0 -> top - 512 - 2048
+    
+    mov     sp, 2048           ; 2048 bytes for the stack
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; Copy ourselves to top of memory ;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    mov     cx, 256
+
+    mov     si, 7C00h
+    
+    xor     di, di
+    
+    mov     ds, di
+    
+    rep     movsw
+
+    ;;;;;;;;;;;;;;;;;;;;;;
+    ;; Jump to the copy ;;
+    ;;;;;;;;;;;;;;;;;;;;;;
+
+    push    es
+    
+    push    byte Stage1
+    
 
 Stage1:
-    mov dl, byte [BS_DrvNum] ; DL = Drive Number
-    
-    ; Lets calculate the FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors(Its zero) + Partitiontable
-    mov di, PartitionTableData
-    mov cx, 0x0008 ; 8 words = 16 bytes
-    repnz movsw
+    push cs
 
-    ; clear eax and ebx
-    xor eax, eax
-    xor ebx, ebx
-    
-    movzx eax, byte [BPB_NumFATs] ; (BPB_NumFATs * FATSz)
-    mov ebx, dword [BPB_FATSz32]
-    imul eax, ebx
-    
-    xor ebx, ebx ; clear it from previous value
-    mov ebx, dword [BPB_RsvdSecCnt] ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz)
-    add eax, ebx
-
-    xor ebx, ebx
-    mov ebx, dword [dBaseSector]
-    add eax, ebx ; BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + Partitiontable
-
-    ; save result
-    push eax
-    pop eax
-
-find_File:
-    xchg bx, bx
-    mov dx, word [BPB_RootClus]
-    push di
-
-search_Root_Files:
-    push di
-    mov si, FileName
-    mov cx, 11
-    rep cmpsb
-    pop di
-    je read_File
-
-    add di, 32
-    dec dx
-
-    call ColdReboot
-        
-
-read_File:
-    push di
-    push es
     pop ds
-    pop si
 
-    mov di, 0x7E00
-    mov es, di
+    mov byte [BS_DrvNum], dl
 
-    pop ax
-    call FirstSectorofCluster
-
-    jmp 0x0:0x7E00
-
-FirstSectorofCluster:
-    ; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-    ; preserve registers
-    pushad
+    and     byte [BPB_RootClus+3], 0Fh ; mask cluster value
     
-    lea   edi, [esi-2]
-    movzx   eax, byte [BPB_SecPerClus]
-    imul  edi, eax
-
-    movzx eax, byte [BPB_NumFATs]
-    imul  eax, [BPB_FATSz32]
-    add   edi, eax
-
-    movzx eax, word [BPB_RsvdSecCnt]
-    add   eax, edi
-    add   eax, [BPB_HiddSec]
-        
-    push  dx
-    mov   cx, [BPB_SecPerClus]
-
-    ret
-
-Disk_Error:
-    mov si, Disk_Error
-    call PRINT16BIT
-
-ColdReboot:
-    mov si, HALT_MSG
-    call PRINT16BIT
-    cli
-    hlt
-
-;*************************************************;
-;   TODO
-; 1) Fix the stack mistakes
-; 2) Properly read file
-; 3) Test
-;*************************************************;
+    mov     esi, [BPB_RootClus] ; esi=cluster # of root dir
 
 
-
-;*************************************************;
-;   Global Variables
-;*************************************************;
-PartitionTableData dq 0
-dBaseSector       dd 0
-
-dSectorCount      dd 0
-
-FileName   db "STAGE2  SYS"
-;DAP - Disk Address Packet, Used by INT13h Extensions	
-disk_Address_Packet:
-    DAP_Size					db 0x10			;Size of packet, always 16 BYTES
-    DAP_Reserved				db 0x00			;Reserved
-    DAP_Sectors					dw 0x0000		;Number of sectors to read
-    DAP_Offset					dw 0x0000		;Offset to read data to
-    DAP_Segment 				dw 0x0000		;Segment to read data to
-    DAP_LBA_LSD					dd 0x00000000	;QWORD with LBA of where to start reading from
-    DAP_LBA_MSD					dd 0x00000000
-;*************************************************;
-;   Error Messages
-;*************************************************;
-DISK_ERROR	db "Error reading from disk!",0
-HALT_MSG	db 0x0D,0x0A,"Halting machine. Power off and reboot.",0
-
-
-;*************************************************;
-;   Data
-;*************************************************;
-loadFileError db "Can't load file"
-findFileError db "Unable to find your file"
 
 times 510-($-$$) DB 0
 dw 0xAA55

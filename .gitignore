@@ -3,5 +3,6 @@ tests/
 .gitignore
 bochsout.txt
 build/
-.sys
-.SYS
+disk.img
+SysBoot/*.SYS
+SysCore/*.SYS
