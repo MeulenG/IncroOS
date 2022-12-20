@@ -1,189 +1,92 @@
-; Calling convention helpers
-%macro STACK_FRAME_BEGIN 0
-    push bp
-    mov bp, sp
-%endmacro
-%macro STACK_FRAME_END 0
-    mov sp, bp
-    pop bp
-%endmacro
+; 16 Bit Code, Origin at 0x0
+BITS 16
+ORG 0x7C00
 
-ImageLoadSeg EQU 60h     ; <=07Fh because of "push byte ImageLoadSeg" instructions
 
-%define ARG0 [bp + 4]
-%define ARG1 [bp + 6]
-%define ARG2 [bp + 8]
-%define ARG3 [bp + 10]
-%define ARG4 [bp + 12]
-%define ARG5 [bp + 14]
-
-%define LVAR0 word [bp - 2]
-%define LVAR1 word [bp - 4]
-%define LVAR2 word [bp - 6]
-%define LVAR3 word [bp - 8]
-
-; *************************
-;    Real Mode 16-Bit
-; - Uses the native Segment:offset memory model
-; - Limited to 1MB of memory
-; - No memory protection or virtual memory
-; *************************
-BITS	16							; We are in 16 bit Real Mode
-
-ORG		0x7C00						; We are loaded by BIOS at 0x7C00
-
-MAIN:       
-    JMP Entry              ; Jump over the Fat32 Blocks
-    nop
+; Jump Code, 3 Bytes
+jmp short Main
+nop
 
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-BS_OEMName					db		"MSWIN4.1"
-BPB_BytsPerSec				dw		0
-BPB_SecPerClus  			db		0
-BPB_RsvdSecCnt  			dw		0
-BPB_NumFATs					db		0
-BPB_RootEntCnt				dw		0
-BPB_TotSec16				dw		0
-BPB_Media					db		0
-BPB_FatSz16 				dw		0
-BPB_SecPerTrk   			dw		0
-BPB_NumHeads    			dw		0
-BPB_HiddSec 				dd 		0
-BPB_TotSec32				dd 		0
+szOemName					db		"OMOS    "
+wBytesPerSector				dw		0
+bSectorsPerCluster			db		0
+wReservedSectors			dw		0
+bNumFATs					db		0
+wRootEntries				dw		0
+wTotalSectors				dw		0
+bMediaType					db		0
+wSectorsPerFat				dw		0
+wSectorsPerTrack			dw		0
+wHeadsPerCylinder			dw		0
+dHiddenSectors				dd 		0
+dTotalSectors				dd 		0
 
 ; *************************
 ; FAT32 Extension Block
 ; *************************
-BPB_FATSz32     			dd 		0
-BPB_ExtFlags				dw		0
-BPB_FSVer					dw		0
-BPB_RootClus				dd 		0
-BPB_FSInfo  				dw		0
-BPB_BkBootSec   			dw		0
+dSectorsPerFat32			dd 		0
+wFlags						dw		0
+wVersion					dw		0
+dRootDirStart				dd 		0
+wFSInfoSector				dw		0
+wBackupBootSector			dw		0
 
 ; Reserved 
 dReserved0					dd		0 	;FirstDataSector
-
-BS_DrvNum       			db		0
-
 dReserved1					dd		0 	;ReadCluster
-
-BS_BootSig  				db		0
 dReserved2					dd 		0 	;ReadCluster
 
+bPhysicalDriveNum			db		0
 bReserved3					db		0
+bBootSignature				db		0
+dVolumeSerial				dd 		0
+szVolumeLabel				db		"NO NAME    "
+szFSName					db		"FAT32   "
 
-BS_VolID    				dd 		0
 
-BS_VolLab   				db		"NO NAME    "
+; *************************
+; Bootloader Entry Point
+; *************************
 
-BS_FilSysType				db		"FAT32   "
+Main:
+    cli ;Disable Interrupts
 
-;***************************************
-;	Prints a string
-;	DS=>SI: 0 terminated string
-;***************************************
+    jmp 0x0:FixStack ; Let's fix segments and the stack
 
-PRINT16BIT:
-			lodsb					        ; load next byte from string from SI to AL
+FixStack:
+    mov 0x0000, ax ; Move 0 to ax
+    mov ds, ax ; Move 0 to ds
+    mov es, ax ; Move 0 to es
+    mov ss, ax ; Move 0 to ss
 
-			or			al, al		        ; Does AL=0?
-			
-            jz			PRINTDONE16BIT	    ; Yep, null terminator found-bail out
-			
-            mov			ah,	0eh	            ; Nope-Print the character
-			
-            int			10h
-			
-            jmp			PRINT16BIT		    ; Repeat until null terminator found
+    ; Set the Stack
+    mov ax, 0x7C00
+    mov sp, ax
 
-PRINTDONE16BIT:
-			
-            ret					            ; we are done, so return
-
-;*************************************************;
-;	Bootloader Entry Point
-;*************************************************;
-; dl = drive number
-; si = partition table entry
-Entry:
-    cli ;disable interrupts
-    jmp 0:loadCS
-
-loadCS:
-    cli                        ; Disable Interrupts
-    
-    mov ax, 0x0000             ; Set ax to 0
-
-    mov ds, ax                 ; Set segment ds to 0
-    
-    mov es, ax                 ; Set segment es to 0
-    
-    mov ss, ax                 ; Set segment ss to 0
-    
-    mov sp, 0x7C00             ; Set stack-pointer to 0
-
-checkStack:
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; How much RAM is there? ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-    int 12h                    ; Get size in KB
-    
-    shl ax, 6                  ; convert it to 16-byte paragraphs
-
-    
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; Reserve memory for the boot sector and its stack ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-    sub ax, 512/16             ; reserve 512 bytes for the bootsector
-
-    mov es, ax                 ; es:0 -> top - 512
-
-    sub     ax, 2048 / 16      ; reserve 2048 bytes for the stack
-    
-    mov     ss, ax             ; ss:0 -> top - 512 - 2048
-    
-    mov     sp, 2048           ; 2048 bytes for the stack
-
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; Copy ourselves to top of memory ;;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-    mov     cx, 256
-
-    mov     si, 7C00h
-    
-    xor     di, di
-    
-    mov     ds, di
-    
-    rep     movsw
-
-    ;;;;;;;;;;;;;;;;;;;;;;
-    ;; Jump to the copy ;;
-    ;;;;;;;;;;;;;;;;;;;;;;
-
-    push    es
-    
-    push    byte Stage1
-    
-
-Stage1:
-    push cs
-
-    pop ds
-
-    mov byte [BS_DrvNum], dl
-
-    and     byte [BPB_RootClus+3], 0Fh ; mask cluster value
-    
-    mov     esi, [BPB_RootClus] ; esi=cluster # of root dir
+    ; Segments and stack fixed, lets enable interrupts again
+    sti
 
 
 
-times 510-($-$$) DB 0
-dw 0xAA55
+; *************************
+; Global Variables
+; *************************
+DefStage2	db 	"STAGE2  SYS"
+
+; *************************
+; Error Codes
+; *************************
+
+
+; *************************
+; Fill Out The Bootloader
+; *************************
+times 510-($-$$) db 0
+
+; *************************
+; Boot Signature
+; *************************
+db 0x55, 0xAA
