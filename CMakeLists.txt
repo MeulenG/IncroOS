@@ -9,7 +9,7 @@ set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
 set (ASM_BIN
     SysBoot/STAGE1.SYS
     SysBoot/STAGE2.SYS
-    SysCore/KRNLDR.sys
+    SysCore/KRNLDR.SYS
 )
 
 set(C_SOURCES
