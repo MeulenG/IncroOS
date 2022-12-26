@@ -11,7 +11,7 @@
 #     predefined hybrid MBR bootsector that automatically loads the first
 #     partition VBR marked as legacy boot ('boot' attribute).
 #
-scheme: GPT
+scheme: Singleton
 size: 2GB
 
 # Partitions that should be installed onto the disk image.

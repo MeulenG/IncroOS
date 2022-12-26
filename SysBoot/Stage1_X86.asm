@@ -57,7 +57,7 @@ Main:
     jmp 0x0:FixStack ; Let's fix segments and the stack
 
 FixStack:
-    mov 0x0000, ax ; Move 0 to ax
+    xor ax, ax ; Set ax to 0
     mov ds, ax ; Move 0 to ds
     mov es, ax ; Move 0 to es
     mov ss, ax ; Move 0 to ss
