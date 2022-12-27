@@ -69,12 +69,24 @@ FixStack:
     ; Segments and stack fixed, lets enable interrupts again
     sti
 
+    ; Save Drive Num
+    mov BYTE [bPhysicalDriveNum], dl
 
+    ; Calculate the First Data Cluster. FirstDataSector = BPB_ResvdSecCnt + (BPB_NumFATs * FATSz) + RootDirSectors
+    ; RootDirSectors is always 0
+    xor eax, eax ; Set eax to 0
+    mov al, BYTE [bNumFATs] ; Move BPB_NumFATs(bNumFATs) into al
+    mov ebx, DWORD [dSectorsPerFat32] ; Move FATSz(dSectorsPerFat32) into ebx, since it is a dword
+    mul ebx ; Multiply BPB_NumFATs(bNumFATs) with FATSz(dSectorsPerFat32)
+    mov bx, WORD [wReservedSectors] ; Move BPB_ResvdSecCnt(wReservedSectors) into bx
+    add eax, ebx ; Add BPB_ResvdSecCnt with the result of (BPB_NumFATs * FATSz)
 
+    
 ; *************************
 ; Global Variables
 ; *************************
 DefStage2	db 	"STAGE2  SYS"
+Stage1_JMP_Message db "Jumping to 0x7E00"
 
 ; *************************
 ; Error Codes
