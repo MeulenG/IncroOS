@@ -76,7 +76,7 @@ partitions:
 
     #####################
     # reserved-sectors-image
-    reserved-sectors-image: SysBoot/STAGE2.SYS
+    #reserved-sectors-image: SysBoot/STAGE2.SYS
     #reserved-sectors-image: SysBoot/KERNEL.SYS
     
     #####################

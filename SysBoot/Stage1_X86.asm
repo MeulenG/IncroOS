@@ -52,6 +52,7 @@ szFSName					db		"FAT32   "
 ; *************************
 
 Main:
+    xchg bx, bx
     cli ;Disable Interrupts
 
     jmp 0x0:FixStack ; Let's fix segments and the stack
@@ -81,7 +82,6 @@ FixStack:
     mov bx, WORD [wReservedSectors] ; Move BPB_ResvdSecCnt(wReservedSectors) into bx
     add eax, ebx ; Add BPB_ResvdSecCnt with the result of (BPB_NumFATs * FATSz)
 
-    
 ; *************************
 ; Global Variables
 ; *************************
