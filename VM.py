@@ -25,7 +25,7 @@ def Virtual_Box_Setup():
         os.system('VBoxManage setextradata Incro-OS \'CustomVideoMode1\' \'1920x1080x32'', dont_quote = true')
         os.system('VBoxManage setextradata Incro-OS GUI/MaxGuestResolution any')
         os.system('VBoxManage setextradata Incro-OS GUI/DefaultCloseAction Poweroff')
-        return;
+        return
     if arg1 == 'run_VM':
         print('\n================ Running Incro-OS VM ================\n')
         os.system('VBoxManage controlvm Incro-OS poweroff')
@@ -33,7 +33,7 @@ def Virtual_Box_Setup():
         os.system('VBoxManage closemedium disk_images/Incro-OS.vdi')
         os.system('VBoxManage storageattach Incro-OS --storagectl AHCI --port 0 --medium disk_images/Incro-OS.vdi --device 0 --type hdd')
         os.system('VBoxManage startvm Incro-OS -E VBOX_GUI_DBG_ENABLED=true')
-        return;
+        return
 
 if __name__ == "__main__":
     Virtual_Box_Setup()
