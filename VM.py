@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import subprocess
-import command
 import os
 import sys
 
