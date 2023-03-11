@@ -10,7 +10,7 @@ nop
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"OMOS    "
+szOemName					db		"Incro-OS"
 wBytesPerSector				dw		0
 bSectorsPerCluster			db		0
 wReservedSectors			dw		0
@@ -46,6 +46,27 @@ dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
 
+;***************************************
+;	Prints a string
+;	DS=>SI: 0 terminated string
+;***************************************
+
+PRINT16BIT:
+			lodsb					        ; load next byte from string from SI to AL
+
+			or			al, al		        ; Does AL=0?
+			
+            jz			PRINTDONE16BIT	    ; Yep, null terminator found-bail out
+			
+            mov			ah,	0eh	            ; Nope-Print the character
+			
+            int			10h
+			
+            jmp			PRINT16BIT		    ; Repeat until null terminator found
+
+PRINTDONE16BIT:
+			
+            ret					            ; we are done, so return
 
 ; *************************
 ; Bootloader Entry Point
@@ -82,6 +103,9 @@ FixStack:
     mov bx, WORD [wReservedSectors] ; Move BPB_ResvdSecCnt(wReservedSectors) into bx
     add eax, ebx ; Add BPB_ResvdSecCnt with the result of (BPB_NumFATs * FATSz)
 
+    mov si, DefStage2
+    call PRINT16BIT
+    hlt
 ; *************************
 ; Global Variables
 ; *************************
