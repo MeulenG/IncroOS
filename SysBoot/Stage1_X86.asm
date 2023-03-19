@@ -128,7 +128,21 @@ ReadSector:
         mov ch, BYTE[wHeadsPerCylinder]
         mov dh, BYTE[wSectorsPerTrack]
         mov dl, BYTE[bPhysicalDriveNum]
-        mov cl, BYTE[wSectorsPerTrack]
+        mov cl, BYTE[wSectorsPerFat]
+        int 0x13
+        xor ax, ax
+        int 0x13
+        dec di
+        popa
+        int 0x18
+    .SUCESS
+        mov si, DefStage2
+        call PRINT16BIT
+        popa
+        add bx, WORD[wBytesPerSector]
+        inc ax
+        loop .MAIN
+        ret
         
 ; *************************
 ; Global Variables
