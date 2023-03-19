@@ -135,7 +135,7 @@ ReadSector:
         dec di
         popa
         int 0x18
-    .SUCESS
+    .SUCCESS
         mov si, DefStage2
         call PRINT16BIT
         popa
