@@ -103,15 +103,30 @@ FixStack:
     mov bx, WORD [wReservedSectors] ; Move BPB_ResvdSecCnt(wReservedSectors) into bx
     add eax, ebx ; Add BPB_ResvdSecCnt with the result of (BPB_NumFATs * FATSz)
 
-    mov si, DefStage2
-    call PRINT16BIT
-    hlt
+    ; Calculate the root directory
+    mov eax, DWORD[dRootDirStart] ; FirstDataSector
+    mov ebx, DWORD[bSectorsPerCluster]
+    mul ebx
+    add eax, DWORD[wReservedSectors]
+    add eax, DWORD[wTotalSectors]
+
+    ; Now we calculate the LBA = ((RootDirSector - 2) * BPB_SecPerClus) + FirstDataSector
+    mov eax, [dRootDirStart]
+    mov ebx, [bSectorsPerCluster]
+    sub eax, 2
+    mul ebx
+    add eax, [dReserved0]
+    mov [DRootLBA], eax
+
+ReadSector:
+    pusha
+    
 ; *************************
 ; Global Variables
 ; *************************
 DefStage2	db 	"STAGE2  SYS"
 Stage1_JMP_Message db "Jumping to 0x7E00"
-
+DRootLBA dd 0
 ; *************************
 ; Error Codes
 ; *************************
