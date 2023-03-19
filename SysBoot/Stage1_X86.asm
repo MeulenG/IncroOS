@@ -143,7 +143,39 @@ ReadSector:
         inc ax
         loop .MAIN
         ret
-        
+
+Search_Root_Directory_Loop:
+    mov cx, [wRootEntries]
+    mov di, [dRootDirStart]
+    cmp cx, 0 ; check if we have reached  the end of the root directory
+    je File_Not_Found
+
+    ; Check the root directory for a file
+    mov al, BYTE[di + 0x0b]
+    and al, 0x18
+    cmp al, 0 ; check if the bits 4 and 3 are 0
+    jne Not_A_File
+
+    ; Check if the file name we are searching for is the correct one
+    mov si, DefStage2
+    mov cx, 11 ; File name is 11 bytes long
+    mov di, di + 0x0 ; We move the pointer to the beginnning of the file name
+    repe cmpsb ; Compare the filename in the root directory with the filename we are looking for
+    jz File_Is_Found
+
+    Not_A_File:
+    add di, 0x20 ; Move DI to the next directory entry
+    dec cx
+    jmp Search_Root_Directory_Loop
+    
+    File_Is_Found:
+    ; Let's load this dumbass
+    mov ax, word [di + 0x1a]
+    jmp Load_File
+
+    File_Not_Found:
+    mov si, File_Not_Exist
+    call PRINT16BIT
 ; *************************
 ; Global Variables
 ; *************************
@@ -153,7 +185,7 @@ DRootLBA dd 0
 ; *************************
 ; Error Codes
 ; *************************
-
+File_Not_Exist db "File Doesn't Exist In The Root Directory"
 
 ; *************************
 ; Fill Out The Bootloader
