@@ -119,8 +119,17 @@ FixStack:
     mov [DRootLBA], eax
 
 ReadSector:
-    pusha
-    
+    .MAIN
+        mov di, 0x0005 ; five retries for error
+    .SECTORREADLOOP
+        pusha
+        mov ah, 0x02 ; BIOS read sector
+        mov al, 0x01 ; Read one sector
+        mov ch, BYTE[wHeadsPerCylinder]
+        mov dh, BYTE[wSectorsPerTrack]
+        mov dl, BYTE[bPhysicalDriveNum]
+        mov cl, BYTE[wSectorsPerTrack]
+        
 ; *************************
 ; Global Variables
 ; *************************
