@@ -3,6 +3,16 @@ BITS 16
 ORG 0x7C00
 
 
+%macro STACK_FRAME_BEGIN16 0
+    push bp
+    mov bp, sp
+%endmacro
+
+%macro STACK_FRAME_END16 0
+    mov sp, bp
+    pop bp
+%endmacro
+
 ; Jump Code, 3 Bytes
 jmp short Main
 nop
@@ -119,30 +129,36 @@ FixStack:
     mov [DRootLBA], eax
 
 ReadSector:
-    .MAIN
-        mov di, 0x0005 ; five retries for error
-    .SECTORREADLOOP
-        pusha
-        mov ah, 0x02 ; BIOS read sector
-        mov al, 0x01 ; Read one sector
-        mov ch, BYTE[wHeadsPerCylinder]
-        mov dh, BYTE[wSectorsPerTrack]
-        mov dl, BYTE[bPhysicalDriveNum]
-        mov cl, BYTE[wSectorsPerFat]
-        int 0x13
-        xor ax, ax
-        int 0x13
-        dec di
-        popa
-        int 0x18
-    .SUCCESS
-        mov si, DefStage2
-        call PRINT16BIT
-        popa
-        add bx, WORD[wBytesPerSector]
-        inc ax
-        loop .MAIN
-        ret
+    popa
+
+    mov ax, [bp + 12]
+    shl eax, 16 ; shift into upper 32 bits
+    mov ax, [bp + 10]
+
+    ; add a base sector into start-sector
+    add eax, [dBaseSector]
+
+    xor edx, edx
+    xor ecx, ecx
+    mov cx, WORD[wSectorsPerTrack]
+    div ecx
+    inc dx
+    push dx
+
+    xor dx, dx
+    div WORD [wHeadsPerCylinder]
+    push dx
+    push ax
+
+    mov ax, [bp + 8]
+    mov cx, [bp + 6]
+    mov dx, [bp + 4]
+
+    push ax
+    push cx
+    push dx
+    STACK_FRAME_END16
+
 
 Search_Root_Directory_Loop:
     mov cx, [wRootEntries]
@@ -176,12 +192,18 @@ Search_Root_Directory_Loop:
     File_Not_Found:
     mov si, File_Not_Exist
     call PRINT16BIT
+
+Load_File:
+    mov si, FileFoundSuccesfully
+    call PRINT16BIT
 ; *************************
 ; Global Variables
 ; *************************
 DefStage2	db 	"STAGE2  SYS"
 Stage1_JMP_Message db "Jumping to 0x7E00"
 DRootLBA dd 0
+FileFoundSuccesfully db "That is surreal!!!!"
+dBaseSector db 1
 ; *************************
 ; Error Codes
 ; *************************
