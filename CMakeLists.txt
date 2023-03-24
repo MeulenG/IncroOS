@@ -44,4 +44,13 @@ add_subdirectory(SysKernel)
 add_executable(${PROJECT_NAME} ${C_SOURCES} ${ASM_BIN})
 
 message(STATUS "Linking Libraries With Project")
+add_custom_command(
+    OUTPUT disk.img
+    COMMAND cd .. && External/diskbuilder/build/osbuilder os.yaml --target img
+    DEPENDS ${PROJECT_NAME}
+)
+
+add_custom_target(disk-image ALL DEPENDS disk.img)
+
+
 TARGET_LINK_LIBRARIES(${PROJECT_NAME})
