@@ -14,7 +14,7 @@ ORG 0x7C00
 %endmacro
 
 ; Jump Code, 3 Bytes
-jmp short Main
+jmp short start
 nop
 
 ; *************************
@@ -56,58 +56,115 @@ dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
 
-[BITS 16]
-[ORG 0x7c00]
+%include "asmlib16.inc"
+Main:
+    ;-------------------------------------------------------
+    ; Let's set the stack first thing
+    ;-------------------------------------------------------
+    xchg    bx, bx
 
-start:
-    xor ax,ax   
-    mov ds,ax
-    mov es,ax  
-    mov ss,ax
-    mov sp,0x7c00
+    cli
+
+    xor     ax,ax
+
+    mov     ds,ax
+
+    mov     es,ax
+
+    ;--------------------------------------------------------
+    ; Set the stack pointer
+    ;--------------------------------------------------------
+
+    mov     ss,ax
+
+    mov     sp,0x7c00
+
+    sti
+
+    cld
+
+    ;--------------------------------------------------------
+    ; Let's display a loading message
+    ;--------------------------------------------------------
+    mov     si, MsrLoading
+    call    Puts16
 
 TestDiskExtension:
     mov [DriveId],dl
+
     mov ah,0x41
+
     mov bx,0x55aa
+
     int 0x13
+
     jc NotSupport
+
     cmp bx,0xaa55
+
     jne NotSupport
 
 LoadLoader:
     mov si,ReadPacket
+
     mov word[si],0x10
+
     mov word[si+2],5
+
     mov word[si+4],0x7e00
+
     mov word[si+6],0
+
     mov dword[si+8],1
+
     mov dword[si+0xc],0
+
     mov dl,[DriveId]
+
     mov ah,0x42
+
     int 0x13
+
     jc  ReadError
 
     mov dl,[DriveId]
+
     jmp 0x7e00 
 
 ReadError:
 NotSupport:
     mov ah,0x13
+
     mov al,1
+
     mov bx,0xa
+
     xor dx,dx
+
     mov bp,Message
-    mov cx,MessageLen 
+
+    mov cx,MessageLen
+
     int 0x10
 
 End:
-    hlt    
+    hlt
+
     jmp End
-    
-DriveId:    db 0
+
+
+;--------------------------------------------------------
+; Global Messages
+;--------------------------------------------------------
 Message:    db "We have an error in boot process"
 MessageLen: equ $-Message
+MsrLoading: db 0x0D, 0x0A, "Loading Boot Files", 0xD, 0x0A, 0x00
+MsrJumpStage2: db "Jumping To Location 0x7E00", 0x0A
+MsrBootSector: db "Loaded Into Memory Location 0x7C00", 0x0D
+;--------------------------------------------------------
+; Global Variables
+;--------------------------------------------------------
+DriveId:    db 0
 ReadPacket: times 16 db 0
 
 times (0x1be-($-$$)) db 0
