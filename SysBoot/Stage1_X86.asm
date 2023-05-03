@@ -14,7 +14,7 @@ ORG 0x7C00
 %endmacro
 
 ; Jump Code, 3 Bytes
-jmp short start
+jmp short Main
 nop
 
 ; *************************
