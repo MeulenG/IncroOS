@@ -58,7 +58,7 @@ endif()
 
 add_subdirectory(SysCore)
 
-add_subdirectory(SysKernel)# Depending on the build options, build the targets from the source directory
+add_subdirectory(SysKernel) # Depending on the build options, build the targets from the source directory
 if(USE_DISKBUILDER)
     message(STATUS "Attempting to link object files")
     add_custom_command(
@@ -89,22 +89,21 @@ endif()
 if(USE_DD)
     add_custom_command(
         OUTPUT Incro-OS
-        COMMAND ld -nostdlib -T SysKernel/arch/amd64/link.ld -o ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS SysCore/KRNLDR.SYS /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Incro-Kernel/target/debug/deps/Incro_Kernel-4d6ddc1619e61400.1nb7gasd51bhk1x.rcgu.o
+        COMMAND ld -nostdlib -T /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Kernel-Rust/arch/amd64/link.ld -o Incro /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Kernel-Rust/target/release/deps/libkernel-b70872a646538ec6.a
         DEPENDS SysCore/KRNLDR.SYS SysKernel/Incro-Kernel/target/debug/Incro-Kernel
     )
 
     message(STATUS "Attempting to build image")
     add_custom_command(
         OUTPUT Incro-OS.bin
-        COMMAND objcopy -O binary ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS Incro-OS.bin
+        COMMAND objcopy -O binary /home/oliverm/Desktop/Programming/Incro-OS/Incro Incro-OS.bin
         DEPENDS Incro-OS
     )
-
 
     message(STATUS "Linking Libraries With Project")
     add_custom_command(
         OUTPUT disk.img
-        COMMAND dd if=SysBoot/STAGE1.SYS of=disk.img bs=512 count=1 conv=notrunc && dd if=SysBoot/Stage2.SYS of=disk.img bs=512 count=5 seek=1 conv=notrunc && dd if=Incro-OS.bin of=disk.img bs=512 count=100 seek=6 conv=notrunc
+        COMMAND dd if=/home/oliverm/Desktop/Programming/Incro-OS/SysBoot/STAGE1.SYS of=disk.img bs=512 count=1 conv=notrunc && dd if=/home/oliverm/Desktop/Programming/Incro-OS/SysBoot/STAGE2.SYS of=disk.img bs=512 count=5 seek=1 conv=notrunc && dd if=Incro-OS.bin of=disk.img bs=512 count=100 seek=6 conv=notrunc
         DEPENDS Incro-OS.bin
     )
 
