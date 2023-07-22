@@ -11,7 +11,7 @@
 #     predefined hybrid MBR bootsector that automatically loads the first
 #     partition VBR marked as legacy boot ('boot' attribute).
 #
-scheme: Singleton
+scheme: GPT
 size: 2GB
 
 # Partitions that should be installed onto the disk image.
@@ -72,12 +72,14 @@ partitions:
     #####################
     # vbr-image
     vbr-image: SysBoot/STAGE1.SYS
+    vbr-image: External/Boot-Tools/osboot/fat32.bin
     #vbr-image: SysBoot/Fat16/fat16.bin
 
     #####################
     # reserved-sectors-image
-    reserved-sectors-image: SysBoot/STAGE2.SYS
+    #reserved-sectors-image: SysBoot/STAGE2.SYS
     #reserved-sectors-image: SysBoot/KERNEL.SYS
+    reserved-sectors-image: External/Boot-Tools/osboot/kernel.sys
     
     #####################
     # sources
@@ -117,8 +119,8 @@ partitions:
       #  target: /EFI/BOOT/BOOTX64.EFI
         
       #- type: dir
-      #  path: <path_to_additional_bootfiles>
-      #  target: /EFI/vali/
+      #  path: limine_files
+      #  target: /boot/
         
         #####################
         # source.type.chef

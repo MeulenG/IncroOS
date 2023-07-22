@@ -89,14 +89,14 @@ endif()
 if(USE_DD)
     add_custom_command(
         OUTPUT Incro-OS
-        COMMAND ld -nostdlib -T SysKernel/arch/amd64/link.ld -o Incro-OS SysCore/KRNLDR.SYS /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Incro-Kernel/target/debug/deps/Incro_Kernel-4d6ddc1619e61400.1nb7gasd51bhk1x.rcgu.o
+        COMMAND ld -nostdlib -T SysKernel/arch/amd64/link.ld -o ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS SysCore/KRNLDR.SYS /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Incro-Kernel/target/debug/deps/Incro_Kernel-4d6ddc1619e61400.1nb7gasd51bhk1x.rcgu.o
         DEPENDS SysCore/KRNLDR.SYS SysKernel/Incro-Kernel/target/debug/Incro-Kernel
     )
 
     message(STATUS "Attempting to build image")
     add_custom_command(
         OUTPUT Incro-OS.bin
-        COMMAND objcopy -O binary Incro-OS Incro-OS.bin
+        COMMAND objcopy -O binary ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS Incro-OS.bin
         DEPENDS Incro-OS
     )
 
