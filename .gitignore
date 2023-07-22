@@ -6,3 +6,5 @@ build/
 disk.img
 SysBoot/*.SYS
 SysCore/*.SYS
+External/
+hdd.img
