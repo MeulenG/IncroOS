@@ -5,9 +5,9 @@ project("OS")
 enable_language(ASM_NASM)
 
 # Define the build options
-option(USE_DISKBUILDER "Build Target DISKBUILDER" OFF)
-option(USE_DD "Build Target DD" ON)
-option(STABLE "Build Target STABLE" OFF)
+option(FAT12 "Build Target DISKBUILDER" OFF)
+option(FAT16 "Build Target DD" OFF)
+option(FAT32 "Build Target STABLE" ON)
 
 
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
@@ -35,10 +35,10 @@ set(C_SOURCES
 )
 
 set(boot-dir
-    SysBoot
+    ${CMAKE_SOURCE_DIR}/SysBoot
 )
-set(core-dir
-    SysCore
+set(kernel-dir
+    ${CMAKE_SOURCE_DIR}/SysKernel
 )
 
 message(CHECK_START "Attempting to find system bootloaders")
@@ -49,17 +49,16 @@ else()
 endif()
 add_subdirectory(SysBoot)
 
-message(CHECK_START "Attempting to find system core")
-if(EXISTS "${core-dir}" AND IS_DIRECTORY "${core-dir}")
-    message("Found System Core")
+message(CHECK_START "Attempting to find kernel")
+if(EXISTS "${kernel-dir}" AND IS_DIRECTORY "${kernel-dir}")
+    message("Found Kernel")
 else()
-    message(CHECK_FAIL "${core-dir} doesn't exist")
+    message(CHECK_FAIL "${kernel-dir} doesn't exist")
 endif()
 
-add_subdirectory(SysCore)
+add_subdirectory(SysKernel)
 
-add_subdirectory(SysKernel) # Depending on the build options, build the targets from the source directory
-if(USE_DISKBUILDER)
+if(FAT12)
     message(STATUS "Attempting to link object files")
     add_custom_command(
         OUTPUT KRN
@@ -86,24 +85,24 @@ if(USE_DISKBUILDER)
     add_custom_target(disk-image ALL DEPENDS disk.img)
 endif()
 
-if(USE_DD)
+if(FAT16)
     add_custom_command(
-        OUTPUT Incro-OS
-        COMMAND ld -nostdlib -T /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Kernel-Rust/arch/amd64/link.ld -o Incro /home/oliverm/Desktop/Programming/Incro-OS/SysKernel/Kernel-Rust/target/release/deps/libkernel-b70872a646538ec6.a
-        DEPENDS SysCore/KRNLDR.SYS SysKernel/Incro-Kernel/target/debug/Incro-Kernel
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS
+        COMMAND ld -nostdlib -T SysKernel/Kernel-Rust/arch/amd64/link.ld -o ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS SysKernel/Kernel-Rust/target/release/deps/libkernel-b70872a646538ec6.a
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SysCore/KRNLDR.SYS ${CMAKE_CURRENT_SOURCE_DIR}/SysKernel/Incro-Kernel/target/debug/Incro-Kernel
     )
 
     message(STATUS "Attempting to build image")
     add_custom_command(
-        OUTPUT Incro-OS.bin
-        COMMAND objcopy -O binary /home/oliverm/Desktop/Programming/Incro-OS/Incro Incro-OS.bin
-        DEPENDS Incro-OS
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS.bin
+        COMMAND objcopy -O binary ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS.bin
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Incro-OS
     )
 
     message(STATUS "Linking Libraries With Project")
     add_custom_command(
         OUTPUT disk.img
-        COMMAND dd if=/home/oliverm/Desktop/Programming/Incro-OS/SysBoot/STAGE1.SYS of=disk.img bs=512 count=1 conv=notrunc && dd if=/home/oliverm/Desktop/Programming/Incro-OS/SysBoot/STAGE2.SYS of=disk.img bs=512 count=5 seek=1 conv=notrunc && dd if=Incro-OS.bin of=disk.img bs=512 count=100 seek=6 conv=notrunc
+        COMMAND dd if=SysBoot/STAGE1.SYS of=disk.img bs=512 count=1 conv=notrunc && dd if=SysBoot/STAGE2.SYS of=disk.img bs=512 count=5 seek=1 conv=notrunc && dd if=Incro-OS.bin of=disk.img bs=512 count=100 seek=6 conv=notrunc
         DEPENDS Incro-OS.bin
     )
 
@@ -112,18 +111,12 @@ if(USE_DD)
     add_custom_target(disk-image ALL DEPENDS disk.img)
 endif()
 
-if(STABLE)
+if(FAT32)
     message(STATUS "Linking Libraries With Project")
     add_custom_command(
         OUTPUT disk.img
         COMMAND cd .. && External/diskbuilder/build/osbuilder os.yaml --target img
         DEPENDS disk.img
-    )
-    # Add custom command to link kernel object file with linker script
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/kernel
-        COMMAND ld -nostdlib -o kernel kernel.o main.o
-        DEPENDS kernel
     )
 
     add_custom_target(disk-image ALL DEPENDS disk.img)

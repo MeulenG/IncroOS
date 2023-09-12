@@ -11,8 +11,8 @@
 #     predefined hybrid MBR bootsector that automatically loads the first
 #     partition VBR marked as legacy boot ('boot' attribute).
 #
-scheme: GPT
-size: 2GB
+scheme: Singleton
+size: 512MB
 
 # Partitions that should be installed onto the disk image.
 # Each partition will be right after each other on the disk image
@@ -71,22 +71,18 @@ partitions:
 
     #####################
     # vbr-image
-    vbr-image: SysBoot/STAGE1.SYS
-    vbr-image: External/Boot-Tools/osboot/fat32.bin
-    #vbr-image: SysBoot/Fat16/fat16.bin
+    vbr-image: SysBoot/Fat32/STAGE1.SYS
 
     #####################
     # reserved-sectors-image
-    #reserved-sectors-image: SysBoot/STAGE2.SYS
-    #reserved-sectors-image: SysBoot/KERNEL.SYS
-    reserved-sectors-image: External/Boot-Tools/osboot/kernel.sys
+    reserved-sectors-image: SysBoot/Fat32/STAGE2.SYS
     
     #####################
     # sources
     # Sources are the files/directories that should be installed onto
     # the disk partition as a part of the build process.
     #
-    #sources:
+    sources:
 
         #####################
         # source.type
@@ -104,14 +100,23 @@ partitions:
         # Osbuilder supports chef packages, and can download and install those directly to the partition
         # if specified. The 'target' key specifies where on the partition the package should be copied to,
         # this can be either a full file path (must contain an extension) or a directory path.
-      #- type: file
+      - type: file
 
         #####################
         # source.path
         # If the path is a relative path, it will be resolved from where osbuilder is invoked.
         #
-        #path: SysCore/KRNLDR.sys
-        #target: /KRNLDR.sys
+        path: SysBoot/Fat32/KRNLDR.SYS
+        target: /KRNLDR.SYS
+      
+      - type: file
+
+        #####################
+        # source.path
+        # If the path is a relative path, it will be resolved from where osbuilder is invoked.
+        #
+        path: SysBoot/Fat32/KRNLDR.SYS
+        target: /KRNLDR.SYS
 
         #####################
         # source.target

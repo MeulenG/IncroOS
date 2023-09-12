@@ -1,7 +1,5 @@
 #!/usr/bin/python
-import subprocess
 import os
-import sys
 
 
 def Virtual_Box_Setup():
