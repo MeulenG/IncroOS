@@ -18,6 +18,10 @@ My first OS written in Assembly to learn OS Development. I dedicate all my spare
 To get started with Puhaa-OS, run the following script which will install all the necessary prerequisites, including Bochs:
 
 ```sh
+  ./Setup.sh
+```
+
+```sh
 ./Dev.sh
 ```
 
