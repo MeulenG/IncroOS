@@ -1,6 +1,3 @@
-[submodule "External/llvm-project"]
-	path = External/llvm-project
-	url = https://github.com/llvm/llvm-project.git
 [submodule "External/diskbuilder"]
 	path = External/diskbuilder
 	url = https://github.com/MeulenG/diskbuilder.git
