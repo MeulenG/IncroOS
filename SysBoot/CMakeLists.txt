@@ -41,6 +41,11 @@ if(USE_DD)
 endif()
 
 
+if(STABLE)    
+    add_subdirectory(Fat32)
+endif()
+
+
 
 
 #add_custom_target(stage3 ALL DEPENDS STAGE3.SYS)
