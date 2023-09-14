@@ -37,7 +37,7 @@ main_Stage2: JMP Stage2_Main
 ;*******************************************************
 ;	Preprocessor Descriptor Tables
 ;*******************************************************
-%include "../Routines/Gdt.inc"
+%include "../Routines/Gdt16.inc"
 %include "../Routines/Idt.inc"
 
 ;*******************************************************
@@ -45,114 +45,12 @@ main_Stage2: JMP Stage2_Main
 ;*******************************************************
 %include "../Routines/A20.inc"
 
-;******************************************************
-;	ENTRY POINT For STAGE 2
-;******************************************************
-Stage2_Main:
-	; Clear Interrupts
-    CLI
-    ;-------------------------------;
-	;   Setup segments and stack	;
-	;-------------------------------;
-    XOR     ax, ax
-    
-    MOV	    ds, ax
-    
-    MOV	    es, ax
-    
-    MOV	    fs, ax
-    
-    MOV	    gs, ax
-
-    MOV	    ss, ax
-    
-    MOV	    ax, 0x7C00
-    
-    MOV	    sp, ax
-    ; Enable Interrupts
-    STI
-    ; Save Drive Number in DL
-    MOV     [bPhysicalDriveNum],dl
-    ; Time to check whether or not your processor supports CPUID
-    ; Check if CPUID is supported by attempting to flip the ID bit (bit 21) in
-    ; the FLAGS register. If we can flip it, CPUID is available.
-    ; Copy FLAGS in to EAX via stack
-    PUSHFD
-    
-    POP     eax
- 
-    ; Copy to ECX as well for comparing later on
-    MOV     ecx, eax
- 
-    ; Flip the ID bit
-    XOR     eax, ( 1 << 21 )
- 
-    ; Copy EAX to FLAGS via the stack
-    PUSH    eax
-    
-    POPFD
- 
-    ; Copy FLAGS back to EAX (with the flipped bit if CPUID is supported)
-    PUSHFD
-    
-    POP     eax
- 
-    ; Restore FLAGS from the old version stored in ECX (i.e. flipping the ID bit
-    ; back if it was ever flipped).
-    PUSH    ecx
-    
-    POPFD
- 
-    ; Compare EAX and ECX. If they are equal then that means the bit wasn't
-    ; flipped, and CPUID isn't supported.
-    XOR     eax, ecx
-    
-    JZ  DEATHSCREEN.NoCPUID
-    ; "cpuid" retrieve the information about your cpu
-    ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
-    ; 0x80000000 = 2^31
-    MOV     eax,0x80000000
-    
-    CPUID
-    ; Long mode can only be detected using the extended functions of CPUID (> 0x80000000)
-    ; It is less, there is no long mode.
-    CMP     eax,0x80000001
-    ; if eax < 0x80000001 => CF=1 => jb
-    ; jb, jump if below for unsigned number
-    ; (jl, jump if less for signed number)
-    JB      DEATHSCREEN.NoLongMode
-    ; eax=0x80000001: Extended Processor Info and Feature Bits
-    MOV     eax,0x80000001
-    CPUID
-    ; check if long mode is supported
-    ; test => edx & (1<<29), if result=0, CF=1, then jump
-    ; long mode is at bit-29
-;    TEST    edx,( 1 << 29 ) ; We test to check whether it supports long mode
-    ; jz, jump if zero => CF=1
-;    JZ      DEATHSCREEN.NoLongMode
-    ; check if 1g huge page support
-    ; test => edx & (1<<26), if result=0, CF=1, then jump
-    ; Gigabyte pages is at bit-26
-;    TEST    edx,( 1 << 26 )
-    ; jz, jump if zero => CF=1
-;    JZ      DEATHSCREEN.NoLongMode
-
-;    MOV     eax, 0x7
-    
-;    XOR     ecx, ecx
-    
-;    CPUID
-    
-;    TEST    ecx, ( 1 << 16 )
-    
-;    JNZ     DEATHSCREEN.5_level_paging
 
 ;******************************************************
 ;	Fat32 Routine
 ;******************************************************
 FixCS:
 	; Step 1. Calculate FAT32 Data Sector
-	xchg bx, bx
 	xor		eax, eax
 	mov 	al, [0x7C00 + 0x10]
 	mov 	ebx, dword [0x7C00 + 0x24]
@@ -184,7 +82,6 @@ FixCS:
 
 		; End of root?
 		.EntryLoop:
-			xchg bx, bx
 			cmp 	[es:di], ch
 			je 		.cEnd
 
@@ -201,7 +98,8 @@ FixCS:
         	push    word [es:di + 1Ah]
         	pop     esi
         	pop 	eax ; fix stack
-        	jmp 	LoadFile
+        	call 	LoadFile
+			ret
 
         	; Next entry
         	.Next:
@@ -246,7 +144,7 @@ LoadFile:
 	; Done, jump
 	mov 	dl, byte [bPhysicalDriveNum]
 	mov 	dh, 4
-	jmp 	0x0:0xA000
+	jmp 	SetA20
 
 	; Safety catch
 	cli
@@ -255,7 +153,7 @@ LoadFile:
 
 ; **************************
 ; FAT ReadCluster
-; IN: 
+; IN:
 ;	- ES:BX Buffer
 ;	- SI ClusterNum
 ;
@@ -416,18 +314,95 @@ GetNextCluster:
 	mov 	esi, dword [es:bx + si]
 	ret
 
+;******************************************************
+;	ENTRY POINT For STAGE 2
+;******************************************************
+Stage2_Main:
+	; Clear Interrupts
+    CLI
+    ;-------------------------------;
+	;   Setup segments and stack	;
+	;-------------------------------;
+    XOR     ax, ax
+    
+    MOV	    ds, ax
+    
+    MOV	    es, ax
+    
+    MOV	    fs, ax
+    
+    MOV	    gs, ax
 
+    MOV	    ss, ax
+    
+    MOV	    ax, 0x7C00
+    
+    MOV	    sp, ax
+    ; Enable Interrupts
+    STI
+    ; Save Drive Number in DL
+    MOV     [bPhysicalDriveNum],dl
+    ; Time to check whether or not your processor supports CPUID
+    ; Check if CPUID is supported by attempting to flip the ID bit (bit 21) in
+    ; the FLAGS register. If we can flip it, CPUID is available.
+    ; Copy FLAGS in to EAX via stack
+    PUSHFD
+    
+    POP     eax
+ 
+    ; Copy to ECX as well for comparing later on
+    MOV     ecx, eax
+ 
+    ; Flip the ID bit
+    XOR     eax, ( 1 << 21 )
+ 
+    ; Copy EAX to FLAGS via the stack
+    PUSH    eax
+    
+    POPFD
+ 
+    ; Copy FLAGS back to EAX (with the flipped bit if CPUID is supported)
+    PUSHFD
+    
+    POP     eax
+ 
+    ; Restore FLAGS from the old version stored in ECX (i.e. flipping the ID bit
+    ; back if it was ever flipped).
+    PUSH    ecx
+    
+    POPFD
+ 
+    ; Compare EAX and ECX. If they are equal then that means the bit wasn't
+    ; flipped, and CPUID isn't supported.
+    XOR     eax, ecx
+    
+    JZ  DEATHSCREEN.NoCPUID
+    ; "cpuid" retrieve the information about your cpu
+    ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
+    ; 0x80000000 = 2^31
+    MOV     eax,0x80000000
+    
+    CPUID
+    ; Long mode can only be detected using the extended functions of CPUID (> 0x80000000)
+    ; It is less, there is no long mode.
+    CMP     eax,0x80000001
+    ; if eax < 0x80000001 => CF=1 => jb
+    ; jb, jump if below for unsigned number
+    ; (jl, jump if less for signed number)
+    JB      DEATHSCREEN.NoLongMode
+    ; eax=0x80000001: Extended Processor Info and Feature Bits
+    MOV     eax,0x80000001
+    CPUID
+	CALL FixCS
 
-;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it through BIOS
+;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it
 SetA20:
     ;-------------------------------;
 	;   Enable A20 Line		        ;
 	;-------------------------------;
-    CALL EnableA20_Bios
-    
-;    MOV         si, msgA20
-    
-;    CALL        Puts16
+	xchg bx, bx
+
+    CALL EnableA20_KKbrd_Out
 
 SetVideoMode:
     ;-------------------------------;
@@ -436,10 +411,6 @@ SetVideoMode:
     MOV     ax, 3
 
     INT     0x10
-
-;    MOV         si, msgVideoMode
-    
-;    CALL        Puts16
     
     CLI
     ;-------------------------------;
@@ -447,17 +418,11 @@ SetVideoMode:
 	;-------------------------------;
     LGDT    [gdt_descriptor]
     
-;    MOV         si, msggdt
-    
-;    CALL        Puts16
     ;-------------------------------;
 	;   Install our IDT		        ;
 	;-------------------------------;
     LIDT    [idt_real]
     
-;    MOV         si, msgidt
-    
-;    CALL        Puts16
 	;-------------------------------;
 	;   Get Ready For PMode		    ;
 	;-------------------------------;
@@ -772,10 +737,10 @@ ReadPacket:                 times 16 db 0
 
 LoadingMsg                  DB 0x0D, 0x0A, "Stage 2 Sucessfully Loaded", 0x00
 
-msgpmode:                   DB  0x0A, 0x0A, 0x0A, "               <[OMOS Protected Mode]>         "
+msgpmode:                   DB  0x0A, 0x0A, 0x0A, "               <[Puhaa-OS Protected Mode]>         "
                             DB  0x0A, 0x0A   		"            Welcome To Protected Mode", 0
 
-msglongmode:                DB  0x0A, 0x0A, 0x0A, "               <[OMOS Long Mode]>"
+msglongmode:                DB  0x0A, 0x0A, 0x0A, "               <[Puhaa-OS Long Mode]>"
                             DB  0x0A, 0x0A   		"            Welcome To 64-Bit Mode Long Mode", 0
 ;*******************************************************
 ;	Data Error Section

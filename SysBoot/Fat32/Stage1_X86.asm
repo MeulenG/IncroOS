@@ -20,7 +20,7 @@ nop
 ; *************************
 ; FAT Boot Parameter Block
 ; *************************
-szOemName					db		"Incro-OS"
+szOemName					db		"Puhaa-OS"
 wBytesPerSector				dw		0 ; 0B
 bSectorsPerCluster			db		0 ; 0D
 wReservedSectors			dw		0 ; 0E
