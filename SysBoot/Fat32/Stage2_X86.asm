@@ -37,7 +37,7 @@ main_Stage2: JMP Stage2_Main
 ;*******************************************************
 ;	Preprocessor Descriptor Tables
 ;*******************************************************
-%include "../Routines/Gdt16.inc"
+%include "../Routines/Gdt.inc"
 %include "../Routines/Idt.inc"
 
 ;*******************************************************
@@ -416,7 +416,7 @@ SetVideoMode:
     ;-------------------------------;
 	;   Install our GDT		        ;
 	;-------------------------------;
-    LGDT    [gdt_descriptor]
+    call    GdtInstall
     
     ;-------------------------------;
 	;   Install our IDT		        ;
@@ -760,4 +760,3 @@ ErrorMsgLevel5Paging        DB  "Level 5 Paging Not Avilable"
 ErrorFixCS:  DB "FixCS error", 0x00
 
 ErrorReadSector: DB "ReadSector error", 0x00
-

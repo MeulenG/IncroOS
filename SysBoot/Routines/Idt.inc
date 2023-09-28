@@ -2,6 +2,18 @@
 %define IDT_INC_
 BITS    16
 
+;*******************************************
+; InstallIDT()
+;	- Install our IDT
+;*******************************************
+InstallIDT:
+    lidt [idt_real]
+    ret
+
+;*******************************************
+; Interrupt Descriptor Table (LDT)
+;*******************************************
+
 idt_real:
 	dw 0x3ff		; 256 entries, 4b each = 1K
 	dd 0			; Real Mode IVT @ 0x0000

@@ -3,7 +3,7 @@ project (boot-bios)
 
 enable_language (ASM_NASM)
 
-if(USE_DISKBUILDER)
+if(FAT12)
 
     add_custom_target(stage1 ALL DEPENDS STAGE1.SYS)
     add_custom_command(OUTPUT STAGE1.SYS POST_BUILD
@@ -22,7 +22,7 @@ if(USE_DISKBUILDER)
     )
 endif()
 
-if(USE_DD)    
+if(FAT16)    
     add_custom_target(stage1 ALL DEPENDS STAGE1.SYS)
     add_custom_command(OUTPUT STAGE1.SYS POST_BUILD
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -41,7 +41,7 @@ if(USE_DD)
 endif()
 
 
-if(STABLE)    
+if(FAT32)    
     add_subdirectory(Fat32)
 endif()
 

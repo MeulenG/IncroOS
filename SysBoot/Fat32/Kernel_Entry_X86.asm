@@ -1,14 +1,13 @@
+BITS    64
 ALIGN   64
 
-BITS    64
 
 jmp Kernel_64_Main
 ;*******************************************************
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
 %include "../Routines/asmlib64.inc"
-%include "../Routines/Gdt16.inc"
-%include "../Routines/Gdt64.inc"
+%include "../Routines/Gdt.inc"
 ;******************************************************
 ;	ENTRY POINT For Kernel 64-Bit Mode
 ;******************************************************
@@ -30,7 +29,7 @@ Kernel_64_Main:
 
     MOV     rsp, 0xA000
 
-    CALL setGdt
+    lgdt [gdt_descriptor_64]
 
     retf
     

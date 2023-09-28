@@ -4,6 +4,13 @@
 ; 
 %ifndef GDT_INC_
 %define GDT_INC_
+; ********************************
+; GdtInstall
+; ********************************
+GdtInstall:
+    lgdt [gdt_descriptor]
+    ret
+
 
 gdt_start:
 
