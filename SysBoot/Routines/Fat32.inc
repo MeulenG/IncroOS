@@ -9,13 +9,9 @@
 ;******************************************************
 ;	Fat32 Driver
 ;******************************************************
-
-; Calculate FAT32 Data Sector for a given cluster
-; Input:
-;   - esi contains the starting cluster
-; Output: 
-;   - dReserved0 will contain the calculated data sector
 CalculateDataSector:
+	pusha 	; store registers
+	push es
     ; Clear eax for calculations
     xor     eax, eax
     
@@ -34,6 +30,8 @@ CalculateDataSector:
     
     ; Store the result
     mov     dword [dReserved0], eax
+	pop es
+	popa
     ret
 
 
@@ -43,6 +41,8 @@ CalculateDataSector:
 ; Output:
 ;   - esi will contain the next cluster in the chain
 ReadFATTable:
+	pusha ; store registers
+	push es
     ; Load FAT table location from BPB (BIOS Parameter Block)
     mov     esi, dword [0x7C00 + 0x2C]
     
@@ -64,57 +64,32 @@ ReadFATTable:
         ; Handle end of chain (you might want to set esi to a special value or raise an error)
         ret
 
+;*******************************************
+; FindFile ()
+;	- Search for filename in root table
+;
+; parm/ DS:SI => File name
+; ret/ AX => File index number in directory table. -1 if error
+;*******************************************
+FindFile:
 
-; Read a cluster into memory
-; Input:
-;   - esi contains the cluster to read
-;   - es:di points to the memory buffer
-; Output:
-;   - Memory buffer will contain the read data
-ReadClusterIntoMemory:
-    ; Calculate the LBA (Logical Block Address) for the cluster
-    ; This usually involves some arithmetic based on the BPB (BIOS Parameter Block)
-    ; For example, LBA = Cluster * SectorsPerCluster + FirstDataSector
-    ; Store the result in a register or memory location
-    
-    ; Read the cluster into the buffer using BIOS interrupts or other methods
-    
-    ret
+	push	cx						; store registers
+	push	dx
+	push	bx
+	mov	bx, si						; copy filename for later
 
+    ; browse root directory for binary image
 
-; Parse directory entries in a cluster
-; Input:
-;   - es:di points to the memory buffer containing the cluster
-;   - ds:si points to the null-terminated string of the file name to search for
-; Output:
-;   - If found, esi will contain the starting cluster of the file
-;   - If not found, set a flag or error code
-ParseDirectoryEntries:
-    ; Loop through each directory entry in the cluster
-    .EntryLoop:
-        ; Read the file name from the current directory entry
-        ; Compare it with the target file name
-        
-        ; If the names match, read the starting cluster for the file into esi
-        ; Set a flag or error code to indicate that the file was found
-        
-        ; Move to the next directory entry in the buffer
-        
-    ret
+	mov     cx, WORD [bpbRootEntries]			; load loop counter
+	mov     di, ROOT_OFFSET						; locate first root entry at 1 MB mark
+	cld							; clear direction flag
 
 FixCS:
-	; Step 1. Calculate FAT32 Data Sector
-	xor		eax, eax
-	mov 	al, [0x7C00 + 0x10]
-	mov 	ebx, dword [0x7C00 + 0x24]
-	mul 	ebx
-	xor 	ebx, ebx
-	mov 	bx, word [0x7C00 + 0x0E]
-	add 	eax, ebx
-	mov 	dword [dReserved0], eax
+	; Step 1. Calculate Data Sector
+	call CalculateDataSector
 
 	; Step 2. Read FAT Table
-	mov 	esi, dword [0x7C00 + 0x2C]
+	call ReadFATTable
 
 	; Read Loop
 	.cLoop:
