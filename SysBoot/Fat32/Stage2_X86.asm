@@ -32,7 +32,7 @@ main_Stage2: JMP Stage2_Main
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
 ;*******************************************************
-%include "../Routines/asmlib16.inc"
+%include "../Routines/stdio16.inc"
 
 ;*******************************************************
 ;	Preprocessor Descriptor Tables
@@ -400,8 +400,6 @@ SetA20:
     ;-------------------------------;
 	;   Enable A20 Line		        ;
 	;-------------------------------;
-	xchg bx, bx
-
     CALL EnableA20_KKbrd_Out
 
 SetVideoMode:
@@ -494,7 +492,7 @@ BITS    32
 ;*******************************************************
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
-%include "../Routines/asmlib32.inc"
+%include "../Routines/stdio32.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
@@ -661,12 +659,13 @@ PEnd:
     HLT
     
     JMP     PEnd
+
 ALIGN   64
 BITS    64
 ;*******************************************************
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
-%include "../Routines/asmlib64.inc"
+%include "../Routines/stdio64.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 5
 ;******************************************************
@@ -677,20 +676,10 @@ Stage4_Long_Mode:
     CLI                             ; Clear The Interrupt Flag
     ;-------------------------------;
 	;   Setup segments and stack	;
-	;-------------------------------;    
-    MOV     ax, DATA_SEGMENT
-    
-    MOV     ds, ax
-    
-    MOV     es, ax
-    
-    MOV     fs, ax
-    
-    MOV     gs, ax
-    
-    MOV     ss, ax
- 
-    JMP 	0xA000
+	;-------------------------------;
+	mov rsp, 0x7c00    ; Set stack pointer to 0x7c00
+	jmp 0xA000
+
     
 LEnd:
     HLT

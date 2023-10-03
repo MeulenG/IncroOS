@@ -56,7 +56,7 @@ dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
 
-%include "../Routines/asmlib16.inc"
+%include "../Routines/stdio16.inc"
 Main:
     ;-------------------------------------------------------
     ; Let's set the stack first thing
