@@ -1,6 +1,16 @@
 %ifndef __MACROS_INC
 %define __MACROS_INC
 
+%macro STACK_FRAME_BEGIN16 0
+    push bp
+    mov bp, sp
+%endmacro
+
+%macro STACK_FRAME_END16 0
+    mov sp, bp
+    pop bp
+%endmacro
+
 %macro SAVE_STATE 0
     PUSH    r15
     

@@ -1,13 +1,13 @@
 ; *******************************************************
-; Fat32Driver.inc
-; - Contains routines for loading files on Fat32
+; Library.inc
+; - Contains General Purpose Rutines
 ; 
-%ifndef FAT32DRIVER_INC_
-%define FAT32DRIVER_INC_
+%ifndef LIBRARY_INC_
+%define LIBRARY_INC_
 
 
 ;******************************************************
-;	Fat32 Driver
+;	Fat32 Routine
 ;******************************************************
 CalculateDataSector:
 	pusha 	; store registers

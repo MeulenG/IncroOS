@@ -2,17 +2,6 @@
 BITS 16
 ORG 0x7C00
 
-
-%macro STACK_FRAME_BEGIN16 0
-    push bp
-    mov bp, sp
-%endmacro
-
-%macro STACK_FRAME_END16 0
-    mov sp, bp
-    pop bp
-%endmacro
-
 ; Jump Code, 3 Bytes
 jmp short Main
 nop

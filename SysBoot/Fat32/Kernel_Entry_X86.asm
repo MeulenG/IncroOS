@@ -34,21 +34,6 @@ Kernel_64_End:
 ;*******************************************************
 KRNLDR_HandOver				DB 	0x0A, 0x0D "Control Handed To Kernel, Sucessfully", 0x00
 
-Idt:
-    %rep 256
-        dw 0
-        dw 0x8
-        db 0
-        db 0x8e
-        dw 0
-        dd 0
-        dd 0
-    %endrep
-
-IdtLen: equ $-Idt
-
-IdtPtr: dw IdtLen
-        dq Idt
 
 ;*******************************************************
 ;	Data Error Section
