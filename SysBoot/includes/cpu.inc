@@ -4,6 +4,8 @@
 ; 
 %ifndef CPU_INC_
 %define CPU_INC_
+bits 16
+
 DetectCPU:
     ; Time to check whether or not your processor supports CPUID
     ; Check if CPUID is supported by attempting to flip the ID bit (bit 21) in
@@ -28,7 +30,7 @@ DetectCPU:
     ; Compare EAX and ECX. If they are equal then that means the bit wasn't
     ; flipped, and CPUID isn't supported.
     XOR     eax, ecx
-    JZ  DetectFailure.NoCPUID
+    JZ  NoCPUID
     ; "cpuid" retrieve the information about your cpu
     ; eax=0x80000000: Get Highest Extended Function Implemented (only in long mode)
     ; 0x80000000 = 2^31
@@ -40,23 +42,13 @@ DetectCPU:
     ; if eax < 0x80000001 => CF=1 => jb
     ; jb, jump if below for unsigned number
     ; (jl, jump if less for signed number)
-    JB      DetectFailure.NoLongMode
+    JB      NoCPUID.NoLongMode
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
     CPUID
+    ret
 
-DetectFailure:
-    MOV         si, ErrorMsg
-    
-    CALL        Puts16                          ; Error message
-    
-    MOV         ah, 0x00
-    
-    INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
-    
-    INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
-
-    .NoCPUID:
+NoCPUID:
         MOV     si, ErrorMsgCPUID
 
         CALL    Puts16
@@ -77,18 +69,6 @@ DetectFailure:
         INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
     
         INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
-    
-    .5_level_paging:
-        MOV     si, ErrorMsgLevel5Paging
-
-        CALL    Puts16
-        
-        MOV         ah, 0x00
-    
-        INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
-    
-        INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
-ErrorMsg:                   DB  "Hahahaha, Fuck you, but at Stage2"
 ErrorMsgLongMode:           DB  "Long Mode Is Not Supported On This Machine"
 ErrorMsgCPUID:              DB  "Processor does not support CPUID"
 %endif

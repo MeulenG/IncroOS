@@ -29,4 +29,7 @@
 %define KERNEL_BASE_ADDRESS 0xA000
 
 
+%define REAL_MODE
+
+
 %endif
