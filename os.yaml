@@ -71,11 +71,12 @@ partitions:
 
     #####################
     # vbr-image
-    vbr-image: SysBoot/Fat32/STAGE1.SYS
+    #vbr-image: SysBoot/Fat32/STAGE1.SYS
+    vbr-image: SysBoot/Fat32/BOOT.SYS
 
     #####################
     # reserved-sectors-image
-    reserved-sectors-image: SysBoot/Fat32/STAGE2.SYS
+    #reserved-sectors-image: SysBoot/Fat32/STAGE2.SYS
     
     #####################
     # sources
@@ -106,9 +107,9 @@ partitions:
         # source.path
         # If the path is a relative path, it will be resolved from where osbuilder is invoked.
         #
-        path: SysBoot/Fat32/KRNLDR.SYS
-        target: /KRNLDR.SYS
-      
+        path: SysBoot/Fat32/STAGE2.SYS
+        target: /STAGE2.SYS
+
       - type: file
 
         #####################
@@ -118,10 +119,6 @@ partitions:
         path: SysBoot/Fat32/KRNLDR.SYS
         target: /KRNLDR.SYS
 
-        #####################
-        # source.target
-        # Must be an absolute path from the root of the partition.
-      #  target: /EFI/BOOT/BOOTX64.EFI
         
       #- type: dir
       #  path: limine_files
