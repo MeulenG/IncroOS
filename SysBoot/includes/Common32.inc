@@ -5,10 +5,10 @@ SetStack32:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    mov     ax, 0x20
+    mov     ax, DATA_SEGMENT
     mov     ds, ax
     mov     es, ax
     mov     ss, ax
-    mov     esp, 0x7c00
-    ret
+    mov     esp, MEMLOCATION_INITIALLOWERSTACK
+    jmp Continue_Part2
 %endif

@@ -2,20 +2,16 @@
 %define __COMMON16_INC
 BITS 16
 SetStack16:
-	; Clear Interrupts
-    cli
-    ;-------------------------------;
+	;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    xor     ax, ax
-    mov	    ds, ax
-    mov	    es, ax
-    mov	    fs, ax
-    mov	    gs, ax
-    mov	    ss, ax
-    mov	    ax, 0x7C00
-    mov	    sp, ax
-    ; Enable Interrupts
-    sti
-    ret
+	cli				    ; clear interrupts
+	xor	ax, ax			; null segments
+	mov	ds, ax
+	mov	es, ax
+	mov	ax, 0x0			; stack begins at 0x00000500 - 0x00007BFF
+	mov	ss, ax
+	mov	sp, MEMLOCATION_INITIALUPPERSTACK
+	sti				    ; enable interrupts
+    jmp Continue_Part1
 %endif

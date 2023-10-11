@@ -72,4 +72,5 @@ PMode_Setup_Paging:
     OR  eax, (1 << 31)               ; Set the PG-bit, which is the 32nd bit (bit 31).
     
     MOV     cr0, eax                 ; Set control register 0 to the A-register.
+    ret
 %endif
