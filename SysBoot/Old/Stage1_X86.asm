@@ -45,29 +45,25 @@ dVolumeSerial				dd 		0
 szVolumeLabel				db		"NO NAME    "
 szFSName					db		"FAT32   "
 
-%include "../Routines/stdio16.inc"
+%include "../includes/stdio16.inc"
 Main:
-    ;-------------------------------------------------------
-    ; Let's set the stack first thing
-    ;-------------------------------------------------------
-    cli
+    ;----------------------------------------------------
+    ; code located at 0000:7C00, adjust segment registers
+    ;----------------------------------------------------
+    cli						        ; disable interrupts
+    mov     ax, 0x07C0				; setup registers to point to our segment
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
 
-    xor     ax,ax
-
-    mov     ds,ax
-
-    mov     es,ax
-
-    ;--------------------------------------------------------
-    ; Set the stack pointer
-    ;--------------------------------------------------------
-
-    mov     ss,ax
-
-    mov     sp,0x7c00
-
-    sti
-
+    ;----------------------------------------------------
+    ; create stack
+    ;----------------------------------------------------
+    mov     ax, 0x0000				; set the stack
+    mov     ss, ax
+    mov     sp, 0x7BFF
+    sti						; restore interrupts
     cld
 
 TestDiskExtension:
@@ -86,13 +82,6 @@ TestDiskExtension:
     jne NotSupport
 
 LoadStage2:
-    ; Copy FAT table to a fixed address
-    mov si, FATTableBuffer
-    mov ax, 0x6000
-    mov es, ax
-    xor di, di
-    mov cx, 79
-    rep movsb
     ; DS:SI (segment:offset pointer to the DAP, Disk Address Packet)
     ; DS is Data Segment, SI is Source Index
     mov si,ReadPacket

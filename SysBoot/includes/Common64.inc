@@ -1,29 +1,19 @@
 %ifndef __COMMON64_INC
 %define __COMMON64_INC
+
 BITS 64
+
 SetStack64:
-    ;-------------------------------;
-	;   Setup segments and stack	;
-	;-------------------------------;
-
-    ; Clear general purpose registers
-    xor rax, rax
-    xor rbx, rbx
-    xor rcx, rcx
-    xor rdx, rdx
-    xor rsi, rsi
-    xor rdi, rdi
-    xor rbp, rbp
-
-    ; Set data segments
-    mov ax, 0
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
-    ; Set the stack
-    mov rsp, 0x7C00
-
+    ;--------------------------------;
+    ;   Setup segments and stack	   ;
+    ;--------------------------------;
+    ; Setting up the Stack Segment selector and stack pointer
+	mov	ax, DATA_SEGMENT	; set data segments to data selector (0x10)
+	mov	ds, ax
+	mov	ss, ax
+	mov	es, ax
+	mov	esp, 90000h		; stack begins from 90000h
+    ; Jump to the next part of the code
     jmp Continue_Part3
+
 %endif

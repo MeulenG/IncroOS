@@ -21,7 +21,7 @@
 bits	16
 
 org     0x7E00
-jmp Stage2_Main
+jmp LoaderEntry16
 
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
@@ -49,8 +49,10 @@ jmp Stage2_Main
 ;		-Install GDT; go into protected mode (pmode)
 ;		-Jump to Stage 3
 ;*******************************************************
-Stage2_Main:
+LoaderEntry16:
     call    SetStack16
+
+Continue_Part1:
     ; Save Drive Number in DL
     mov     [bPhysicalDriveNum],dl
     ; Is this CPU eligible?
@@ -91,7 +93,7 @@ SetVideoMode:
     
     mov     cr0,eax             ; Set control register 0 to the A-register.
 
-    JMP 8:ProtectedMode_Stage3  ; Get outta this cursed Real Mode
+    JMP CODE_DESC:LoaderEntry32  ; Get outta this cursed Real Mode
 ALIGN   32
 BITS    32
 ;*******************************************************
@@ -103,15 +105,12 @@ BITS    32
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
-ProtectedMode_Stage3:
+LoaderEntry32:
     call    SetStack32
-    call    PMode_Setup_Paging
-    JMP     8:Stage4_Long_Mode
 
-PEnd:
-    HLT
-    
-    JMP     PEnd
+Continue_Part2:
+    call    PMode_Setup_Paging
+    JMP     CODE_DESC:LoaderEntry64
 
 ALIGN   64
 BITS    64
@@ -123,12 +122,9 @@ BITS    64
 ;******************************************************
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
-Stage4_Long_Mode:
+LoaderEntry64:
+    xchg bx, bx
     call    SetStack64
-	jmp     0xA000
 
-    
-LEnd:
-    HLT
-    
-    JMP     LEnd
+Continue_Part3:
+	jmp     KERNEL_BASE_ADDRESS

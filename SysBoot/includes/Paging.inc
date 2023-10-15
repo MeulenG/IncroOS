@@ -5,6 +5,14 @@
 %ifndef PAGING_INC_
 %define PAGING_INC_
 PMode_Setup_Paging:
+    cld
+    mov edi,0x70000
+    xor eax,eax
+    mov ecx,0x10000/4
+    rep stosd
+    
+    mov dword[0x70000],0x71007
+    mov dword[0x71000],10000111b
     ;-------------------------------;
 	;   Disable Paging	            ;
 	;-------------------------------;
