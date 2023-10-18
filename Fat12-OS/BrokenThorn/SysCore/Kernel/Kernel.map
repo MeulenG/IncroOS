@@ -1,0 +1,88 @@
+ KRNL32
+
+ Timestamp is 652e67f6 (Tue Oct 17 12:54:46 2023)
+
+ Preferred load address is 00100000
+
+ Start         Length     Name                   Class
+ 0001:00000000 000004c8H .text$mn                CODE
+ 0002:00000000 00000178H .rdata                  DATA
+ 0002:00000178 00000020H .rdata$voltmd           DATA
+ 0002:00000198 00000134H .rdata$zzzdbg           DATA
+ 0003:00000000 00000004H .CRT$XCA                DATA
+ 0003:00000004 00000004H .CRT$XCZ                DATA
+ 0003:00000008 00000018H .data                   DATA
+ 0003:00000020 0000003cH .bss                    DATA
+ 0004:00000000 00000060H .rsrc$01                DATA
+ 0004:00000060 00000380H .rsrc$02                DATA
+
+  Address         Publics by Value              Rva+Base       Lib:Object
+
+ 0000:00000000       ___AbsoluteZero            00000000     <absolute>
+ 0000:00000000       ___arm64x_extra_rfe_table  00000000     <absolute>
+ 0000:00000000       ___arm64x_extra_rfe_table_size 00000000     <absolute>
+ 0000:00000000       ___arm64x_native_entrypoint 00000000     <absolute>
+ 0000:00000000       ___arm64x_redirection_metadata 00000000     <absolute>
+ 0000:00000000       ___arm64x_redirection_metadata_count 00000000     <absolute>
+ 0000:00000000       ___dynamic_value_reloc_table 00000000     <absolute>
+ 0000:00000000       ___enclave_config          00000000     <absolute>
+ 0000:00000000       ___guard_check_icall_a64n_fptr 00000000     <absolute>
+ 0000:00000000       ___guard_eh_cont_count     00000000     <absolute>
+ 0000:00000000       ___guard_eh_cont_table     00000000     <absolute>
+ 0000:00000000       ___guard_fids_count        00000000     <absolute>
+ 0000:00000000       ___guard_fids_table        00000000     <absolute>
+ 0000:00000000       ___guard_flags             00000000     <absolute>
+ 0000:00000000       ___guard_iat_count         00000000     <absolute>
+ 0000:00000000       ___guard_iat_table         00000000     <absolute>
+ 0000:00000000       ___guard_longjmp_count     00000000     <absolute>
+ 0000:00000000       ___guard_longjmp_table     00000000     <absolute>
+ 0000:00000000       ___hybrid_auxiliary_iat    00000000     <absolute>
+ 0000:00000000       ___hybrid_auxiliary_iat_copy 00000000     <absolute>
+ 0000:00000000       ___hybrid_code_map         00000000     <absolute>
+ 0000:00000000       ___hybrid_code_map_count   00000000     <absolute>
+ 0000:00000000       ___safe_se_handler_count   00000000     <absolute>
+ 0000:00000000       ___safe_se_handler_table   00000000     <absolute>
+ 0000:00000000       ___x64_code_ranges_to_entry_points 00000000     <absolute>
+ 0000:00000000       ___x64_code_ranges_to_entry_points_count 00000000     <absolute>
+ 0001:00000000       ?DebugClrScr@@YAXG@Z       00100400 f   DebugDisplay.obj
+ 0001:00000040       ?DebugGotoXY@@YAXII@Z      00100440 f   DebugDisplay.obj
+ 0001:00000070       ?DebugPrintf@@YAHPBDZZ     00100470 f   DebugDisplay.obj
+ 0001:000001c0       ?DebugPutc@@YAXE@Z         001005c0 f   DebugDisplay.obj
+ 0001:00000230       ?DebugPuts@@YAXPAD@Z       00100630 f   DebugDisplay.obj
+ 0001:000002c0       ?DebugSetColor@@YAII@Z     001006c0 f   DebugDisplay.obj
+ 0001:000002d0       ?itoa_s@@YAXHIPAD@Z        001006d0 f   DebugDisplay.obj
+ 0001:00000340       ?kernel_entry@@YAXXZ       00100740 f   entry.obj
+ 0001:00000380       _main                      00100780 f   main.obj
+ 0001:00000430       ?strlen@@YAIPBD@Z          00100830 f   Lib:string.obj
+ 0001:00000450       ?Exit@@YAXXZ               00100850 f   Lib:cstd.obj
+ 0001:00000490       ?InitializeConstructors@@YAXXZ 00100890 f   Lib:cstd.obj
+ 0002:00000000       ??_C@_0CN@FMGOCDKO@?$CL?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9@ 00100a00     main.obj
+ 0002:00000030       ??_C@_0CN@PMONMCJE@?$HM?5?5?5?5MOS?532?5Bit?5C?$CL?$CL?5Kernel?5Exec@ 00100a30     main.obj
+ 0002:00000060       ??_C@_0CO@MLNNAIEG@?$CL?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9@ 00100a60     main.obj
+ 0002:00000090       ??_C@_0CH@MFILIHKL@?6i?5as?5integer?5?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4@ 00100a90     main.obj
+ 0002:000000b8       ??_C@_0CH@BOGMIAEI@?6i?5in?5hex?5?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4?4@ 00100ab8     main.obj
+ 0002:000000e0       ??_C@_05HPJKAPFK@?6?$FL?$CFi?$FN@ 00100ae0     main.obj
+ 0002:000000e8       ??_C@_07CFAMGIEN@?6?$FL0x?$CFx?$FN@ 00100ae8     main.obj
+ 0002:000000f0       ??_C@_0DC@NHHANBFB@?6?6I?5am?5preparing?5to?5load?4?4?4?5Hol@ 00100af0     main.obj
+ 0002:00000178       ___volatile_metadata       00100b78     <linker-defined>
+ 0003:00000000       ?__xc_a@@3PAP6AXXZA        00100e00     Lib:cstd.obj
+ 0003:00000004       ?__xc_z@@3PAP6AXXZA        00100e04     Lib:cstd.obj
+ 0003:00000008       ?bchars@@3PADA             00100e08     DebugDisplay.obj
+ 0003:00000018       __fltused                  00100e18     Lib:cstd.obj
+ 0003:00000020       ?tbuf@@3PADA               00100e20     DebugDisplay.obj
+
+ entry point at        0001:00000340
+
+ Static symbols
+
+ 0001:00000180       $LN25                      00100580     DebugDisplay.obj
+ 0001:00000194       $LN24                      00100594     DebugDisplay.obj
+ 0003:0000001c       ?max_atexitlist_entries@@3IA 00100e1c     Lib:cstd.obj
+ 0003:00000040       ?_xPos@@3IA                00100e40     DebugDisplay.obj
+ 0003:00000044       ?_yPos@@3IA                00100e44     DebugDisplay.obj
+ 0003:00000048       ?_startX@@3IA              00100e48     DebugDisplay.obj
+ 0003:0000004c       ?_startY@@3IA              00100e4c     DebugDisplay.obj
+ 0003:00000050       ?_color@@3IA               00100e50     DebugDisplay.obj
+ 0003:00000054       ?pf_atexitlist@@3PAP6AXXZA 00100e54     Lib:cstd.obj
+ 0003:00000058       ?cur_atexitlist_entries@@3IA 00100e58     Lib:cstd.obj
+ 0004:00000060       $R000000                   00101060     Resource.res
