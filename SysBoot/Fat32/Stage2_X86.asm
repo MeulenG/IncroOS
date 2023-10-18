@@ -93,7 +93,7 @@ SetVideoMode:
     
     mov     cr0,eax             ; Set control register 0 to the A-register.
 
-    JMP CODE_DESC:LoaderEntry32  ; Get outta this cursed Real Mode
+    jmp     CODE_DESC:LoaderEntry32  ; Get outta this cursed Real Mode
 ALIGN   32
 BITS    32
 ;*******************************************************
@@ -110,7 +110,7 @@ LoaderEntry32:
 
 Continue_Part2:
     call    PMode_Setup_Paging
-    JMP     CODE_DESC:LoaderEntry64
+    jmp     CODE64_DESC:LoaderEntry64
 
 ALIGN   64
 BITS    64

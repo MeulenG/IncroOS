@@ -8,45 +8,73 @@
 ; GdtInstall
 ; ********************************
 GdtInstall:
-    lgdt [gdt_descriptor]
+    lgdt [TemporaryGdt]
     ret
 
 
-gdt_start:
+;*******************************************
+; Global Descriptor Table
+;*******************************************
+StartOfGdt:
+    dd 0                ; null descriptor
+    dd 0 
 
-gdt_null:           ; The mandatory null descriptor
-    dd 0x0          ; dd = define double word (4 bytes)
-    dd 0x0
+; gdt code:	            ; code descriptor
+    dw 0FFFFh           ; limit low
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10011010b        ; access
+    db 11001111b        ; granularity
+    db 0                ; base high
 
-gdt_code:           ; Code segment descriptor
-    dw 0xffff       ; Limit (bites 0-15)
-    dw 0x0          ; Base (bits 0-15)
-    db 0x0          ; Base (bits 16-23)
-    db 10011010b    ; 1st flags, type flags
-    db 11001111b    ; 2nd flags, limit (bits 16-19)
-    db 0x0          ; Base (bits 24-31)
+; gdt data:	            ; data descriptor
+    dw 0FFFFh           ; limit low (Same as code)
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10010010b        ; access
+    db 11001111b        ; granularity
+    db 0                ; base high
 
-gdt_data:
-    dw 0xffff       ; Limit (bites 0-15)
-    dw 0x0          ; Base (bits 0-15)
-    db 0x0          ; Base (bits 16-23)
-    db 10010010b    ; 1st flags, type flags
-    db 11001111b    ; 2nd flags, limit (bits 16-19)
-    db 0x0
+; gdt code 16bit:	    ; code descriptor
+    dw 0FFFFh           ; limit low
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10011010b        ; access
+    db 00001111b        ; granularity
+    db 0                ; base high
 
-gdt_end:            ; necessary so assembler can calculate gdt size below
+; gdt data 16bit:       ; data descriptor
+    dw 0FFFFh           ; limit low (Same as code)
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10010010b        ; access
+    db 00001111b        ; granularity
+    db 0                ; base high
 
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1  ; GDT size
+; gdt code 64bit:       ; code descriptor
+    dw 0                ; limit low
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10011010b        ; access
+    db 00100000b        ; granularity
+    db 0                ; base high
 
-    dd gdt_start                ; Start adress of GDT
+; gdt data 64bit:       ; data descriptor
+    dw 0                ; limit low (Same as code)
+    dw 0                ; base low
+    db 0                ; base middle
+    db 10010010b        ; access
+    db 00000000b        ; granularity
+    db 0                ; base high
+EndOfGdt:
 
-gdt_descriptor_64:
-    dw gdt_end - gdt_start - 1  ; GDT size
+; The actual Gdt Header
+TemporaryGdt: 
+    dw EndOfGdt - StartOfGdt - 1
+    dd StartOfGdt
 
-    dq gdt_start                ; Start adress of GDT
-
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
-
+; The actual Gdt Header
+TemporaryGdt64bit: 
+    dw EndOfGdt - StartOfGdt - 1
+    dq StartOfGdt
 %endif
