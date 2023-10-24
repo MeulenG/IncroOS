@@ -1,9 +1,10 @@
 Books/
 tests/
+External/
+build/
+
 .gitignore
 bochsout.txt
-build/
 disk.img
-SysBoot/*.SYS
-SysCore/*.SYS
-External/
+
+SysBoot/Fat32/*.SYS

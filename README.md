@@ -7,7 +7,7 @@ My first OS written in Assembly to learn OS Development. I dedicate all my spare
 
 ### Built With
 * [osdev](https://wiki.osdev.org)
-* [C](https://www.learn-c.org/)
+* [Brokenthorn](http://www.brokenthorn.com/Resources/)
 * [CMake](https://cmake.org/)
 * [NASM](https://nasm.us/)
 * [BOCHS](https://bochs.sourceforge.io)
@@ -15,10 +15,10 @@ My first OS written in Assembly to learn OS Development. I dedicate all my spare
 ## Getting Started
 
 ### Prerequisites
-To get started with Puhaa-OS, run the following script which will install all the necessary prerequisites, including Bochs:
+To get started, run the following script which will install all the necessary prerequisites, including Bochs(Unless you already have it downloaded):
 
 ```sh
-  ./Setup.sh
+./Setup.sh
 ```
 
 ```sh
@@ -27,5 +27,5 @@ To get started with Puhaa-OS, run the following script which will install all th
 
 Additionally, you can install .NET by running:
 ```sh
-./DotnetInstall.sh
+./dotnet-install.sh
 ```
