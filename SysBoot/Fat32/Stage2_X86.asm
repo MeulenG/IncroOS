@@ -2,7 +2,7 @@
 ; General x86 Real Mode Memory Map:
 ;   - 0x00000000 - 0x000003FF - Real Mode Interrupt Vector Table
 ;   - 0x00000400 - 0x000004FF - BIOS Data Area
-;   - 0x00000500 - 0x00007BFF - Unused
+;   - 0x00000500 - 0x00007BFF - Kernel
 ;   - 0x00007C00 - 0x00007DFF - Stage 1 (512 Bytes)
 ;   - 0x00007E00 - 0x0009FFFF - Stage 2
 ;   - 0x000A0000 - 0x000BFFFF - Video RAM (VRAM) Memory
@@ -90,7 +90,7 @@ SetVideoMode:
     mov     eax,cr0             ; Set the A-register to control register 0.
     
     OR      eax, (1 << 0)       ; Set The PM-bit, which is the 0th bit.
-    
+        
     mov     cr0,eax             ; Set control register 0 to the A-register.
 
     jmp     CODE_DESC:LoaderEntry32  ; Get outta this cursed Real Mode
