@@ -1,4 +1,4 @@
-# Puhaa-OS
+# MFOS
 ![Screenshot](./docs/Bochs.png) <br />
 <div id="top"></div>
 
