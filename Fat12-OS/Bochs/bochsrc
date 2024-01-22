@@ -1,5 +1,0 @@
-romimage: file="C:\Program Files\Bochs-2.7\BIOS-bochs-latest"
-vgaromimage: file="C:\Program Files\Bochs-2.7\VGABIOS-lgpl-latest"
-floppya: 1_44="C:\Users\Puhaa\Desktop\myfloppy.img", status=inserted
-display_library: win32
-log: bochsout.txt
