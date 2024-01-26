@@ -2,6 +2,7 @@
 
 # Navigate to the parent directory
 cd ..
+cd ..
 
 # Update the main repository
 git pull origin master
