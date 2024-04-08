@@ -1,10 +1,7 @@
-Books/
-tests/
-External/
+external/
 build/
-
-.gitignore
+.vscode/
+grub/
+x86test/
 bochsout.txt
 disk.img
-
-SysBoot/Fat32/*.SYS

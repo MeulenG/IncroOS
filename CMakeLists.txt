@@ -20,7 +20,7 @@ if(MFOS)
 
     add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/kernel.bin
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND x86_64-linux-gnu-ld -T ${CMAKE_SOURCE_DIR}/linker.ld -o ${CMAKE_BINARY_DIR}/kernel.bin ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/entry.o
+        COMMAND x86_64-linux-gnu-ld -T ${CMAKE_SOURCE_DIR}/linker.ld -o ${CMAKE_BINARY_DIR}/kernel.bin ${CMAKE_BINARY_DIR}/vga.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/entry.o
         DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/entry.o
     )
     add_custom_target(MyOS ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.bin)
@@ -40,7 +40,7 @@ if(MFOS)
     add_custom_target(disk-image ALL DEPENDS disk.img)
 
     # Explicit dependencies
-    add_dependencies(MyOS Kernel KernelEntry Boot stage2)
+    add_dependencies(MyOS VGADriver Kernel KernelEntry Boot stage2)
     add_dependencies(KernelBin MyOS)
     add_dependencies(disk-image MyOS KernelBin)
 endif(MFOS)

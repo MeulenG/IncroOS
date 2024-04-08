@@ -19,6 +19,8 @@ else()
     message(CHECK_PASS "Found C Kernel")
 endif()
 
+add_subdirectory(drivers)
+
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/kernel.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND x86_64-linux-gnu-gcc -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -m64

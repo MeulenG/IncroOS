@@ -15,16 +15,14 @@ My first OS written in Assembly to learn OS Development. I dedicate all my spare
 ## Getting Started
 
 ### Prerequisites
-To get started, run the following script which will install all the necessary prerequisites, including Bochs(Unless you already have it downloaded):
-
+Before any attempt is made to build, please do run the following script which updates and clones submodules:
 ```sh
-./Setup.sh
+./setup.sh
 ```
-
+```dev.sh``` script will make sure you have all the needed packages required to build the OS:
 ```sh
-./Dev.sh
+./dev.sh
 ```
-
 Additionally, you can install .NET by running:
 ```sh
 ./dotnet-install.sh
