@@ -5,3 +5,4 @@ grub/
 x86test/
 bochsout.txt
 disk.img
+dep/
