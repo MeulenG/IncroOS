@@ -34,7 +34,7 @@ if(MFOS)
 
     add_custom_command(
         OUTPUT disk.img
-        COMMAND cd .. && external/diskbuilder/build/osbuilder os.yaml --target img
+        COMMAND cd .. && External/diskbuilder/build/osbuilder os.yaml --target img
         DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS ${CMAKE_BINARY_DIR}/STAGE2.SYS ${CMAKE_BINARY_DIR}/kernel.bin ${CMAKE_BINARY_DIR}/kernel.raw
     )
     add_custom_target(disk-image ALL DEPENDS disk.img)
