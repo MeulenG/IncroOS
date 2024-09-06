@@ -123,7 +123,6 @@ BITS    64
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
 LoaderEntry64:
-    xchg bx, bx
     call    SetStack64
 
 Continue_Part3:
