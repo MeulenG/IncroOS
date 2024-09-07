@@ -96,11 +96,6 @@ partitions:
         # This copies the entire contents (recursively) into the partition, like the file parameter
         # the 'path' key specifies where on the host machine the directory is, and the 'target' key
         # specifies the directory the contents should be copied into on the disk partition.
-        #
-        # chef
-        # Osbuilder supports chef packages, and can download and install those directly to the partition
-        # if specified. The 'target' key specifies where on the partition the package should be copied to,
-        # this can be either a full file path (must contain an extension) or a directory path.
       - type: file
 
         #####################
@@ -116,22 +111,5 @@ partitions:
         # source.path
         # If the path is a relative path, it will be resolved from where osbuilder is invoked.
         #
-        path: build/kernel.raw
+        path: build/KRNLDR.SYS
         target: /KRNLDR.SYS
-
-        
-      #- type: dir
-      #  path: limine_files
-      #  target: /boot/
-        
-        #####################
-        # source.type.chef
-        #
-        # The chef plugin for sources supports some additional keys to specify
-        # the package and its configuration.
-      #- type: chef
-      #  package: vali/hello-world
-      #  channel: stable
-      #  platform: my-os
-      #  arch: x64
-      #  target: packages/
