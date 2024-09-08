@@ -6,11 +6,14 @@ This project is purely for educational purposes, and to satisfy my own interests
 
 ![Screenshot](./docs/Bochs.png) <br />
 <div id="top"></div>
-
+(This is an old screenshot, will be updated ASAP)
 
 ## Run Locally
 
-Clone the project
+Clone the project locally along with the submodules(SSH is recommended):
+```sh
+git clone --recurse-submodules -j8 git@github.com:MeulenG/MFOS.git
+```
 ```dev.sh``` script will make sure you have all the needed packages required to build the OS:
 ```sh
 ./dev.sh
