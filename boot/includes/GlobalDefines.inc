@@ -5,7 +5,6 @@
 %ifndef GLOBALDEFINES_INC_
 %define GLOBALDEFINES_INC_
 
-
 %define NULL_DESC        0
 %define CODE_DESC        0x8
 %define DATA_SEGMENT     0x10

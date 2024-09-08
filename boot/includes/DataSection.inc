@@ -5,12 +5,6 @@
 %ifndef DATASECTION_INC_
 %define DATASECTION_INC_
 
-dReserved0					dd		0 	;FirstDataSector
-
-dReserved1					dd		0 	;ReadCluster
-
-dReserved2					dd 		0 	;ReadCluster
-
 syskrnldr					db 		"KRNLDR  SYS"
 
 bPhysicalDriveNum			DB		0
