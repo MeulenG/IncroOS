@@ -384,7 +384,15 @@ BITS    32
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
 LoaderEntry32:
-    call    SetStack32
+    ;-------------------------------;
+	;   Setup segments and stack	;
+	;-------------------------------;
+    mov     ax, DATA_SEGMENT
+    mov     ds, ax
+    mov     es, ax
+    mov     ss, ax
+    mov     esp, MEMLOCATION_INITIALLOWERSTACK
+    jmp Continue_Part2
 
 Continue_Part2:
     call    PMode_Setup_Paging
@@ -401,7 +409,17 @@ BITS    64
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
 LoaderEntry64:
-    call    SetStack64
+    ;--------------------------------;
+    ;   Setup segments and stack	 ;
+    ;--------------------------------;
+    ; Setting up the Stack Segment selector and stack pointer
+	mov	ax, DATA_SEGMENT64
+	mov	ds, ax
+	mov	ss, ax
+	mov	es, ax
+	mov	rsp, 90000h		; stack begins from 90000h
+    ; Jump to the next part of the code
+    jmp Continue_Part3
 
 Continue_Part3:
 	jmp     KERNEL_BASE_ADDRESS
