@@ -114,7 +114,7 @@ FixCS:
 		call 	ReadCluster
 		push 	esi
 
-		; Step 3. Parse entries and look for Kernel
+		; Step 3. Parse entries and look for Stage 2
 		mov 	di, 0x1000
 		mov 	si, szStage2
 		mov 	cx, 0x000B

@@ -21,7 +21,7 @@
 bits	16
 
 org     0x7E00
-jmp FixCS
+jmp Stage2_Entry
 
 ;*******************************************************
 ;	Preprocessor directives 16-BIT MODE
@@ -139,7 +139,6 @@ FixCS:
 ; 	- ESI Start cluster of file
 ; **************************
 LoadFile:
-    xchg bx, bx
 	push di
 	; Lets load the fuck out of this file
 	; Step 1. Setup buffer
@@ -159,7 +158,7 @@ LoadFile:
 	; Done, jump
 	mov 	dl, byte [bPhysicalDriveNum]
 	mov 	dh, 4
-	jmp 	0x0:0x500
+	jmp     CheckCPU
 
 	; Safety catch
 	cli
@@ -329,7 +328,13 @@ GetNextCluster:
 	mov 	esi, dword [es:bx + si]
 	ret
 
-Continue_Part1:
+Stage2_Entry:
+    xchg bx, bx
+    ; Load File
+    call    FixCS
+
+
+CheckCPU:
     ; Is this CPU eligible?
     call    DetectCPU
 
@@ -379,7 +384,6 @@ BITS    32
 ;*******************************************************
 %include "../includes/stdio32.inc"
 %include "../includes/Paging.inc"
-%include "../includes/Common32.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
@@ -404,7 +408,6 @@ BITS    64
 ;	Preprocessor directives 64-BIT MODE
 ;*******************************************************
 %include "../includes/stdio64.inc"
-%include "../includes/Common64.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
