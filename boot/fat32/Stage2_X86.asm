@@ -329,8 +329,8 @@ GetNextCluster:
 	ret
 
 Stage2_Entry:
-    xchg bx, bx
     ; Load File
+	xchg bx, bx
     call    FixCS
 
 
@@ -416,9 +416,13 @@ LoaderEntry64:
     ;   Setup segments and stack	 ;
     ;--------------------------------;
     ; Setting up the Stack Segment selector and stack pointer
+	cli
 	mov	ax, DATA_SEGMENT64
 	mov	ds, ax
-	mov	ss, ax
+	mov	es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
 	mov	es, ax
 	mov	rsp, 90000h		; stack begins from 90000h
     ; Jump to the next part of the code

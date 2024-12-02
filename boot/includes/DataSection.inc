@@ -5,7 +5,7 @@
 %ifndef DATASECTION_INC_
 %define DATASECTION_INC_
 
-syskrnldr					db 		"KRNLDR  SYS"
+syskrnldr					db 		"KRNLDR  BIN"
 
 bPhysicalDriveNum			DB		0
 

@@ -1,8 +1,8 @@
 BITS 64
-ORG 0x500
+global _start
 
 _start:
-    nop
-    nop
-    nop
+    mov rsp, 0x200000
+
+hang:
     hlt
