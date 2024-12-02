@@ -17,15 +17,27 @@ if(MFOS)
 
     add_subdirectory(boot)
     add_subdirectory(kernel)
+    
+
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/KRNLDR.BIN
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND objcopy -O binary ${CMAKE_BINARY_DIR}/KRNLDR.ELF ${CMAKE_BINARY_DIR}/KRNLDR.BIN
+        COMMENT "Converting ELF to BIN"
+        DEPENDS ${CMAKE_BINARY_DIR}/KRNLDR.ELF
+    )
+    
+    add_custom_target(KernelBin ALL DEPENDS KernelELF ${CMAKE_BINARY_DIR}/KRNLDR.BIN)
 
     add_custom_command(
         OUTPUT disk.img
         COMMAND cd .. && External/diskbuilder/build/osbuilder os.yaml --target img
         DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS 
                 ${CMAKE_BINARY_DIR}/STAGE2.SYS 
-                ${CMAKE_BINARY_DIR}/KRNLDR.SYS
+                ${CMAKE_BINARY_DIR}/KRNLDR.BIN
+        COMMENT "Building Disk Image"
     )
 
-    add_custom_target(disk-image ALL DEPENDS disk.img Boot stage2 KernelEntry)
+    add_custom_target(disk-image ALL DEPENDS disk.img Boot stage2 KernelELF)
 
 endif(MFOS)

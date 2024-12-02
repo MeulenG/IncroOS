@@ -111,5 +111,5 @@ partitions:
         # source.path
         # If the path is a relative path, it will be resolved from where osbuilder is invoked.
         #
-        path: build/KRNLDR.SYS
-        target: /KRNLDR.SYS
+        path: build/KRNLDR.BIN
+        target: /KRNLDR.BIN
