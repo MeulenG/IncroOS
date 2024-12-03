@@ -330,7 +330,6 @@ GetNextCluster:
 
 Stage2_Entry:
     ; Load File
-	xchg bx, bx
     call    FixCS
 
 
@@ -425,6 +424,7 @@ LoaderEntry64:
 	mov ss, ax
 	mov	es, ax
 	mov	rsp, 90000h		; stack begins from 90000h
+	xchg bx, bx
     ; Jump to the next part of the code
     jmp Continue_Part3
 
