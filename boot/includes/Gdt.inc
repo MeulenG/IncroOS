@@ -8,73 +8,45 @@
 ; GdtInstall
 ; ********************************
 GdtInstall:
-    lgdt [TemporaryGdt]
+    lgdt [GDT64.Pointer]         ; Load the 64-bit global descriptor table.
     ret
 
 
 ;*******************************************
 ; Global Descriptor Table
 ;*******************************************
-StartOfGdt:
-    dd 0                ; null descriptor
-    dd 0 
+; Access bits
+PRESENT        equ 1 << 7
+NOT_SYS        equ 1 << 4
+EXEC           equ 1 << 3
+DC             equ 1 << 2
+RW             equ 1 << 1
+ACCESSED       equ 1 << 0
 
-; gdt code:	            ; code descriptor
-    dw 0FFFFh           ; limit low
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10011010b        ; access
-    db 11001111b        ; granularity
-    db 0                ; base high
+; Flags bits
+GRAN_4K       equ 1 << 7
+SZ_32         equ 1 << 6
+LONG_MODE     equ 1 << 5
 
-; gdt data:	            ; data descriptor
-    dw 0FFFFh           ; limit low (Same as code)
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10010010b        ; access
-    db 11001111b        ; granularity
-    db 0                ; base high
-
-; gdt code 16bit:	    ; code descriptor
-    dw 0FFFFh           ; limit low
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10011010b        ; access
-    db 00001111b        ; granularity
-    db 0                ; base high
-
-; gdt data 16bit:       ; data descriptor
-    dw 0FFFFh           ; limit low (Same as code)
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10010010b        ; access
-    db 00001111b        ; granularity
-    db 0                ; base high
-
-; gdt code 64bit:       ; code descriptor
-    dw 0                ; limit low
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10011010b        ; access
-    db 00100000b        ; granularity
-    db 0                ; base high
-
-; gdt data 64bit:       ; data descriptor
-    dw 0                ; limit low (Same as code)
-    dw 0                ; base low
-    db 0                ; base middle
-    db 10010010b        ; access
-    db 00000000b        ; granularity
-    db 0                ; base high
-EndOfGdt:
-
-; The actual Gdt Header
-TemporaryGdt: 
-    dw EndOfGdt - StartOfGdt - 1
-    dd StartOfGdt
-
-; The actual Gdt Header
-TemporaryGdt64bit: 
-    dw EndOfGdt - StartOfGdt - 1
-    dq StartOfGdt
+GDT:
+    .Null: equ $ - GDT
+        dq 0
+    .Code: equ $ - GDT
+        dd 0xFFFF                                   ; Limit & Base (low, bits 0-15)
+        db 0                                        ; Base (mid, bits 16-23)
+        db PRESENT | NOT_SYS | EXEC | RW            ; Access
+        db GRAN_4K | LONG_MODE | 0xF                ; Flags & Limit (high, bits 16-19)
+        db 0                                        ; Base (high, bits 24-31)
+    .Data: equ $ - GDT
+        dd 0xFFFF                                   ; Limit & Base (low, bits 0-15)
+        db 0                                        ; Base (mid, bits 16-23)
+        db PRESENT | NOT_SYS | RW                   ; Access
+        db GRAN_4K | SZ_32 | 0xF                    ; Flags & Limit (high, bits 16-19)
+        db 0                                        ; Base (high, bits 24-31)
+    .TSS: equ $ - GDT
+        dd 0x00000068
+        dd 0x00CF8900
+    .Pointer:
+        dw $ - GDT - 1
+        dq GDT
 %endif
