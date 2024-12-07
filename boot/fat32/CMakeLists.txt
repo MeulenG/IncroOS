@@ -37,3 +37,5 @@ add_custom_command(
 )
 
 add_custom_target(KernelELF ALL DEPENDS ${CMAKE_BINARY_DIR}/KRNLDR.ELF)
+
+add_dependencies(KernelELF Kernel)
