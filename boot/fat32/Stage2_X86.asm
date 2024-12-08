@@ -425,7 +425,6 @@ LoaderEntry64:
 	mov	es, ax
 	mov	rsp, 90000h		; stack begins from 90000h
 	xchg bx, bx
-    ; Jump to the next part of the code
     jmp Continue_Part3
 
 Continue_Part3:
