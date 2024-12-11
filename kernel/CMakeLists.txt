@@ -1,5 +1,7 @@
 project(Kernel-C)
 
+enable_language(C)
+
 message(CHECK_START "Finding C Kernel In Project")
 list(APPEND CMAKE_MESAGE_INDENT "  ")
 unset(check_Kernel_C)
@@ -19,12 +21,15 @@ else()
     message(CHECK_PASS "Found C Kernel")
 endif()
 
-#add_subdirectory(drivers)
+add_subdirectory(drivers)
+add_subdirectory(output)
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/kernel.o
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/kernel.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o
     COMMENT "Compiling C Kernel"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c ${CMAKE_BINARY_DIR}/terminal.o
 )
-add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o)
+
+add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o)

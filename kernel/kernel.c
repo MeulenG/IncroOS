@@ -1,6 +1,5 @@
 void kMain(void) {
-    char* p = (char*)0xb8000;
+    terminal_initialize();
 
-    p[0] = 'C';
-    p[1] = 0xa;
+    terminal_writestring("Hello, 64-bit kernel World!\n");
 }
