@@ -87,7 +87,7 @@ FixCS:
 		call 	ReadCluster
 		push 	esi
 
-		; Step 3. Parse entries and look for Stage 2
+		; Step 3. Parse entries and look for kernel
 		mov 	di, 0x1000
 		mov 	si, syskrnldr
 		mov 	cx, 0x000B
@@ -390,15 +390,38 @@ LoaderEntry32:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-    mov     ax, DATA_SEGMENT
-    mov     ds, ax
-    mov     es, ax
-    mov     ss, ax
-    mov     esp, MEMLOCATION_INITIALLOWERSTACK
+	xchg bx, bx
+	mov ebx, cr0
+	and ebx, ~(1 << 31)
+	mov cr0, ebx
+
+	; Enable PAE
+	mov edx, cr4
+	or  edx, (1 << 5)
+	mov cr4, edx
+
+	; Set LME (long mode enable)
+	mov ecx, 0xC0000080
+	rdmsr
+	or  eax, (1 << 8)
+	wrmsr
+
+	; Replace 'pml4_table' with the appropriate physical address (and flags, if applicable)
+	mov eax, pml4_table
+	mov cr3, eax
+
+	; Enable paging (and protected mode, if it isn't already active)
+	or ebx, (1 << 31) | (1 << 0)
+	mov cr0, ebx
+
+	mov ax, DATA_SEGMENT
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
     jmp Continue_Part2
 
 Continue_Part2:
-    call    PMode_Setup_Paging
     jmp     CODE64_DESC:LoaderEntry64
 
 ALIGN   64
