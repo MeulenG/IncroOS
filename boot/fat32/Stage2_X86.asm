@@ -30,7 +30,7 @@ jmp Stage2_Entry
 %include "../includes/Macros.inc"
 %include "../includes/GlobalDefines.inc"
 %include "../includes/cpu.inc"
-%include "../includes/Gdt.inc"
+; %include "../includes/Gdt.inc"
 %include "../includes/Idt.inc"
 %include "../includes/A20.inc"
 
@@ -38,7 +38,6 @@ jmp Stage2_Entry
 ;	Data Section
 ;*******************************************************
 %include "../includes/DataSection.inc"
-
 ;*******************************************************
 ;	STAGE 2 ENTRY POINT
 ;
@@ -354,12 +353,12 @@ SetVideoMode:
     ;-------------------------------;
 	;   Install our GDT		        ;
 	;-------------------------------;
-    call    GdtInstall
+    lgdt [Gdt32Ptr]
     
     ;-------------------------------;
 	;   Install our IDT		        ;
 	;-------------------------------;
-    call    InstallIDT
+    lidt [Idt32Ptr]
     
 	;-------------------------------;
 	;   Get Ready For PMode		    ;
@@ -382,7 +381,7 @@ BITS    32
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
 %include "../includes/stdio32.inc"
-%include "../includes/Paging.inc"
+; %include "../includes/Paging.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
@@ -403,34 +402,28 @@ LoaderEntry32:
 	mov ecx, 4496
 	rep movsb
 
-	mov ebx, cr0
-	and ebx, ~(1 << 31)
-	mov cr0, ebx
+	cld
+	mov edi, 0x70000
+	xor eax, eax
+	mov ecx, 0x10000 / 4
+	rep stosd
 
-	; Enable PAE
-	mov edx, cr4
-	or  edx, (1 << 5)
-	mov cr4, edx
+	mov dword [0x70000], 0x71007
+	mov dword [0x71000], 0x100003
 
-	; Set LME (long mode enable)
-	mov ecx, 0xC0000080
-	rdmsr
-	or  eax, (1 << 8)
-	wrmsr
+	lgdt [Gdt64Ptr]
 
-	; Replace 'pml4_table' with the appropriate physical address (and flags, if applicable)
-	mov eax, pml4_table
+	mov eax, cr4
+	or eax, (1 << 5)
+	mov cr4, eax
+
+	mov eax, 0x70000
 	mov cr3, eax
 
-	; Enable paging (and protected mode, if it isn't already active)
-	or ebx, (1 << 31) | (1 << 0)
-	mov cr0, ebx
+	mov eax, cr0
+	or eax, (1 << 31)
+	mov cr0, eax
 
-	mov ax, DATA_SEGMENT
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
     jmp Continue_Part2
 
 Continue_Part2:
@@ -464,3 +457,41 @@ LoaderEntry64:
 
 Continue_Part3:
 	jmp     KERNEL_BASE_ADDRESS
+
+
+Gdt32:
+	dq 0
+
+Code32:
+	dw 0xFFFF
+	dw 0
+	db 0
+	db 0x9a
+	db 0xcf
+	db 0
+
+Data32:
+	dw 0xFFFF
+	dw 0
+	db 0
+	db 0x92
+	db 0xcf
+	db 0
+
+Gdt32Len: equ $-Gdt32
+
+Gdt32Ptr: dw Gdt32Len-1
+		  dd Gdt32
+
+Idt32Ptr: dw 0
+		  dd 0
+
+Gdt64:
+	dq 0
+	dq 0x0020980000000000
+
+Gdt64Len: equ $-Gdt64
+
+Gdt64Ptr:
+	dw Gdt64Len-1
+	dd Gdt64
