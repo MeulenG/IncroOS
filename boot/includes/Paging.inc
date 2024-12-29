@@ -10,6 +10,34 @@
 %define PD64_SIZE       0x40000000
 %define PDP64_SIZE_LOW  0
 %define PDP64_SIZE_HIGH 0x00000080
+%macro STACK_FRAME_BEGIN32 0
+    push ebp
+    mov ebp, esp
+%endmacro
+%macro STACK_FRAME_END32 0
+    mov esp, ebp
+    pop ebp
+%endmacro
+%define ARG0_32 [ebp + 8]
+%define ARG1_32 [ebp + 12]
+%define ARG2_32 [ebp + 16]
+%define ARG3_32 [ebp + 20]
+%define ARG4_32 [ebp + 24]
+%define ARG5_32 [ebp + 28]
+
+%define XARG0_32 [esp + 4]
+%define XARG1_32 [esp + 8]
+%define XARG2_32 [esp + 12]
+%define XARG3_32 [esp + 16]
+%define XARG4_32 [esp + 20]
+%define XARG5_32 [esp + 24]
+
+%define LVAR0_32 dword [ebp - 4]
+%define LVAR1_32 dword [ebp - 8]
+%define LVAR2_32 dword [ebp - 12]
+%define LVAR3_32 dword [ebp - 16]
+%define LVAR4_32 dword [ebp - 20]
+%define LVAR5_32 dword [ebp - 24]
 AllocatePageTable:
     push edi
     push VBOOT_MEMORY_TYPE_RECLAIM
