@@ -391,6 +391,18 @@ LoaderEntry32:
 	;   Setup segments and stack	;
 	;-------------------------------;
 	xchg bx, bx
+
+	mov ax, DATA_SEGMENT
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+    
+	mov esi, 0x00000500
+	mov edi, 0x00100000
+	mov ecx, 4496
+	rep movsb
+
 	mov ebx, cr0
 	and ebx, ~(1 << 31)
 	mov cr0, ebx
