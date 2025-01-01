@@ -404,8 +404,8 @@ LoaderEntry32:
 	mov ecx, 4496
 	rep movsb
 
-	call populate_first_page_table
-	call add_page_table_to_directory
+	call populateFirstTablePage
+	call addPageTableToDir
 	call loadPageDir
 	call enablePaging
 

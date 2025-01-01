@@ -6,33 +6,33 @@
 %define PAGING_INC_
 section .bss
 align 4096
-page_directory resd 1024
-first_page_table resd 1024
+pageDir resd 1024
+firstPageTable resd 1024
 
 section .text
-populate_first_page_table:
+populateFirstTablePage:
     mov esi, first_page_table
     xor ecx, ecx
-populate_loop:
+populateTables:
     mov eax, ecx
     shl eax, 12
     or eax, 3
     mov [esi + ecx * 4], eax
     inc ecx
     cmp ecx, 1024
-    jl populate_loop
+    jl populateTables
     ret
 
-add_page_table_to_directory:
-    mov esi, page_directory
-    mov eax, first_page_table
+addPageTableToDir:
+    mov esi, pageDir
+    mov eax, firstPageTable
     or eax, 3
     mov [esi], eax
     ret
 
 ; Load the page directory into CR3
 loadPageDir:
-    mov eax, page_directory
+    mov eax, pageDir
     mov cr3, eax
     ret
 
