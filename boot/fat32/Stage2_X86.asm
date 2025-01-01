@@ -30,7 +30,7 @@ jmp Stage2_Entry
 %include "../includes/Macros.inc"
 %include "../includes/GlobalDefines.inc"
 %include "../includes/cpu.inc"
-; %include "../includes/Gdt.inc"
+%include "../includes/Gdt.inc"
 %include "../includes/Idt.inc"
 %include "../includes/A20.inc"
 
@@ -38,6 +38,7 @@ jmp Stage2_Entry
 ;	Data Section
 ;*******************************************************
 %include "../includes/DataSection.inc"
+
 ;*******************************************************
 ;	STAGE 2 ENTRY POINT
 ;
@@ -353,12 +354,12 @@ SetVideoMode:
     ;-------------------------------;
 	;   Install our GDT		        ;
 	;-------------------------------;
-    lgdt [Gdt32Ptr]
+    call    GdtInstall
     
     ;-------------------------------;
 	;   Install our IDT		        ;
 	;-------------------------------;
-    lidt [Idt32Ptr]
+    call    InstallIDT
     
 	;-------------------------------;
 	;   Get Ready For PMode		    ;
@@ -381,7 +382,8 @@ BITS    32
 ;	Preprocessor directives 32-BIT MODE
 ;*******************************************************
 %include "../includes/stdio32.inc"
-; %include "../includes/Paging.inc"
+%include "../includes/Paging.inc"
+;%include "../includes/Gdt64.inc"
 ;******************************************************
 ;	ENTRY POINT For STAGE 3
 ;******************************************************
@@ -402,32 +404,16 @@ LoaderEntry32:
 	mov ecx, 4496
 	rep movsb
 
-	cld
-	mov edi, 0x70000
-	xor eax, eax
-	mov ecx, 0x10000 / 4
-	rep stosd
+	call populate_first_page_table
+	call add_page_table_to_directory
+	call loadPageDir
+	call enablePaging
 
-	mov dword [0x70000], 0x71007
-	mov dword [0x71000], 0x100003
+	
 
-	lgdt [Gdt64Ptr]
-
-	mov eax, cr4
-	or eax, (1 << 5)
-	mov cr4, eax
-
-	mov eax, 0x70000
-	mov cr3, eax
-
-	mov eax, cr0
-	or eax, (1 << 31)
-	mov cr0, eax
-
-    jmp Continue_Part2
 
 Continue_Part2:
-    jmp     CODE64_DESC:LoaderEntry64
+    jmp 0x8:LoaderEntry64
 
 ALIGN   64
 BITS    64
@@ -457,41 +443,3 @@ LoaderEntry64:
 
 Continue_Part3:
 	jmp     KERNEL_BASE_ADDRESS
-
-
-Gdt32:
-	dq 0
-
-Code32:
-	dw 0xFFFF
-	dw 0
-	db 0
-	db 0x9a
-	db 0xcf
-	db 0
-
-Data32:
-	dw 0xFFFF
-	dw 0
-	db 0
-	db 0x92
-	db 0xcf
-	db 0
-
-Gdt32Len: equ $-Gdt32
-
-Gdt32Ptr: dw Gdt32Len-1
-		  dd Gdt32
-
-Idt32Ptr: dw 0
-		  dd 0
-
-Gdt64:
-	dq 0
-	dq 0x0020980000000000
-
-Gdt64Len: equ $-Gdt64
-
-Gdt64Ptr:
-	dw Gdt64Len-1
-	dd Gdt64
