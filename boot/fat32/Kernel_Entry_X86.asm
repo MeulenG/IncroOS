@@ -9,8 +9,6 @@ _start:
 	; Place the vboot header into first argument for kMain
 	mov rcx, rbx
 
-	;Now call the init function
-    sub rsp, 0x20
 	call kMain
 	mov rax, 0x000000000000DEAD
 

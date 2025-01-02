@@ -11,7 +11,7 @@ firstPageTable resd 1024
 
 section .text
 populateFirstTablePage:
-    mov esi, first_page_table
+    mov esi, firstPageTable
     xor ecx, ecx
 populateTables:
     mov eax, ecx

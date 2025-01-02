@@ -31,7 +31,7 @@ add_custom_target(KernelEntry ALL DEPENDS ${CMAKE_BINARY_DIR}/Kernel_Entry.o)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/KRNLDR.ELF
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND ld -o ${CMAKE_BINARY_DIR}/KRNLDR.ELF ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o -Ttext=0x500 --entry=_start
+    COMMAND ld -o ${CMAKE_BINARY_DIR}/KRNLDR.ELF ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o -Ttext=0x200000 --entry=_start
     COMMENT "Linking Kernel to ELF"
     DEPENDS ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o
 )
