@@ -391,11 +391,11 @@ LoaderEntry32:
     ;-------------------------------;
 	;   Setup segments and stack	;
 	;-------------------------------;
-
 	mov ax, DATA_SEGMENT
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
+	mov ss, ax
 	mov gs, ax
     
 	mov esi, 0x00000500
@@ -444,7 +444,7 @@ LoaderEntry32:
     mov cr0, eax
 
 Continue_Part2:
-    jmp 0x8:LoaderEntry64
+    jmp CODE64_DESC:LoaderEntry64
 
 ALIGN   64
 BITS    64
