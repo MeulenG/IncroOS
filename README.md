@@ -1,4 +1,4 @@
-# MFOS
+# IncroOS
 
 This project is purely for educational purposes, and to satisfy my own interests. It has no real usage.
 
