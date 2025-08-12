@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project("MFOS")
+project("IncroOS")
 
 enable_language(ASM_NASM)
 
-option(MFOS "Building Target MFOS" ON)
+option(MFOS "Building Target IncroOS" ON)
 option(Barebones "Building Barebones" OFF)
 
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
