@@ -27,11 +27,7 @@ jobs:
           ninja-build \
           python3 \
           git \
-          curl \
-          xorg-dev \
-          libx11-dev \
-          libxrandr-dev \
-          libgtk2.0-dev
+          curl
     
     - name: Build and install Bochs with serial support
       run: |
@@ -79,7 +75,9 @@ jobs:
     
     - name: Create headless bochsrc configuration
       run: |
-        cat > bochs/bochsrc.ci <<'EOF'
+        # Set BXSHARE environment variable for Bochs
+        BXSHARE=/usr/local/share/bochs
+        cat > bochs/bochsrc.ci <<EOF
         # Headless configuration for CI testing
         display_library: nogui
         
@@ -141,14 +139,15 @@ jobs:
         # Copy disk image to bochs directory (it's created in repo root)
         if [ -f ../disk.img ]; then
           cp ../disk.img .
-        elif [ -f ../build/disk.img ]; then
-          cp ../build/disk.img .
         else
           echo "Error: disk.img not found!"
           ls -la ..
           ls -la ../build || true
           exit 1
         fi
+        
+        # Set BXSHARE environment variable for Bochs
+        export BXSHARE=/usr/local/share/bochs
         
         # Run bochs in headless mode with timeout
         # The OS should boot and produce serial output
