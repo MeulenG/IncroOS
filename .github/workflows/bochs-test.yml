@@ -157,21 +157,19 @@ jobs:
         timeout 30s bochs -q -f bochsrc.ci || true
         
         echo "=== Bochs run completed ==="
+    
+    - name: Display Bochs output logs
+      if: always()
+      run: |
+        cd bochs
         
         # Display bochs output log
         echo "=== Bochs Output Log ==="
         if [ -f bochsout.txt ]; then
+          echo "File size: $(wc -c < bochsout.txt) bytes"
           cat bochsout.txt
         else
           echo "No bochsout.txt found"
-        fi
-        
-        echo ""
-        echo "=== Serial Output ==="
-        if [ -f serial.out ]; then
-          cat serial.out
-        else
-          echo "No serial output found"
         fi
         
         echo ""
@@ -179,6 +177,40 @@ jobs:
         if [ -f bochsout.txt ]; then
           grep -i "port 0x0e9" bochsout.txt || echo "No E9 output found"
         fi
+    
+    - name: Dump Serial Output
+      if: always()
+      run: |
+        cd bochs
+        
+        echo "========================================"
+        echo "     SERIAL OUTPUT FROM COM1 PORT      "
+        echo "========================================"
+        echo ""
+        
+        if [ -f serial.out ]; then
+          echo "Serial output file found!"
+          echo "File size: $(wc -c < serial.out) bytes"
+          echo "Line count: $(wc -l < serial.out) lines"
+          echo ""
+          echo "--- Serial Output Content ---"
+          cat serial.out
+          echo ""
+          echo "--- End of Serial Output ---"
+          
+          # Also display as hex dump for verification
+          if [ -s serial.out ]; then
+            echo ""
+            echo "--- Serial Output (Hex Dump - First 512 bytes) ---"
+            xxd -l 512 serial.out || hexdump -C serial.out | head -32
+          fi
+        else
+          echo "❌ No serial output file found!"
+          echo "This means the OS did not write to the serial port."
+        fi
+        
+        echo ""
+        echo "Serial output capture location: $(pwd)/serial.out"
     
     - name: Verify OS started
       run: |
