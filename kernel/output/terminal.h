@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-const size_t VGA_WIDTH      = 80;
-const size_t VGA_HEIGHT     = 25;
+extern const size_t VGA_WIDTH;
+extern const size_t VGA_HEIGHT;
 
 enum vga_color {
     VGA_COLOR_BLACK         = 0,
@@ -32,10 +32,10 @@ uint16_t vga_entry(unsigned char uc, uint8_t color);
 size_t strlen(const char* str);
 
 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
+extern size_t terminal_row;
+extern size_t terminal_column;
+extern uint8_t terminal_color;
+extern uint16_t* terminal_buffer;
 
 void terminal_initialize(void);
 void terminal_setcolor(uint8_t color);
