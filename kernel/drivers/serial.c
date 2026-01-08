@@ -6,6 +6,10 @@ extern size_t strlen(const char* str);
 // Write a string of specific size to serial port
 void serial_write(const char* data, size_t size) {
     for (size_t i = 0; i < size; i++) {
+        // Convert LF to CRLF for proper serial terminal output
+        if (data[i] == '\n') {
+            serial_putchar('\r');
+        }
         serial_putchar(data[i]);
     }
 }
