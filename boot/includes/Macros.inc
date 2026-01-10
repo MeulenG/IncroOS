@@ -78,8 +78,12 @@
     POP     r14
     
     POP     r15
+%endmacro
 
-	; Cleanup irq & error code from stack
+; Separate macro for interrupt handlers that need to clean up error code and IRQ number
+%macro RESTORE_STATE_IRQ 0
+    RESTORE_STATE
+    ; Cleanup irq & error code from stack (2 qwords = 16 bytes)
     ADD     rsp, 0x10
 %endmacro
 
