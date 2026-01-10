@@ -43,6 +43,8 @@ jobs:
           --enable-cpu-level=6 \
           --enable-x86-64 \
           --enable-smp \
+          --enable-svm \
+          --enable-avx \
           --enable-long-phy-address \
           --enable-debugger \
           --enable-disasm \
@@ -55,6 +57,7 @@ jobs:
           --enable-ne2000 \
           --enable-pnic \
           --enable-e1000 \
+          --enable-raw-serial \
           --with-nogui
         make -j$(nproc)
         sudo make install
@@ -135,8 +138,17 @@ jobs:
       timeout-minutes: 2
       run: |
         cd bochs
-        # Copy disk image to bochs directory
-        cp ../build/disk.img .
+        # Copy disk image to bochs directory (it's created in repo root)
+        if [ -f ../disk.img ]; then
+          cp ../disk.img .
+        elif [ -f ../build/disk.img ]; then
+          cp ../build/disk.img .
+        else
+          echo "Error: disk.img not found!"
+          ls -la ..
+          ls -la ../build || true
+          exit 1
+        fi
         
         # Run bochs in headless mode with timeout
         # The OS should boot and produce serial output
