@@ -50,8 +50,6 @@ jobs:
           --enable-svm \
           --enable-avx \
           --enable-long-phy-address \
-          --enable-debugger \
-          --enable-disasm \
           --enable-all-optimizations \
           --enable-pci \
           --enable-usb \
