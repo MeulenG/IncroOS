@@ -1,0 +1,19 @@
+# Hashes of file build rules.
+57646b0532ba3413c8c234e1645f8319 BOOT.SYS
+23e4f036a2e5367e632ceae26928122c CMakeFiles/KernelBin
+23e4f036a2e5367e632ceae26928122c CMakeFiles/disk-image
+30c127961756f87d287c0b73cc91b467 KRNLDR.BIN
+31e308c3bd0a36fd6c722ef211a3a7f1 KRNLDR.ELF
+c80ca6f21ea10f9b06df518fb4217299 Kernel_Entry.o
+52204752806c0d56119655149e0e1cf7 STAGE2.SYS
+68fb7acfbff9b0e58354401846251b3c boot/fat32/CMakeFiles/Boot
+68fb7acfbff9b0e58354401846251b3c boot/fat32/CMakeFiles/KernelELF
+68fb7acfbff9b0e58354401846251b3c boot/fat32/CMakeFiles/KernelEntry
+68fb7acfbff9b0e58354401846251b3c boot/fat32/CMakeFiles/stage2
+f4a019c70da8b36eb582294405abd151 disk.img
+a871b9f48cd35fba96611f4453ab79ca kernel.o
+c6a4bbfa155d4db8b03ade4a9acd2183 kernel/CMakeFiles/Kernel
+ef281707a69bbfa7b8a7ddc0c57c8a4a kernel/drivers/CMakeFiles/VGADriver
+c8e7f81862211c9bf73a1697c1faf08b kernel/output/CMakeFiles/terminal
+16fe7924ba0c8a53bc71f14e15051cc8 terminal.o
+427ab095bd4cce6391e4218042c0ffdb vga.o
