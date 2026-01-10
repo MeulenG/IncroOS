@@ -1,3 +1,5 @@
+#include "output/terminal.h"
+
 void kMain(void) {
     terminal_initialize();
 
