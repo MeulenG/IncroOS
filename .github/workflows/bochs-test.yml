@@ -20,6 +20,11 @@ jobs:
       with:
         submodules: recursive
     
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+    
     - name: Install build dependencies
       run: |
         sudo apt-get update
