@@ -57,6 +57,19 @@ serial_init:
     mov al, 0x0B
     out dx, al
     
+    ; Send a test character to verify serial port is working
+    ; Wait for transmitter to be ready
+.init_wait:
+    mov dx, COM1_LSR
+    in al, dx
+    test al, 0x20
+    jz .init_wait
+    
+    ; Send 'S' to indicate serial init
+    mov al, 'S'
+    mov dx, COM1_DATA
+    out dx, al
+    
     pop rdx
     pop rax
     ret
