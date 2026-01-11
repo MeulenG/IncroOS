@@ -1,5 +1,6 @@
 external/
 build/
+_codeql_build_dir/
 .vscode/
 grub/
 x86test/
