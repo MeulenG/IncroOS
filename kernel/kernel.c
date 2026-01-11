@@ -1,4 +1,3 @@
-#include "kernel.h"
 #include "drivers/serial.h"
 #include "output/terminal.h"
 
