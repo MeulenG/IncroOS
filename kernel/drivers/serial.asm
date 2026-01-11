@@ -86,3 +86,6 @@ serial_putchar:
     pop rdx
     pop rax
     ret
+
+; Indicate that this code does not require an executable stack
+section .note.GNU-stack noalloc noexec nowrite progbits

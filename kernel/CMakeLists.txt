@@ -33,3 +33,4 @@ add_custom_command(
 )
 
 add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/serial_asm.o)
+add_dependencies(Kernel terminal SerialDriver SerialDriverAsm)
