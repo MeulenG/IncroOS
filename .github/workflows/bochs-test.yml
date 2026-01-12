@@ -40,9 +40,9 @@ jobs:
     - name: Build and install Bochs with serial support
       run: |
         cd /tmp
-        wget https://sourceforge.net/projects/bochs/files/bochs/2.8/bochs-2.8.tar.gz
-        tar -xzf bochs-2.8.tar.gz
-        cd bochs-2.8
+        wget https://sourceforge.net/projects/bochs/files/bochs/2.7/bochs-2.7.tar.gz
+        tar -xzf bochs-2.7.tar.gz
+        cd bochs-2.7
         ./configure \
           --enable-cpu-level=6 \
           --enable-x86-64 \
@@ -50,8 +50,6 @@ jobs:
           --enable-svm \
           --enable-avx \
           --enable-long-phy-address \
-          --enable-debugger \
-          --enable-disasm \
           --enable-all-optimizations \
           --enable-pci \
           --enable-usb \
@@ -210,7 +208,7 @@ jobs:
             xxd -l 512 serial.out || hexdump -C serial.out | head -32
           fi
         else
-          echo "ERROR: No serial output file found!"
+          echo "❌ No serial output file found!"
           echo "This means the OS did not write to the serial port."
         fi
         
@@ -228,27 +226,27 @@ jobs:
         if [ -f bochsout.txt ]; then
           # Check if bochs started successfully
           if grep -q "Bochs x86 Emulator" bochsout.txt; then
-            echo "SUCCESS: Bochs emulator started successfully"
+            echo "✓ Bochs emulator started successfully"
             success=1
           fi
           
           # Check for boot sector execution
           if grep -q "Booting from" bochsout.txt; then
-            echo "SUCCESS: Boot process initiated"
+            echo "✓ Boot process initiated"
             success=1
           fi
         fi
         
         # Check serial output for any OS messages
         if [ -f serial.out ] && [ -s serial.out ]; then
-          echo "SUCCESS: Serial output captured"
+          echo "✓ Serial output captured"
           echo "Serial output content:"
           cat serial.out
           success=1
         fi
         
         if [ $success -eq 0 ]; then
-          echo "ERROR: Could not verify OS boot - no serial output or boot indicators found"
+          echo "❌ ERROR: Could not verify OS boot - no serial output or boot indicators found"
           echo "The workflow expects either:"
           echo "  1. Serial output in serial.out, OR"
           echo "  2. Boot indicators in bochsout.txt (e.g., 'Booting from')"
@@ -260,7 +258,7 @@ jobs:
           exit 1
         fi
         
-        echo "SUCCESS: OS verification successful"
+        echo "✅ OS verification successful"
         exit 0
     
     - name: Upload artifacts
