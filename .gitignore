@@ -6,4 +6,4 @@ grub/
 x86test/
 bochsout.txt
 disk.img
-dep/
+dep/_codeql_detected_source_root
