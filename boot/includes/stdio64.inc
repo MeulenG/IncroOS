@@ -137,7 +137,7 @@ Puts64:
 	;-------------------------------;
 	;   Get character               ;
 	;-------------------------------;
-	MOV	    bl, byte [edi]		    ; get next character
+	MOV	    bl, byte [rdi]		    ; get next character (use rdi, not edi, for 64-bit addressing)
 	
     CMP	    bl, 0			        ; is it 0 (Null terminator)?
 	
