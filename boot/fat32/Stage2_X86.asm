@@ -398,53 +398,85 @@ LoaderEntry32:
 	mov ss, ax
 	mov gs, ax
     
+	; Copy kernel from 0x500 to 0x100000 (1MB mark)
 	mov esi, 0x00000500
 	mov edi, 0x00100000
 	mov ecx, 4496
 	rep movsb
 
+	; Disable paging temporarily before setting up 64-bit paging
 	mov eax, cr0
     and eax, 01111111111111111111111111111111b
     mov cr0, eax
 
+	;-------------------------------;
+	;   Setup 64-bit Paging Tables  ;
+	;-------------------------------;
+	; Memory layout for page tables:
+	;   0x1000-0x1FFF: PML4 (Page Map Level 4) - 512 entries
+	;   0x2000-0x2FFF: PDPT (Page Directory Pointer Table) - 512 entries
+	;   0x3000-0x3FFF: PD (Page Directory) - 512 entries
+	;   0x4000-0x4FFF: PT (Page Table) - 512 entries
+	; This maps the first 2MB of physical memory (512 * 4KB pages)
+	
 	mov edi, 0x1000
-    mov cr3, edi
-    xor eax, eax
-    mov ecx, 4096
-    rep stosd
-    mov edi, cr3
+    mov cr3, edi				; Set CR3 to point to PML4
+    xor eax, eax				; EAX = 0 for clearing
+    mov ecx, 4096				; Clear 4096 DWORDs (16KB)
+    rep stosd					; Zero out memory from 0x1000-0x4FFF
+    mov edi, cr3				; Reset EDI to start of PML4
 
+	; Each entry is 8 bytes in 64-bit paging
+	; Lower 32 bits: physical address | flags
+	; Upper 32 bits: remain 0 for addresses < 4GB (already cleared above)
+	; Flags: bit 0 = Present, bit 1 = Read/Write
+	
+	; PML4[0] -> PDPT at 0x2000 (present + writable)
 	mov DWORD [edi], 0x2003
-    add edi, 0x1000
+	mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
+    add edi, 0x1000				; Move to PDPT at 0x2000
+    
+    ; PDPT[0] -> PD at 0x3000 (present + writable)
     mov DWORD [edi], 0x3003
-    add edi, 0x1000
+    mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
+    add edi, 0x1000				; Move to PD at 0x3000
+    
+    ; PD[0] -> PT at 0x4000 (present + writable)
     mov DWORD [edi], 0x4003
-    add edi, 0x1000
+    mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
+    add edi, 0x1000				; Move to PT at 0x4000
 
-	mov ebx, 0x00000003
-    mov ecx, 512
+	; Each entry maps a 4KB page: physical_addr | flags
+	; Maps virtual 0x0-0x1FFFFF to physical 0x0-0x1FFFFF (identity mapping)
+	xor ebx, ebx				; Start at physical address 0
+    mov ecx, 512				; 512 entries = 2MB of mapped memory
     
 .SetEntry:
-    mov DWORD [edi], ebx
-    add ebx, 0x1000
-    add edi, 8
-    loop .SetEntry
+    mov eax, ebx				; Copy physical address to eax
+    or eax, 0x3					; Add present + writable flags
+    mov DWORD [edi], eax		; Write lower 32 bits of page table entry
+    mov DWORD [edi + 4], 0		; Write upper 32 bits (0 for addresses < 4GB)
+    add ebx, 0x1000				; Next physical page (advance by 4KB)
+    add edi, 8					; Next page table entry (8 bytes per entry)
+    loop .SetEntry				; Repeat for all 512 entries
 
 	mov eax, cr4
-    or eax, 1 << 5
+    or eax, 1 << 5				; Set PAE bit (bit 5)
     mov cr4, eax
 
-	mov ecx, 0xC0000080
-    rdmsr
-    or eax, 1 << 8
-    wrmsr
+	mov ecx, 0xC0000080			; EFER MSR
+    rdmsr						; Read current EFER value
+    or eax, 1 << 8				; Set LME bit (Long Mode Enable)
+    wrmsr						; Write back to EFER
 
+	xchg bx, bx					; Magic breakpoint - about to enable paging
 	mov eax, cr0
-    or eax, 1 << 31
-    mov cr0, eax
+    or eax, 1 << 31				; Set PG bit (bit 31) to enable paging
+    mov cr0, eax				; Long mode is now active
 
-Continue_Part2:
-    jmp CODE64_DESC:LoaderEntry64
+	push CODE64_DESC			; Push 64-bit code segment selector
+	push LoaderEntry64			; Push offset
+	retf						; Far return to enter 64-bit mode
 
 ALIGN   64
 BITS    64
@@ -456,18 +488,17 @@ BITS    64
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
 LoaderEntry64:
-    cli                        ; Disable interrupts
+    ; Disable interrupts
+	cli
     ; Setup data segments
-    mov ax, DATA_SEGMENT64     ; Load data segment selector
+    mov ax, DATA_SEGMENT64
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov es, ax                ; Redundant; can be omitted if not needed
-    ; Setup stack
-    mov rsp, 0x90000           ; Set stack pointer (ensure 16-byte alignment)
-	xchg bx, bx
+    ; Setup stack pointer, ensure 16-byte alignment
+    mov rsp, 0x90000
     ; Jump to next stage
     jmp Continue_Part3
 
