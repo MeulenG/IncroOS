@@ -50,8 +50,6 @@ jobs:
           --enable-svm \
           --enable-avx \
           --enable-long-phy-address \
-          --enable-debugger \
-          --enable-disasm \
           --enable-all-optimizations \
           --enable-pci \
           --enable-usb \
@@ -248,11 +246,19 @@ jobs:
         fi
         
         if [ $success -eq 0 ]; then
-          echo "⚠ Warning: Could not verify OS boot, but Bochs ran without errors"
-          echo "This may be normal if the OS doesn't produce serial output yet"
+          echo "❌ ERROR: Could not verify OS boot - no serial output or boot indicators found"
+          echo "The workflow expects either:"
+          echo "  1. Serial output in serial.out, OR"
+          echo "  2. Boot indicators in bochsout.txt (e.g., 'Booting from')"
+          echo ""
+          echo "Current status:"
+          echo "  - Bochs log exists: $([ -f bochsout.txt ] && echo 'Yes' || echo 'No')"
+          echo "  - Serial file exists: $([ -f serial.out ] && echo 'Yes' || echo 'No')"
+          echo "  - Serial file size: $([ -f serial.out ] && wc -c < serial.out || echo '0') bytes"
+          exit 1
         fi
         
-        # Don't fail the build, just report status
+        echo "✅ OS verification successful"
         exit 0
     
     - name: Upload artifacts
