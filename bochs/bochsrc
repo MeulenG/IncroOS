@@ -85,12 +85,12 @@
 #display_library: nogui
 #display_library: rfb
 #display_library: sdl, options="fullscreen" # startup in fullscreen mode
-#display_library: sdl2  #options="fullscreen" # startup in fullscreen mode
+display_library: sdl2  #options="fullscreen" # startup in fullscreen mode
 #display_library: term
 #display_library: vncsrv
 #display_library: win32
 #display_library: wx
-display_library: x
+#display_library: x
 
 #=======================================================================
 # CPU:
@@ -732,7 +732,7 @@ debug: action=ignore, pci=report
 #=======================================================================
 #debugger_log: /dev/null
 #debugger_log: debugger.out
-debugger_log: -
+debugger_log: debugger.out
 
 #=======================================================================
 # COM1, COM2, COM3, COM4:
@@ -1022,4 +1022,4 @@ magic_break: enabled=1
 # Example:
 #   port_e9_hack: enabled=1
 #=======================================================================
-#port_e9_hack: enabled=1
+port_e9_hack: enabled=1
