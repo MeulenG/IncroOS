@@ -419,7 +419,6 @@ LoaderEntry32:
 	;   0x4000-0x4FFF: PT (Page Table) - 512 entries
 	; This maps the first 2MB of physical memory (512 * 4KB pages)
 	
-	; Step 1: Clear 16KB (4096 DWORDs) for page table structures
 	mov edi, 0x1000
     mov cr3, edi				; Set CR3 to point to PML4
     xor eax, eax				; EAX = 0 for clearing
@@ -427,7 +426,6 @@ LoaderEntry32:
     rep stosd					; Zero out memory from 0x1000-0x4FFF
     mov edi, cr3				; Reset EDI to start of PML4
 
-	; Step 2: Setup page table hierarchy
 	; Each entry is 8 bytes in 64-bit paging
 	; Lower 32 bits: physical address | flags
 	; Upper 32 bits: remain 0 for addresses < 4GB (already cleared above)
@@ -448,37 +446,37 @@ LoaderEntry32:
     mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
     add edi, 0x1000				; Move to PT at 0x4000
 
-	; Step 3: Fill page table with 512 entries mapping 2MB of physical memory
 	; Each entry maps a 4KB page: physical_addr | flags
 	; Maps virtual 0x0-0x1FFFFF to physical 0x0-0x1FFFFF (identity mapping)
-	mov ebx, 0x00000003			; Start at physical address 0 with present+writable flags
+	xor ebx, ebx				; Start at physical address 0
     mov ecx, 512				; 512 entries = 2MB of mapped memory
     
 .SetEntry:
-    mov DWORD [edi], ebx		; Write lower 32 bits of page table entry
+    mov eax, ebx				; Copy physical address to eax
+    or eax, 0x3					; Add present + writable flags
+    mov DWORD [edi], eax		; Write lower 32 bits of page table entry
     mov DWORD [edi + 4], 0		; Write upper 32 bits (0 for addresses < 4GB)
     add ebx, 0x1000				; Next physical page (advance by 4KB)
     add edi, 8					; Next page table entry (8 bytes per entry)
     loop .SetEntry				; Repeat for all 512 entries
 
-	; Step 4: Enable Physical Address Extension (PAE) - required for 64-bit paging
 	mov eax, cr4
     or eax, 1 << 5				; Set PAE bit (bit 5)
     mov cr4, eax
 
-	; Step 5: Enable Long Mode by setting EFER.LME
 	mov ecx, 0xC0000080			; EFER MSR
     rdmsr						; Read current EFER value
     or eax, 1 << 8				; Set LME bit (Long Mode Enable)
     wrmsr						; Write back to EFER
 
-	; Step 6: Enable paging and activate Long Mode
+	xchg bx, bx					; Magic breakpoint - about to enable paging
 	mov eax, cr0
     or eax, 1 << 31				; Set PG bit (bit 31) to enable paging
     mov cr0, eax				; Long mode is now active
 
-Continue_Part2:
-    jmp CODE64_DESC:LoaderEntry64
+	push CODE64_DESC			; Push 64-bit code segment selector
+	push LoaderEntry64			; Push offset
+	retf						; Far return to enter 64-bit mode
 
 ALIGN   64
 BITS    64
@@ -490,18 +488,17 @@ BITS    64
 ;	ENTRY POINT For STAGE 4
 ;******************************************************
 LoaderEntry64:
-    cli                        ; Disable interrupts
+    ; Disable interrupts
+	cli
     ; Setup data segments
-    mov ax, DATA_SEGMENT64     ; Load data segment selector
+    mov ax, DATA_SEGMENT64
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov es, ax                ; Redundant; can be omitted if not needed
-    ; Setup stack
-    mov rsp, 0x90000           ; Set stack pointer (ensure 16-byte alignment)
-	xchg bx, bx
+    ; Setup stack pointer, ensure 16-byte alignment
+    mov rsp, 0x90000
     ; Jump to next stage
     jmp Continue_Part3
 
