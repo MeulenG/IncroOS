@@ -1,0 +1,143 @@
+name: Nightly Build Check
+
+on:
+  schedule:
+    # Run every night at 21:00 UTC (adjust for your timezone as needed)
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-build
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-test-reusable.yml
+    with:
+      artifact-name: nightly-bochs-output
+      upload-disk-image: true
+  
+  create-nightly-release:
+    name: Create Nightly Release
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: success()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download disk image
+      uses: actions/download-artifact@v4
+      with:
+        name: disk-image
+        path: .
+    
+    - name: Verify disk image exists
+      run: |
+        if [ ! -f disk.img ]; then
+          echo "ERROR: disk.img not found after download"
+          exit 1
+        fi
+        echo "SUCCESS: disk.img found"
+        ls -lh disk.img
+    
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+    
+    - name: Delete existing nightly release
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Delete the nightly release if it exists
+        gh release delete nightly --yes 2>/dev/null || echo "No existing nightly release to delete"
+        # Delete the nightly tag using GitHub API
+        gh api "repos/${{ github.repository }}/git/refs/tags/nightly" -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
+    
+    - name: Verify deletion succeeded
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Check if the release still exists
+        if gh release view nightly 2>/dev/null; then
+          echo "WARNING: Nightly release still exists after deletion attempt"
+        else
+          echo "SUCCESS: Nightly release successfully deleted or did not exist"
+        fi
+    
+    - name: Create nightly release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Create release notes with variable substitution
+        cat > release_notes.md <<EOF
+        # Nightly Build - ${{ steps.date.outputs.date }}
+        
+        This is an automated nightly build of IncroOS.
+        
+        ## Build Information
+        - **Build Date**: ${{ steps.date.outputs.date }}
+        - **Commit**: ${{ github.sha }}
+        - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
+        
+        ## Included Files
+        - \`disk.img\`: Bootable disk image for the OS
+        
+        ## Usage
+        Download \`disk.img\` and run it with Bochs emulator.
+        
+        You'll need to create a \`bochsrc\` configuration file. Example:
+        \`\`\`
+        display_library: sdl2
+        
+        # ROM images (adjust paths based on your Bochs installation)
+        romimage: file=/usr/share/bochs/BIOS-bochs-latest
+        vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
+        
+        # CPU configuration
+        cpu: model=core2_penryn_t9600, count=1, ips=50000000
+        cpuid: x86_64=1, mmx=1, sep=1, simd=sse4_2, apic=xapic, aes=1, movbe=1, xsave=1
+        
+        # Memory
+        memory: guest=4096, host=256
+        
+        # PCI
+        pci: enabled=1, chipset=i440fx
+        
+        # Disk image
+        ata0-master: type=disk, mode=flat, path=disk.img
+        boot: disk
+        
+        # Serial port for debugging
+        com1: enabled=1, mode=file, dev=serial.out
+        \`\`\`
+        
+        Then run:
+        \`\`\`bash
+        bochs -q -f bochsrc
+        \`\`\`
+        
+        **Note**: You may need to adjust ROM paths and other settings based on your Bochs installation and system requirements.
+        
+        ## Warning
+        This is a pre-release nightly build and may be unstable.
+        EOF
+        
+        # Create the release
+        gh release create nightly \
+          disk.img \
+          --title "Nightly Build - ${{ steps.date.outputs.date }}" \
+          --notes-file release_notes.md \
+          --prerelease \
+          --target ${{ github.sha }}
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f disk.img release_notes.md
