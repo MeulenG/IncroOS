@@ -81,8 +81,9 @@ serial_init:
 serial_putchar:
     push rax
     push rdx
+    push rbx
     
-    mov al, dil             ; Get the character from first argument
+    mov bl, dil             ; Save the character in bl (preserved across the wait loop)
     
     ; Wait for transmit buffer to be empty
 .wait:
@@ -92,10 +93,11 @@ serial_putchar:
     jz .wait
     
     ; Send the character
-    mov al, dil
+    mov al, bl              ; Retrieve the character from bl
     mov dx, COM1_DATA
     out dx, al
     
+    pop rbx
     pop rdx
     pop rax
     ret
