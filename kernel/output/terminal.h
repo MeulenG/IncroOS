@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-extern const size_t VGA_WIDTH;
-extern const size_t VGA_HEIGHT;
+#define VGA_WIDTH  80
+#define VGA_HEIGHT 25
 
 enum vga_color {
     VGA_COLOR_BLACK         = 0,
