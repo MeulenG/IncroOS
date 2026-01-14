@@ -291,7 +291,12 @@ jobs:
       if: always()
       run: |
         echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
-        echo "serial-output-verified=${{ steps.verify-os.outputs.serial_verified || 'false' }}" >> $GITHUB_OUTPUT
+        # Use 'true' or 'false' as strings for consistency with GitHub Actions
+        if [ "${{ steps.verify-os.outputs.serial_verified }}" = "true" ]; then
+          echo "serial-output-verified=true" >> $GITHUB_OUTPUT
+        else
+          echo "serial-output-verified=false" >> $GITHUB_OUTPUT
+        fi
     
     - name: Upload artifacts
       if: always()
