@@ -48,12 +48,17 @@ uint64_t pmm_alloc_page(void) {
         return addr;
     }
     
-    // Find first free page
+    // Find first free page from bitmap-managed region
     for (size_t i = 0; i < PMM_TOTAL_PAGES; i++) {
         if (!test_bit(i)) {
             // Mark as used
             set_bit(i);
             pmm_free_pages--;
+            
+            // NOTE: We cannot clear this page without it being identity-mapped.
+            // This is a known limitation - pages from this region should only be used
+            // after being mapped by VMM, which will need to clear them if required.
+            // For now, we assume the bootloader or subsequent mapping will handle this.
             
             // Return physical address
             return PMM_MEMORY_START + (i * PMM_PAGE_SIZE);

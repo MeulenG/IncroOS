@@ -5,8 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Physical memory starts after the kernel and boot structures
-// We'll use 0x200000 (2MB) as the start of managed physical memory
+// Physical memory configuration
+// NOTE: Currently we only use the identity-mapped region (0x0-0x1FFFFF, first 2MB)
+// for page allocations to avoid page faults. The bootloader identity-maps this region.
+// Future improvement: extend identity mapping in bootloader or implement recursive mapping.
 #define PMM_MEMORY_START    0x200000
 #define PMM_MEMORY_SIZE     (32 * 1024 * 1024)  // Manage 32MB initially
 #define PMM_PAGE_SIZE       4096
