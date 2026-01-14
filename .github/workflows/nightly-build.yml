@@ -7,10 +7,90 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-test:
     uses: ./.github/workflows/build-test-reusable.yml
     with:
       artifact-name: nightly-bochs-output
+      upload-disk-image: true
+  
+  create-nightly-release:
+    name: Create Nightly Release
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download disk image
+      uses: actions/download-artifact@v4
+      with:
+        name: disk-image
+        path: .
+    
+    - name: Verify disk image exists
+      run: |
+        if [ ! -f disk.img ]; then
+          echo "❌ Error: disk.img not found after download"
+          exit 1
+        fi
+        echo "✅ disk.img found"
+        ls -lh disk.img
+    
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+    
+    - name: Delete existing nightly release
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Delete the nightly tag and release if they exist
+        gh release delete nightly --yes || true
+        git push origin :refs/tags/nightly || true
+    
+    - name: Create nightly release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Create release notes
+        cat > release_notes.md <<EOF
+        # Nightly Build - ${{ steps.date.outputs.date }}
+        
+        This is an automated nightly build of IncroOS.
+        
+        ## Build Information
+        - **Build Date**: ${{ steps.date.outputs.date }}
+        - **Commit**: ${{ github.sha }}
+        - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
+        
+        ## Included Files
+        - \`disk.img\`: Bootable disk image for the OS
+        
+        ## Usage
+        Download \`disk.img\` and use it with Bochs or another emulator:
+        \`\`\`bash
+        bochs -q -f bochsrc
+        \`\`\`
+        
+        ## Warning
+        ⚠️ This is a pre-release nightly build and may be unstable.
+        EOF
+        
+        # Create the release
+        gh release create nightly \
+          disk.img \
+          --title "Nightly Build - ${{ steps.date.outputs.date }}" \
+          --notes-file release_notes.md \
+          --prerelease \
+          --target ${{ github.sha }}
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f disk.img release_notes.md

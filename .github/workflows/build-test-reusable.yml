@@ -8,6 +8,18 @@ on:
         required: false
         type: string
         default: 'bochs-output'
+      upload-disk-image:
+        description: 'Whether to upload disk.img as an artifact'
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      disk-image-path:
+        description: 'Path to the disk image'
+        value: ${{ jobs.build-and-test.outputs.disk-image-path }}
+      serial-output-verified:
+        description: 'Whether serial output was verified'
+        value: ${{ jobs.build-and-test.outputs.serial-output-verified }}
 
 permissions:
   contents: read
@@ -15,6 +27,9 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    outputs:
+      disk-image-path: ${{ steps.set-outputs.outputs.disk-image-path }}
+      serial-output-verified: ${{ steps.set-outputs.outputs.serial-output-verified }}
     
     steps:
     - name: Checkout repository
@@ -65,6 +80,10 @@ jobs:
           --with-nogui
         make -j$(nproc)
         sudo make install
+        
+        # Clean up Bochs build artifacts
+        cd /tmp
+        rm -rf bochs-2.7 bochs-2.7.tar.gz
     
     - name: Build diskbuilder
       run: |
@@ -218,6 +237,7 @@ jobs:
         echo "Serial output capture location: $(pwd)/serial.out"
     
     - name: Verify OS started
+      id: verify-os
       run: |
         cd bochs
         
@@ -245,6 +265,9 @@ jobs:
           echo "Serial output content:"
           cat serial.out
           success=1
+          echo "serial_verified=true" >> $GITHUB_OUTPUT
+        else
+          echo "serial_verified=false" >> $GITHUB_OUTPUT
         fi
         
         if [ $success -eq 0 ]; then
@@ -263,6 +286,13 @@ jobs:
         echo "✅ OS verification successful"
         exit 0
     
+    - name: Set outputs
+      id: set-outputs
+      if: always()
+      run: |
+        echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
+        echo "serial-output-verified=${{ steps.verify-os.outputs.serial_verified || 'false' }}" >> $GITHUB_OUTPUT
+    
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -273,3 +303,23 @@ jobs:
           bochs/serial.out
           bochs/bochsrc.ci
         if-no-files-found: warn
+    
+    - name: Upload disk image
+      if: inputs.upload-disk-image && success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: disk-image
+        path: disk.img
+        if-no-files-found: error
+    
+    - name: Cleanup build artifacts
+      if: always()
+      run: |
+        # Clean up temporary build directories
+        rm -rf build/CMakeFiles
+        rm -rf build/CMakeCache.txt
+        rm -rf External/diskbuilder/build/CMakeFiles
+        rm -rf External/diskbuilder/build/CMakeCache.txt
+        
+        # Clean up bochs test directory
+        rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/disk.img
