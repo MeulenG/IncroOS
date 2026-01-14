@@ -6,11 +6,14 @@ on:
     - cron: '0 21 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: nightly-build
+  cancel-in-progress: false
 
 jobs:
   build-and-test:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-test-reusable.yml
     with:
       artifact-name: nightly-bochs-output
@@ -20,6 +23,8 @@ jobs:
     name: Create Nightly Release
     needs: build-and-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: success()
     
     steps:
@@ -50,16 +55,28 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Delete the nightly tag and release if they exist
+        # Delete the nightly release if it exists
         gh release delete nightly --yes 2>/dev/null || echo "No existing nightly release to delete"
-        git push origin :refs/tags/nightly 2>/dev/null || echo "No existing nightly tag to delete"
+        # Delete the nightly tag using GitHub API
+        gh api repos/:owner/:repo/git/refs/tags/nightly -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
+    
+    - name: Verify deletion succeeded
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Check if the release still exists
+        if gh release view nightly 2>/dev/null; then
+          echo "WARNING: Nightly release still exists after deletion attempt"
+        else
+          echo "SUCCESS: Nightly release successfully deleted or did not exist"
+        fi
     
     - name: Create nightly release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Create release notes
-        cat > release_notes.md <<EOF
+        cat > release_notes.md <<'EOF'
         # Nightly Build - ${{ steps.date.outputs.date }}
         
         This is an automated nightly build of IncroOS.
@@ -70,24 +87,43 @@ jobs:
         - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
         
         ## Included Files
-        - \`disk.img\`: Bootable disk image for the OS
+        - `disk.img`: Bootable disk image for the OS
         
         ## Usage
-        Download \`disk.img\` and run it with Bochs emulator.
+        Download `disk.img` and run it with Bochs emulator.
         
-        You'll need to create a \`bochsrc\` configuration file. Example:
-        \`\`\`
+        You'll need to create a `bochsrc` configuration file. Example:
+        ```
         display_library: sdl2
+        
+        # ROM images (adjust paths based on your Bochs installation)
         romimage: file=/usr/share/bochs/BIOS-bochs-latest
         vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
+        
+        # CPU configuration
+        cpu: model=core2_penryn_t9600, count=1, ips=50000000
+        cpuid: x86_64=1, mmx=1, sep=1, simd=sse4_2, apic=xapic, aes=1, movbe=1, xsave=1
+        
+        # Memory
+        memory: guest=4096, host=256
+        
+        # PCI
+        pci: enabled=1, chipset=i440fx
+        
+        # Disk image
         ata0-master: type=disk, mode=flat, path=disk.img
         boot: disk
-        \`\`\`
+        
+        # Serial port for debugging
+        com1: enabled=1, mode=file, dev=serial.out
+        ```
         
         Then run:
-        \`\`\`bash
+        ```bash
         bochs -q -f bochsrc
-        \`\`\`
+        ```
+        
+        **Note**: You may need to adjust ROM paths and other settings based on your Bochs installation and system requirements.
         
         ## Warning
         This is a pre-release nightly build and may be unstable.

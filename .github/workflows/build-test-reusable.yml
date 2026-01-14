@@ -241,6 +241,9 @@ jobs:
       run: |
         cd bochs
         
+        # Initialize output to ensure it's always set
+        echo "serial_verified=false" >> $GITHUB_OUTPUT
+        
         # Check if we have any output indicating the OS started
         success=0
         
@@ -248,26 +251,24 @@ jobs:
         if [ -f bochsout.txt ]; then
           # Check if bochs started successfully
           if grep -q "Bochs x86 Emulator" bochsout.txt; then
-            echo "✓ Bochs emulator started successfully"
+            echo "SUCCESS: Bochs emulator started successfully"
             success=1
           fi
           
           # Check for boot sector execution
           if grep -q "Booting from" bochsout.txt; then
-            echo "✓ Boot process initiated"
+            echo "SUCCESS: Boot process initiated"
             success=1
           fi
         fi
         
         # Check serial output for any OS messages
         if [ -f serial.out ] && [ -s serial.out ]; then
-          echo "✓ Serial output captured"
+          echo "SUCCESS: Serial output captured"
           echo "Serial output content:"
           cat serial.out
           success=1
           echo "serial_verified=true" >> $GITHUB_OUTPUT
-        else
-          echo "serial_verified=false" >> $GITHUB_OUTPUT
         fi
         
         if [ $success -eq 0 ]; then
@@ -290,7 +291,12 @@ jobs:
       id: set-outputs
       if: always()
       run: |
-        echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
+        # Only set disk-image-path when disk image is expected and present
+        if [ "${{ inputs.upload-disk-image }}" = "true" ] && [ -f disk.img ]; then
+          echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
+        else
+          echo "disk-image-path=" >> $GITHUB_OUTPUT
+        fi
         # Use 'true' or 'false' as strings for consistency with GitHub Actions
         if [ "${{ steps.verify-os.outputs.serial_verified }}" = "true" ]; then
           echo "serial-output-verified=true" >> $GITHUB_OUTPUT
@@ -310,7 +316,7 @@ jobs:
         if-no-files-found: warn
     
     - name: Upload disk image
-      if: inputs.upload-disk-image && success()
+      if: inputs.upload-disk-image && (success() || failure())
       uses: actions/upload-artifact@v4
       with:
         name: disk-image
@@ -321,10 +327,8 @@ jobs:
       if: always()
       run: |
         # Clean up temporary build directories
-        rm -rf build/CMakeFiles
-        rm -rf build/CMakeCache.txt
-        rm -rf External/diskbuilder/build/CMakeFiles
-        rm -rf External/diskbuilder/build/CMakeCache.txt
+        rm -rf build
+        rm -rf External/diskbuilder/build
         
         # Clean up bochs test directory
         rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/disk.img
