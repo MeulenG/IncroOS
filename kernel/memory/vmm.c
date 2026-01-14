@@ -44,8 +44,8 @@ static uint64_t* get_page_table_entry(uint64_t virt_addr, bool allocate) {
         
         // Clear the new table
         page_table_t* pdp = (page_table_t*)pdp_phys;
-        for (int i = 0; i < 512; i++) {
-            pdp->entries[i] = 0;
+        for (int entry_idx = 0; entry_idx < 512; entry_idx++) {
+            pdp->entries[entry_idx] = 0;
         }
         
         pml4->entries[pml4_index] = pdp_phys | PTE_PRESENT | PTE_WRITABLE;
@@ -61,8 +61,8 @@ static uint64_t* get_page_table_entry(uint64_t virt_addr, bool allocate) {
         
         // Clear the new table
         page_table_t* pd = (page_table_t*)pd_phys;
-        for (int i = 0; i < 512; i++) {
-            pd->entries[i] = 0;
+        for (int entry_idx = 0; entry_idx < 512; entry_idx++) {
+            pd->entries[entry_idx] = 0;
         }
         
         pdp->entries[pdp_index] = pd_phys | PTE_PRESENT | PTE_WRITABLE;
@@ -78,8 +78,8 @@ static uint64_t* get_page_table_entry(uint64_t virt_addr, bool allocate) {
         
         // Clear the new table
         page_table_t* pt = (page_table_t*)pt_phys;
-        for (int i = 0; i < 512; i++) {
-            pt->entries[i] = 0;
+        for (int entry_idx = 0; entry_idx < 512; entry_idx++) {
+            pt->entries[entry_idx] = 0;
         }
         
         pd->entries[pd_index] = pt_phys | PTE_PRESENT | PTE_WRITABLE;
