@@ -229,7 +229,7 @@ jobs:
             xxd -l 512 serial.out || hexdump -C serial.out | head -32
           fi
         else
-          echo "❌ No serial output file found!"
+          echo "ERROR: No serial output file found!"
           echo "This means the OS did not write to the serial port."
         fi
         
@@ -271,7 +271,7 @@ jobs:
         fi
         
         if [ $success -eq 0 ]; then
-          echo "❌ ERROR: Could not verify OS boot - no serial output or boot indicators found"
+          echo "ERROR: Could not verify OS boot - no serial output or boot indicators found"
           echo "The workflow expects either:"
           echo "  1. Serial output in serial.out, OR"
           echo "  2. Boot indicators in bochsout.txt (e.g., 'Booting from')"
@@ -283,7 +283,7 @@ jobs:
           exit 1
         fi
         
-        echo "✅ OS verification successful"
+        echo "SUCCESS: OS verification successful"
         exit 0
     
     - name: Set outputs
