@@ -26,3 +26,19 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/vga.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vga.c
 )
 add_custom_target(VGADriver ALL DEPENDS ${CMAKE_BINARY_DIR}/vga.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/serial_asm.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND nasm -f elf64 -o ${CMAKE_BINARY_DIR}/serial_asm.o ${CMAKE_CURRENT_SOURCE_DIR}/serial.asm
+    COMMENT "Compiling Serial Driver (Assembly)"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/serial.asm
+)
+add_custom_target(SerialDriverAsm ALL DEPENDS ${CMAKE_BINARY_DIR}/serial_asm.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/serial.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/serial.c -o ${CMAKE_BINARY_DIR}/serial.o
+    COMMENT "Compiling Serial Driver (C)"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/serial.c
+)
+add_custom_target(SerialDriver ALL DEPENDS ${CMAKE_BINARY_DIR}/serial.o)

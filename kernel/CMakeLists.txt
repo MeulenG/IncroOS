@@ -29,7 +29,8 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o
     COMMENT "Compiling C Kernel"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c terminal
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/serial_asm.o
 )
 
-add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o terminal)
+add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/serial_asm.o)
+add_dependencies(Kernel terminal SerialDriver SerialDriverAsm)
