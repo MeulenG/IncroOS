@@ -35,10 +35,10 @@ jobs:
     - name: Verify disk image exists
       run: |
         if [ ! -f disk.img ]; then
-          echo "❌ Error: disk.img not found after download"
+          echo "ERROR: disk.img not found after download"
           exit 1
         fi
-        echo "✅ disk.img found"
+        echo "SUCCESS: disk.img found"
         ls -lh disk.img
     
     - name: Get current date
@@ -90,7 +90,7 @@ jobs:
         \`\`\`
         
         ## Warning
-        ⚠️ This is a pre-release nightly build and may be unstable.
+        This is a pre-release nightly build and may be unstable.
         EOF
         
         # Create the release
