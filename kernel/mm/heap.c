@@ -21,43 +21,48 @@ static uint64_t heap_current_size = 0;
 static uint64_t heap_current_end = HEAP_START;
 
 // Helper function to expand heap
-static bool expand_heap(size_t additional_size) {
+// Returns the start address of the newly allocated region, or 0 on failure
+static uint64_t expand_heap(size_t additional_size) {
     // Align to page boundary
     size_t pages_needed = (additional_size + PAGE_SIZE - 1) / PAGE_SIZE;
     size_t new_size = pages_needed * PAGE_SIZE;
     
     if (heap_current_size + new_size > HEAP_MAX) {
-        return false;  // Would exceed maximum heap size
+        return 0;  // Would exceed maximum heap size
     }
+    
+    // Save start of new region
+    uint64_t new_region_start = heap_current_end;
     
     // Allocate and map pages
     for (size_t i = 0; i < pages_needed; i++) {
         uint64_t phys = pmm_alloc_page();
         if (phys == 0) {
-            return false;  // Out of physical memory
+            return 0;  // Out of physical memory
         }
         
         uint64_t virt = heap_current_end + (i * PAGE_SIZE);
         if (!vmm_map_page(virt, phys, PTE_PRESENT | PTE_WRITABLE)) {
             pmm_free_page(phys);
-            return false;  // Mapping failed
+            return 0;  // Mapping failed
         }
     }
     
     heap_current_end += new_size;
     heap_current_size += new_size;
     
-    return true;
+    return new_region_start;
 }
 
 void heap_init(void) {
     // Expand heap to initial size
-    if (!expand_heap(HEAP_INITIAL)) {
+    uint64_t new_region = expand_heap(HEAP_INITIAL);
+    if (new_region == 0) {
         return;  // Failed to initialize heap
     }
     
     // Create initial free block
-    heap_head = (heap_block_t*)HEAP_START;
+    heap_head = (heap_block_t*)new_region;
     heap_head->size = heap_current_size - sizeof(heap_block_t);
     heap_head->is_free = true;
     heap_head->next = 0;
@@ -100,12 +105,28 @@ void* kmalloc(size_t size) {
     
     // No suitable block found, try to expand heap
     size_t needed = size + sizeof(heap_block_t);
-    if (expand_heap(needed)) {
-        // Create new block at end of heap
-        heap_block_t* new_block = (heap_block_t*)(heap_current_end - needed);
-        new_block->size = needed - sizeof(heap_block_t);
+    uint64_t new_region = expand_heap(needed);
+    if (new_region != 0) {
+        // Get the actual size that was allocated (page-aligned)
+        size_t pages_needed = (needed + PAGE_SIZE - 1) / PAGE_SIZE;
+        size_t allocated_size = pages_needed * PAGE_SIZE;
+        
+        // Create new block at start of new region
+        heap_block_t* new_block = (heap_block_t*)new_region;
+        new_block->size = allocated_size - sizeof(heap_block_t);
         new_block->is_free = false;
         new_block->next = 0;
+        
+        // If block is much larger than needed, split it
+        if (new_block->size >= size + sizeof(heap_block_t) + 64) {
+            heap_block_t* free_block = (heap_block_t*)((uint8_t*)new_block + sizeof(heap_block_t) + size);
+            free_block->size = new_block->size - size - sizeof(heap_block_t);
+            free_block->is_free = true;
+            free_block->next = 0;
+            
+            new_block->size = size;
+            new_block->next = free_block;
+        }
         
         // Link to end of list
         if (prev) {
