@@ -58,7 +58,7 @@ jobs:
         # Delete the nightly release if it exists
         gh release delete nightly --yes 2>/dev/null || echo "No existing nightly release to delete"
         # Delete the nightly tag using GitHub API
-        gh api repos/:owner/:repo/git/refs/tags/nightly -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
+        gh api "repos/${{ github.repository }}/git/refs/tags/nightly" -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
     
     - name: Verify deletion succeeded
       env:
@@ -75,8 +75,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Create release notes
-        cat > release_notes.md <<'EOF'
+        # Create release notes with variable substitution
+        cat > release_notes.md <<EOF
         # Nightly Build - ${{ steps.date.outputs.date }}
         
         This is an automated nightly build of IncroOS.
@@ -87,13 +87,13 @@ jobs:
         - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
         
         ## Included Files
-        - `disk.img`: Bootable disk image for the OS
+        - \`disk.img\`: Bootable disk image for the OS
         
         ## Usage
-        Download `disk.img` and run it with Bochs emulator.
+        Download \`disk.img\` and run it with Bochs emulator.
         
-        You'll need to create a `bochsrc` configuration file. Example:
-        ```
+        You'll need to create a \`bochsrc\` configuration file. Example:
+        \`\`\`
         display_library: sdl2
         
         # ROM images (adjust paths based on your Bochs installation)
@@ -116,12 +116,12 @@ jobs:
         
         # Serial port for debugging
         com1: enabled=1, mode=file, dev=serial.out
-        ```
+        \`\`\`
         
         Then run:
-        ```bash
+        \`\`\`bash
         bochs -q -f bochsrc
-        ```
+        \`\`\`
         
         **Note**: You may need to adjust ROM paths and other settings based on your Bochs installation and system requirements.
         
