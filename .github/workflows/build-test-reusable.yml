@@ -316,6 +316,7 @@ jobs:
         if-no-files-found: warn
     
     - name: Upload disk image
+      # Upload on success or failure for debugging, but skip if cancelled
       if: inputs.upload-disk-image && (success() || failure())
       uses: actions/upload-artifact@v4
       with:
