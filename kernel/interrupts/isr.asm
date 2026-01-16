@@ -11,7 +11,9 @@ extern interrupt_handler
 ; Common ISR stub that saves state and calls the C handler
 ; This is called by all ISR stubs after pushing interrupt number and error code
 isr_common_stub:
-    ; Save all general purpose registers (matches SAVE_STATE macro order)
+    ; Save all general purpose registers
+    ; Push in reverse order so they appear in the correct order in memory
+    ; (stack grows downward, so last pushed = first in memory)
     push rdi
     push rsi
     push rbp
@@ -31,10 +33,11 @@ isr_common_stub:
     push r15
     
     ; Call C interrupt handler with pointer to interrupt frame
+    ; The structure is now properly aligned with the stack layout
     mov rdi, rsp
     call interrupt_handler
     
-    ; Restore all registers
+    ; Restore all registers (in reverse order of push)
     pop r15
     pop r14
     pop r13

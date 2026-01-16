@@ -138,9 +138,7 @@ void interrupt_handler(struct interrupt_frame* frame) {
     // Handle exceptions (0-31)
     if (frame->int_no < 32) {
         terminal_writestring("\n[EXCEPTION] ");
-        if (frame->int_no < 32) {
-            terminal_writestring(exception_messages[frame->int_no]);
-        }
+        terminal_writestring(exception_messages[frame->int_no]);
         terminal_writestring("\n");
         
         // Halt on exception for now
