@@ -46,12 +46,63 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) {
     terminal_buffer[index] = vga_entry(c, color);
 }
 
+void terminal_scroll(void) {
+    // Move all lines up by one
+    for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            const size_t dest_index = y * VGA_WIDTH + x;
+            const size_t src_index = (y + 1) * VGA_WIDTH + x;
+            terminal_buffer[dest_index] = terminal_buffer[src_index];
+        }
+    }
+    
+    // Clear the last line
+    for (size_t x = 0; x < VGA_WIDTH; x++) {
+        const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
+        terminal_buffer[index] = vga_entry(' ', terminal_color);
+    }
+    
+    // Move cursor to the beginning of the last line
+    terminal_row = VGA_HEIGHT - 1;
+    terminal_column = 0;
+}
+
 void terminal_putchar(char c) {
+    // Handle special characters
+    if (c == '\n') {
+        // Newline: move to the start of the next line
+        terminal_column = 0;
+        if (++terminal_row == VGA_HEIGHT) {
+            terminal_scroll();
+        }
+        return;
+    } else if (c == '\r') {
+        // Carriage return: move to the start of the current line
+        terminal_column = 0;
+        return;
+    } else if (c == '\b') {
+        // Backspace: move back one position if not at start of line
+        if (terminal_column > 0) {
+            terminal_column--;
+            terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+        }
+        return;
+    } else if (c == '\t') {
+        // Tab: move to next tab stop (every 4 spaces)
+        size_t spaces = 4 - (terminal_column % 4);
+        for (size_t i = 0; i < spaces; i++) {
+            terminal_putchar(' ');
+        }
+        return;
+    }
+    
+    // Regular character
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
     if (++terminal_column == VGA_WIDTH) {
         terminal_column = 0;
-        if (++terminal_row == VGA_HEIGHT)
-            terminal_row = 0;
+        if (++terminal_row == VGA_HEIGHT) {
+            terminal_scroll();
+        }
     }
 }
 
