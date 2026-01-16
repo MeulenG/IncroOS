@@ -90,8 +90,16 @@ void terminal_putchar(char c) {
     } else if (c == '\t') {
         // Tab: move to next tab stop (every 4 spaces)
         size_t spaces = 4 - (terminal_column % 4);
-        for (size_t i = 0; i < spaces; i++) {
-            terminal_putchar(' ');
+        for (size_t i = 0; i < spaces && terminal_column < VGA_WIDTH; i++) {
+            terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+            terminal_column++;
+        }
+        // Check if we need to move to next line
+        if (terminal_column >= VGA_WIDTH) {
+            terminal_column = 0;
+            if (++terminal_row == VGA_HEIGHT) {
+                terminal_scroll();
+            }
         }
         return;
     }
