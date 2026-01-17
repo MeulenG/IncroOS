@@ -469,7 +469,6 @@ LoaderEntry32:
     or eax, 1 << 8				; Set LME bit (Long Mode Enable)
     wrmsr						; Write back to EFER
 
-	xchg bx, bx					; Magic breakpoint - about to enable paging
 	mov eax, cr0
     or eax, 1 << 31				; Set PG bit (bit 31) to enable paging
     mov cr0, eax				; Long mode is now active
