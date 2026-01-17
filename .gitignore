@@ -7,3 +7,6 @@ x86test/
 bochsout.txt
 disk.img
 dep/_codeql_detected_source_root
+.artifacts/
+qemu.log
+serial.out
