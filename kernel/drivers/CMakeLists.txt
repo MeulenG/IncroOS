@@ -42,3 +42,19 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/serial.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/serial.c
 )
 add_custom_target(SerialDriver ALL DEPENDS ${CMAKE_BINARY_DIR}/serial.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/keyboard_asm.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND nasm -f elf64 -o ${CMAKE_BINARY_DIR}/keyboard_asm.o ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.asm
+    COMMENT "Compiling Keyboard Driver (Assembly)"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.asm
+)
+add_custom_target(KeyboardDriverAsm ALL DEPENDS ${CMAKE_BINARY_DIR}/keyboard_asm.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/keyboard.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.c -o ${CMAKE_BINARY_DIR}/keyboard.o
+    COMMENT "Compiling Keyboard Driver (C)"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.c
+)
+add_custom_target(KeyboardDriver ALL DEPENDS ${CMAKE_BINARY_DIR}/keyboard.o)
