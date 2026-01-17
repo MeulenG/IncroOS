@@ -44,9 +44,9 @@ void pmm_init(uint64_t total_memory) {
     // Calculate bitmap size in bytes
     uint64_t bitmap_size = (total_pages + PAGES_PER_BYTE - 1) / PAGES_PER_BYTE;
     
-    // Place bitmap after kernel code
-    // Kernel is at 0x100000 (1MB), we'll place bitmap at 0x200000 (2MB)
-    page_bitmap = (uint8_t*)0x200000;
+    // Place bitmap after kernel code, but before 2MB (end of identity mapped region)
+    // Kernel is at 0x100000 (1MB), assume it's max 256KB, place bitmap at 0x140000 (1.25MB)
+    page_bitmap = (uint8_t*)0x140000;
     
     // Initialize bitmap - mark all pages as free
     for (uint64_t i = 0; i < bitmap_size; i++) {
@@ -61,8 +61,8 @@ void pmm_init(uint64_t total_memory) {
         used_pages++;
     }
     
-    // Reserve kernel area (1MB to 2MB)
-    uint64_t kernel_pages = 0x100000 / PAGE_SIZE;  // 1MB for kernel
+    // Reserve kernel area (1MB to 1.5MB) - being conservative
+    uint64_t kernel_pages = 0x80000 / PAGE_SIZE;  // 512KB for kernel
     for (uint64_t i = reserved_low; i < reserved_low + kernel_pages; i++) {
         set_page_allocated(i);
         used_pages++;
@@ -70,7 +70,7 @@ void pmm_init(uint64_t total_memory) {
     
     // Reserve bitmap area
     uint64_t bitmap_pages = (bitmap_size + PAGE_SIZE - 1) / PAGE_SIZE;
-    uint64_t bitmap_start_page = 0x200000 / PAGE_SIZE;
+    uint64_t bitmap_start_page = 0x140000 / PAGE_SIZE;
     for (uint64_t i = bitmap_start_page; i < bitmap_start_page + bitmap_pages; i++) {
         set_page_allocated(i);
         used_pages++;

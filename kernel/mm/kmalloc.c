@@ -1,7 +1,6 @@
 #include "kmalloc.h"
-#include "pmm.h"
-#include "vmm.h"
 #include "../drivers/serial.h"
+#include <stdbool.h>
 
 // Memory block header
 typedef struct block_header {
@@ -11,8 +10,8 @@ typedef struct block_header {
 } block_header_t;
 
 // Heap configuration
-#define HEAP_START 0x300000         // Start of kernel heap (3MB)
-#define HEAP_SIZE  0x100000         // 1MB heap size
+#define HEAP_START 0x180000         // Start of kernel heap (1.5MB) - after bitmap
+#define HEAP_SIZE  0x80000          // 512KB heap size (ends at 2MB, edge of identity mapped region)
 #define BLOCK_HEADER_SIZE sizeof(block_header_t)
 
 // Heap state
@@ -25,21 +24,8 @@ static size_t align_size(size_t size) {
 }
 
 void kmalloc_init(void) {
-    // Map heap pages into virtual memory
-    uint64_t heap_pages = HEAP_SIZE / PAGE_SIZE;
-    for (uint64_t i = 0; i < heap_pages; i++) {
-        uint64_t virt = HEAP_START + (i * PAGE_SIZE);
-        uint64_t phys = pmm_alloc_page();
-        if (phys == 0) {
-            serial_writestring("[KMALLOC] Failed to allocate physical page for heap\n");
-            return;
-        }
-        
-        if (!vmm_map_page(virt, phys, PT_WRITABLE)) {
-            serial_writestring("[KMALLOC] Failed to map heap page\n");
-            return;
-        }
-    }
+    // The heap is already in the identity-mapped region (< 2MB), so we don't need
+    // to map it explicitly. The bootloader has already set up the page tables.
     
     // Initialize heap with one large free block
     heap_start = (block_header_t*)HEAP_START;

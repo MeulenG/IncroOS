@@ -28,6 +28,10 @@ static void uint64_to_string(uint64_t value, char* buffer) {
 
 void kMain(void) {
     serial_init();
+    
+    // Write a simple message BEFORE doing anything complex
+    serial_writestring("\n\n=== IncroOS Kernel Starting ===\n");
+    
     terminal_initialize();
 
     serial_writestring("===========================================\n");
@@ -125,4 +129,9 @@ void kMain(void) {
     serial_writestring("===========================================\n");
     
     terminal_writestring("Memory Manager Initialized!\n");
+    
+    // Infinite loop to keep kernel running
+    while (1) {
+        __asm__ volatile("hlt");
+    }
 }

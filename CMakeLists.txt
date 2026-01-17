@@ -31,7 +31,7 @@ if(MFOS)
 
     add_custom_command(
         OUTPUT disk.img
-        COMMAND cd .. && External/diskbuilder/build/osbuilder os.yaml --target img
+        COMMAND cd .. && dotnet External/diskbuilder/build/osbuilder.dll os.yaml --target img
         DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS 
                 ${CMAKE_BINARY_DIR}/STAGE2.SYS 
                 ${CMAKE_BINARY_DIR}/KRNLDR.BIN
