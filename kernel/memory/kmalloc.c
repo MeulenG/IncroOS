@@ -4,30 +4,23 @@
 
 // Memory block header
 typedef struct block_header {
-    size_t size;                    // Size of the block (excluding header)
-    bool is_free;                   // Whether the block is free
-    struct block_header* next;      // Next block in the list
+    size_t size;
+    bool is_free;
+    struct block_header* next;
 } block_header_t;
 
-// Heap configuration
-#define HEAP_START 0x180000         // Start of kernel heap (1.5MB) - after bitmap
-#define HEAP_SIZE  0x80000          // 512KB heap size (ends at 2MB, edge of identity mapped region)
+#define HEAP_START 0x180000
+#define HEAP_SIZE  0x80000
 #define BLOCK_HEADER_SIZE sizeof(block_header_t)
 
-// Heap state
 static block_header_t* heap_start = NULL;
 static uint64_t total_allocated = 0;
 
-// Helper: Align size to 16 bytes
 static size_t align_size(size_t size) {
     return (size + 15) & ~15;
 }
 
 void kmalloc_init(void) {
-    // The heap is already in the identity-mapped region (< 2MB), so we don't need
-    // to map it explicitly. The bootloader has already set up the page tables.
-
-    // Initialize heap with one large free block
     heap_start = (block_header_t*)HEAP_START;
     heap_start->size = HEAP_SIZE - BLOCK_HEADER_SIZE;
     heap_start->is_free = true;
@@ -41,16 +34,12 @@ void* kmalloc(size_t size) {
         return NULL;
     }
 
-    // Align size
     size = align_size(size);
 
-    // Search for a free block
     block_header_t* current = heap_start;
     while (current != NULL) {
         if (current->is_free && current->size >= size) {
-            // Found a suitable block
 
-            // Split block if there's enough space left
             if (current->size >= size + BLOCK_HEADER_SIZE + 16) {
                 block_header_t* new_block = (block_header_t*)((uint8_t*)current + BLOCK_HEADER_SIZE + size);
                 new_block->size = current->size - size - BLOCK_HEADER_SIZE;
@@ -64,14 +53,12 @@ void* kmalloc(size_t size) {
             current->is_free = false;
             total_allocated += current->size;
 
-            // Return pointer after header
             return (void*)((uint8_t*)current + BLOCK_HEADER_SIZE);
         }
 
         current = current->next;
     }
 
-    // No suitable block found
     return NULL;
 }
 
@@ -80,23 +67,20 @@ void kfree(void* ptr) {
         return;
     }
 
-    // Get block header
     block_header_t* block = (block_header_t*)((uint8_t*)ptr - BLOCK_HEADER_SIZE);
 
     if (block->is_free) {
-        return;  // Double free
+        return;
     }
 
     block->is_free = true;
     total_allocated -= block->size;
 
-    // Coalesce with next block if it's free
     if (block->next != NULL && block->next->is_free) {
         block->size += BLOCK_HEADER_SIZE + block->next->size;
         block->next = block->next->next;
     }
 
-    // Coalesce with previous block if it's free
     block_header_t* current = heap_start;
     while (current != NULL && current->next != block) {
         current = current->next;
