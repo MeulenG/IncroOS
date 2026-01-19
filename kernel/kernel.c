@@ -40,9 +40,8 @@ void kMain(void) {
 
     serial_writestring("\n[INIT] Initializing Memory Subsystem...\n");
 
-    // Initialize Physical Memory Manager
-    // Assume 4GB of RAM for now (can be detected via BIOS later)
-    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;  // 4GB
+    // 4GB
+    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
     pmm_init(total_memory);
 
     char buffer[32];
@@ -61,18 +60,14 @@ void kMain(void) {
     serial_writestring(buffer);
     serial_writestring("\n");
 
-    // Initialize Virtual Memory Manager
     vmm_init();
 
-    // Initialize Kernel Heap Allocator
     kmalloc_init();
 
     serial_writestring("\n[INIT] Memory Subsystem Initialized Successfully\n");
 
-    // Test memory allocation
     serial_writestring("\n[TEST] Testing Memory Allocation...\n");
 
-    // Test 1: Allocate a small block
     void* ptr1 = kmalloc(64);
     if (ptr1) {
         serial_writestring("[TEST] kmalloc(64) succeeded\n");
@@ -82,7 +77,6 @@ void kMain(void) {
         serial_writestring("[TEST] kmalloc(64) failed\n");
     }
 
-    // Test 2: Allocate a larger block
     void* ptr2 = kmalloc(1024);
     if (ptr2) {
         serial_writestring("[TEST] kmalloc(1024) succeeded\n");
@@ -92,11 +86,9 @@ void kMain(void) {
         serial_writestring("[TEST] kmalloc(1024) failed\n");
     }
 
-    // Test 3: Test physical page allocation
     uint64_t page = pmm_alloc_page();
     if (page) {
         serial_writestring("[TEST] pmm_alloc_page() succeeded, page at: 0x");
-        // Simple hex output
         for (int i = 60; i >= 0; i -= 4) {
             uint8_t nibble = (page >> i) & 0xF;
             char hex = nibble < 10 ? '0' + nibble : 'A' + (nibble - 10);
@@ -110,7 +102,6 @@ void kMain(void) {
         serial_writestring("[TEST] pmm_alloc_page() failed\n");
     }
 
-    // Show final heap statistics
     uint64_to_string(kmalloc_get_used(), buffer);
     serial_writestring("\n[HEAP] Used memory: ");
     serial_writestring(buffer);
