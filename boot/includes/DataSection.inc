@@ -9,6 +9,8 @@ syskrnldr					db 		"KRNLDR  BIN"
 
 bPhysicalDriveNum			DB		0
 
+KernelSize					DD		0
+
 msgA20                      DB  0x0A, 0x0D, "Enabling A20 Gate", 0x00
 
 msggdt                      DB  0x0A, 0x0D, "Installing GDT", 0x00

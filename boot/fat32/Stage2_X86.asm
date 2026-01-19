@@ -108,6 +108,8 @@ FixCS:
 
         	; YAY WE FOUND IT!
         	; Get clusterLo & clusterHi
+			mov 	eax, dword [es:di + 0x1C]
+			mov 	[KernelSize], eax
         	push    word [es:di + 14h]
         	push    word [es:di + 1Ah]
         	pop     esi
@@ -401,7 +403,7 @@ LoaderEntry32:
 	; Copy kernel from 0x500 to 0x100000 (1MB mark)
 	mov esi, 0x00000500
 	mov edi, 0x00100000
-	mov ecx, 4496
+	mov ecx, dword [KernelSize]
 	rep movsb
 
 	; Disable paging temporarily before setting up 64-bit paging
@@ -416,15 +418,13 @@ LoaderEntry32:
 	;   0x1000-0x1FFF: PML4 (Page Map Level 4) - 512 entries
 	;   0x2000-0x2FFF: PDPT (Page Directory Pointer Table) - 512 entries
 	;   0x3000-0x3FFF: PD (Page Directory) - 512 entries
-	;   0x4000-0x4FFF: PT (Page Table) - 512 entries
-	; This maps the first 2MB of physical memory (512 * 4KB pages)
+	; This maps the first 1GB of physical memory using 2MB pages
 	
 	mov edi, 0x1000
-    mov cr3, edi				; Set CR3 to point to PML4
-    xor eax, eax				; EAX = 0 for clearing
+	xor eax, eax				; EAX = 0 for clearing
     mov ecx, 4096				; Clear 4096 DWORDs (16KB)
     rep stosd					; Zero out memory from 0x1000-0x4FFF
-    mov edi, cr3				; Reset EDI to start of PML4
+	mov edi, 0x1000				; Reset EDI to start of PML4
 
 	; Each entry is 8 bytes in 64-bit paging
 	; Lower 32 bits: physical address | flags
@@ -436,33 +436,31 @@ LoaderEntry32:
 	mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
     add edi, 0x1000				; Move to PDPT at 0x2000
     
-    ; PDPT[0] -> PD at 0x3000 (present + writable)
+	; PDPT[0] -> PD at 0x3000 (present + writable)
     mov DWORD [edi], 0x3003
     mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
-    add edi, 0x1000				; Move to PD at 0x3000
-    
-    ; PD[0] -> PT at 0x4000 (present + writable)
-    mov DWORD [edi], 0x4003
-    mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
-    add edi, 0x1000				; Move to PT at 0x4000
+	add edi, 0x1000				; Move to PD at 0x3000
 
-	; Each entry maps a 4KB page: physical_addr | flags
-	; Maps virtual 0x0-0x1FFFFF to physical 0x0-0x1FFFFF (identity mapping)
+	; Each PD entry maps a 2MB page: physical_addr | flags
+	; Maps virtual 0x0-0x3FFFFFFF to physical 0x0-0x3FFFFFFF (1GB identity)
 	xor ebx, ebx				; Start at physical address 0
-    mov ecx, 512				; 512 entries = 2MB of mapped memory
+	mov ecx, 512				; 512 entries = 1GB of mapped memory
     
 .SetEntry:
-    mov eax, ebx				; Copy physical address to eax
-    or eax, 0x3					; Add present + writable flags
-    mov DWORD [edi], eax		; Write lower 32 bits of page table entry
-    mov DWORD [edi + 4], 0		; Write upper 32 bits (0 for addresses < 4GB)
-    add ebx, 0x1000				; Next physical page (advance by 4KB)
-    add edi, 8					; Next page table entry (8 bytes per entry)
-    loop .SetEntry				; Repeat for all 512 entries
+	mov eax, ebx				; Copy physical address to eax
+	or eax, 0x83					; Present + writable + 2MB page (PS)
+	mov DWORD [edi], eax		; Write lower 32 bits of PD entry
+	mov DWORD [edi + 4], 0		; Write upper 32 bits (0 for addresses < 4GB)
+	add ebx, 0x200000			; Next 2MB physical page
+	add edi, 8					; Next page directory entry (8 bytes)
+	loop .SetEntry				; Repeat for all 512 entries
 
 	mov eax, cr4
     or eax, 1 << 5				; Set PAE bit (bit 5)
     mov cr4, eax
+
+	mov eax, 0x1000
+	mov cr3, eax				; Set CR3 to point to PML4
 
 	mov ecx, 0xC0000080			; EFER MSR
     rdmsr						; Read current EFER value
