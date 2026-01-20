@@ -114,7 +114,7 @@ void logger_log(log_level_t level, const char* file, int line, const char* messa
     serial_writestring(filename);
     serial_writestring(":");
     char line_str[16];
-    uint_to_string(line, line_str);
+    uint_to_string((uint64_t)line, line_str);
     serial_writestring(line_str);
     serial_writestring("]");
     
