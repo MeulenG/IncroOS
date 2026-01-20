@@ -54,6 +54,10 @@ void pmm_init(uint64_t total_memory) {
         free(page_bitmap);
     }
     page_bitmap = (uint8_t*)calloc(bitmap_size, 1);
+    if (page_bitmap == NULL) {
+        printf("FATAL: Failed to allocate page bitmap\n");
+        exit(1);
+    }
 
     // Reset tracking
     used_pages = 0;

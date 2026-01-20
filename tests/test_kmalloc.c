@@ -34,6 +34,10 @@ void kmalloc_init(void) {
     // Allocate test heap in userspace
     if (test_heap == NULL) {
         test_heap = (uint8_t*)malloc(HEAP_SIZE);
+        if (test_heap == NULL) {
+            printf("FATAL: Failed to allocate test heap\n");
+            exit(1);
+        }
     }
     
     heap_start = (block_header_t*)test_heap;
