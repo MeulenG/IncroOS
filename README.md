@@ -8,6 +8,21 @@ This project is purely for educational purposes, and to satisfy my own interests
 <div id="top"></div>
 (This is an old screenshot, will be updated ASAP)
 
+## Testing
+
+The project includes a comprehensive test suite for the memory management subsystem. To run the tests:
+
+```bash
+cd tests
+make run
+```
+
+This will build and run unit tests for:
+- **kmalloc**: Kernel heap allocator
+- **PMM**: Physical Memory Manager
+
+See [tests/README.md](tests/README.md) for more details on the test suite.
+
 ## Run Locally
 
 Clone the project locally along with the submodules(SSH is recommended):
