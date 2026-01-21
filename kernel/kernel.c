@@ -36,9 +36,10 @@ void kMain(void) {
     serial_writestring("  IncroOS - Kernel Starting\n");
     serial_writestring("===========================================\n");
 
-    terminal_writestring("Hello, 64-bit kernel World!\n");
+    terminal_print_info("=== IncroOS Kernel Starting ===\n");
 
     serial_writestring("\n[INIT] Initializing Memory Subsystem...\n");
+    terminal_print_info("[INIT] Initializing Memory Subsystem...\n");
 
     // 4GB
     uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
@@ -65,41 +66,54 @@ void kMain(void) {
     kmalloc_init();
 
     serial_writestring("\n[INIT] Memory Subsystem Initialized Successfully\n");
+    terminal_print_success("[OK] Memory Subsystem Initialized\n");
 
     serial_writestring("\n[TEST] Testing Memory Allocation...\n");
+    terminal_print_info("[TEST] Testing Memory Allocation...\n");
 
     void* ptr1 = kmalloc(64);
     if (ptr1) {
         serial_writestring("[TEST] kmalloc(64) succeeded\n");
+        terminal_print_success("[OK] kmalloc(64) succeeded\n");
         kfree(ptr1);
         serial_writestring("[TEST] kfree(64) succeeded\n");
+        terminal_print_success("[OK] kfree(64) succeeded\n");
     } else {
         serial_writestring("[TEST] kmalloc(64) failed\n");
+        terminal_print_error("[FAIL] kmalloc(64) failed\n");
     }
 
     void* ptr2 = kmalloc(1024);
     if (ptr2) {
         serial_writestring("[TEST] kmalloc(1024) succeeded\n");
+        terminal_print_success("[OK] kmalloc(1024) succeeded\n");
         kfree(ptr2);
         serial_writestring("[TEST] kfree(1024) succeeded\n");
+        terminal_print_success("[OK] kfree(1024) succeeded\n");
     } else {
         serial_writestring("[TEST] kmalloc(1024) failed\n");
+        terminal_print_error("[FAIL] kmalloc(1024) failed\n");
     }
 
     uint64_t page = pmm_alloc_page();
     if (page) {
         serial_writestring("[TEST] pmm_alloc_page() succeeded, page at: 0x");
+        terminal_print_success("[OK] pmm_alloc_page() succeeded, page at: 0x");
         for (int i = 60; i >= 0; i -= 4) {
             uint8_t nibble = (page >> i) & 0xF;
             char hex = nibble < 10 ? '0' + nibble : 'A' + (nibble - 10);
             char hex_str[2] = {hex, '\0'};
             serial_writestring(hex_str);
+            terminal_writestring(hex_str);
         }
         serial_writestring("\n");
+        terminal_writestring("\n");
         pmm_free_page(page);
         serial_writestring("[TEST] pmm_free_page() succeeded\n");
+        terminal_print_success("[OK] pmm_free_page() succeeded\n");
     } else {
         serial_writestring("[TEST] pmm_alloc_page() failed\n");
+        terminal_print_error("[FAIL] pmm_alloc_page() failed\n");
     }
 
     uint64_to_string(kmalloc_get_used(), buffer);
@@ -116,7 +130,8 @@ void kMain(void) {
     serial_writestring("  Memory Manager Tests Complete\n");
     serial_writestring("===========================================\n");
 
-    terminal_writestring("Memory Manager Initialized!\n");
+    terminal_print_success("\n=== All Tests Passed! ===\n");
+    terminal_print_info("Memory Manager Ready\n");
 
     while (1) {
         __asm__ volatile("hlt");
