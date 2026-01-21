@@ -73,38 +73,27 @@ void terminal_writestring(const char* data) {
 }
 
 // Color-coded message printing functions
-void terminal_print_success(const char* data) {
+static void terminal_print_colored(const char* data, enum vga_color fg) {
     uint8_t old_color = terminal_color;
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
+    terminal_setcolor(vga_entry_color(fg, VGA_COLOR_BLACK));
     terminal_write(data, strlen(data));
     terminal_setcolor(old_color);
     // Also output to serial port
     serial_writestring(data);
+}
+
+void terminal_print_success(const char* data) {
+    terminal_print_colored(data, VGA_COLOR_LIGHT_GREEN);
 }
 
 void terminal_print_info(const char* data) {
-    uint8_t old_color = terminal_color;
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
-    terminal_write(data, strlen(data));
-    terminal_setcolor(old_color);
-    // Also output to serial port
-    serial_writestring(data);
+    terminal_print_colored(data, VGA_COLOR_LIGHT_CYAN);
 }
 
 void terminal_print_warning(const char* data) {
-    uint8_t old_color = terminal_color;
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
-    terminal_write(data, strlen(data));
-    terminal_setcolor(old_color);
-    // Also output to serial port
-    serial_writestring(data);
+    terminal_print_colored(data, VGA_COLOR_LIGHT_BROWN);
 }
 
 void terminal_print_error(const char* data) {
-    uint8_t old_color = terminal_color;
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK));
-    terminal_write(data, strlen(data));
-    terminal_setcolor(old_color);
-    // Also output to serial port
-    serial_writestring(data);
+    terminal_print_colored(data, VGA_COLOR_LIGHT_RED);
 }
