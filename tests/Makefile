@@ -1,8 +1,11 @@
-# Test suite Makefile
+# Test suite Makefile using Unity framework
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -g -O0
+CFLAGS = -std=c99 -Wall -Wextra -g -O0 -Iunity
 LDFLAGS = 
+
+# Unity sources
+UNITY_SRC = unity/unity.c
 
 # Test executables
 TEST_KMALLOC = test_kmalloc
@@ -16,22 +19,22 @@ TESTS = $(TEST_KMALLOC) $(TEST_PMM)
 all: $(TESTS)
 
 # Build kmalloc tests
-$(TEST_KMALLOC): test_kmalloc.c test_framework.c
+$(TEST_KMALLOC): test_kmalloc.c $(UNITY_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Build PMM tests
-$(TEST_PMM): test_pmm.c test_framework.c
+$(TEST_PMM): test_pmm.c $(UNITY_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Run all tests
 run: all
-	@echo "Running all memory manager tests..."
+	@echo "Running all memory manager tests with Unity framework..."
 	@echo ""
-	@./$(TEST_KMALLOC) || exit 1
+	@./$(TEST_KMALLOC)
 	@echo ""
-	@./$(TEST_PMM) || exit 1
+	@./$(TEST_PMM)
 	@echo ""
-	@echo "All tests completed successfully!"
+	@echo "All tests completed!"
 
 clean:
 	rm -f $(TESTS) *.o

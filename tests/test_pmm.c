@@ -1,4 +1,4 @@
-#include "test_framework.h"
+#include "unity/unity.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -107,65 +107,56 @@ uint64_t pmm_get_used_pages(void) {
     return used_pages;
 }
 
-// Test cases
-bool test_pmm_init(void) {
+// Unity setup and teardown
+void setUp(void) {
     pmm_init(8 * 1024 * 1024); // 8MB
-    
-    TEST_ASSERT(pmm_get_total_pages() > 0, "Total pages should be > 0");
-    TEST_ASSERT(pmm_get_used_pages() > 0, "Some pages should be reserved");
-    TEST_ASSERT(pmm_get_free_pages() > 0, "Some pages should be free");
-    
-    return true;
 }
 
-bool test_pmm_alloc_page(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void tearDown(void) {
+    // Cleanup happens in next setUp or at end
+}
+
+// Test cases
+void test_pmm_init(void) {
+    TEST_ASSERT_GREATER_THAN(0, pmm_get_total_pages());
+    TEST_ASSERT_GREATER_THAN(0, pmm_get_used_pages());
+    TEST_ASSERT_GREATER_THAN(0, pmm_get_free_pages());
+}
+
+void test_pmm_alloc_page(void) {
     uint64_t addr = pmm_alloc_page();
-    TEST_ASSERT(addr != 0, "Should allocate a page");
-    TEST_ASSERT_EQUAL(0, addr % PAGE_SIZE, "Address should be page-aligned");
-    
-    return true;
+    TEST_ASSERT_NOT_EQUAL(0, addr);
+    TEST_ASSERT_EQUAL_UINT64(0, addr % PAGE_SIZE);
 }
 
-bool test_pmm_free_page(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_free_page(void) {
     uint64_t used_before = pmm_get_used_pages();
     uint64_t addr = pmm_alloc_page();
     uint64_t used_after_alloc = pmm_get_used_pages();
     
-    TEST_ASSERT_EQUAL(used_before + 1, used_after_alloc, "Used pages should increase by 1");
+    TEST_ASSERT_EQUAL_UINT64(used_before + 1, used_after_alloc);
     
     pmm_free_page(addr);
     uint64_t used_after_free = pmm_get_used_pages();
     
-    TEST_ASSERT_EQUAL(used_before, used_after_free, "Used pages should return to original");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(used_before, used_after_free);
 }
 
-bool test_pmm_multiple_allocations(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_multiple_allocations(void) {
     uint64_t addr1 = pmm_alloc_page();
     uint64_t addr2 = pmm_alloc_page();
     uint64_t addr3 = pmm_alloc_page();
     
-    TEST_ASSERT(addr1 != 0, "First allocation should succeed");
-    TEST_ASSERT(addr2 != 0, "Second allocation should succeed");
-    TEST_ASSERT(addr3 != 0, "Third allocation should succeed");
+    TEST_ASSERT_NOT_EQUAL(0, addr1);
+    TEST_ASSERT_NOT_EQUAL(0, addr2);
+    TEST_ASSERT_NOT_EQUAL(0, addr3);
     
-    TEST_ASSERT(addr1 != addr2, "Allocations should have different addresses");
-    TEST_ASSERT(addr2 != addr3, "Allocations should have different addresses");
-    TEST_ASSERT(addr1 != addr3, "Allocations should have different addresses");
-    
-    return true;
+    TEST_ASSERT_NOT_EQUAL(addr1, addr2);
+    TEST_ASSERT_NOT_EQUAL(addr2, addr3);
+    TEST_ASSERT_NOT_EQUAL(addr1, addr3);
 }
 
-bool test_pmm_reuse_freed_page(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_reuse_freed_page(void) {
     // Allocate all free pages except one
     uint64_t free_pages = pmm_get_free_pages();
     uint64_t* addrs = (uint64_t*)malloc(free_pages * sizeof(uint64_t));
@@ -175,105 +166,85 @@ bool test_pmm_reuse_freed_page(void) {
     }
     
     // Now only one page should be free
-    TEST_ASSERT_EQUAL(1, pmm_get_free_pages(), "Should have 1 free page");
+    TEST_ASSERT_EQUAL_UINT64(1, pmm_get_free_pages());
     
     // Allocate the last page
     uint64_t last_addr = pmm_alloc_page();
-    TEST_ASSERT(last_addr != 0, "Should allocate last page");
-    TEST_ASSERT_EQUAL(0, pmm_get_free_pages(), "Should have 0 free pages");
+    TEST_ASSERT_NOT_EQUAL(0, last_addr);
+    TEST_ASSERT_EQUAL_UINT64(0, pmm_get_free_pages());
     
     // Try to allocate when no pages are free
     uint64_t no_page = pmm_alloc_page();
-    TEST_ASSERT_EQUAL(0, no_page, "Should return 0 when no pages available");
+    TEST_ASSERT_EQUAL_UINT64(0, no_page);
     
     // Free one page
     pmm_free_page(addrs[0]);
-    TEST_ASSERT_EQUAL(1, pmm_get_free_pages(), "Should have 1 free page");
+    TEST_ASSERT_EQUAL_UINT64(1, pmm_get_free_pages());
     
     // Should be able to allocate again
     uint64_t reused = pmm_alloc_page();
-    TEST_ASSERT(reused != 0, "Should allocate the freed page");
-    TEST_ASSERT_EQUAL(addrs[0], reused, "Should reuse the same page");
+    TEST_ASSERT_NOT_EQUAL(0, reused);
+    TEST_ASSERT_EQUAL_UINT64(addrs[0], reused);
     
     // Cleanup
     free(addrs);
-    
-    return true;
 }
 
-bool test_pmm_page_tracking(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_page_tracking(void) {
     uint64_t total = pmm_get_total_pages();
     uint64_t used = pmm_get_used_pages();
-    uint64_t free = pmm_get_free_pages();
+    uint64_t free_mem = pmm_get_free_pages();
     
-    TEST_ASSERT_EQUAL(total, used + free, "Total should equal used + free");
+    TEST_ASSERT_EQUAL_UINT64(total, used + free_mem);
     
     uint64_t addr = pmm_alloc_page();
     
     uint64_t used2 = pmm_get_used_pages();
     uint64_t free2 = pmm_get_free_pages();
     
-    TEST_ASSERT_EQUAL(used + 1, used2, "Used should increase by 1");
-    TEST_ASSERT_EQUAL(free - 1, free2, "Free should decrease by 1");
-    TEST_ASSERT_EQUAL(total, used2 + free2, "Total should still equal used + free");
+    TEST_ASSERT_EQUAL_UINT64(used + 1, used2);
+    TEST_ASSERT_EQUAL_UINT64(free_mem - 1, free2);
+    TEST_ASSERT_EQUAL_UINT64(total, used2 + free2);
     
     pmm_free_page(addr);
-    
-    return true;
 }
 
-bool test_pmm_invalid_free(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_invalid_free(void) {
     uint64_t used_before = pmm_get_used_pages();
     
     // Try to free an address beyond the total memory
     uint64_t invalid_addr = (total_pages + 10) * PAGE_SIZE;
     pmm_free_page(invalid_addr);
     
-    TEST_ASSERT_EQUAL(used_before, pmm_get_used_pages(), "Used pages should not change");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(used_before, pmm_get_used_pages());
 }
 
-bool test_pmm_double_free(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_double_free(void) {
     uint64_t addr = pmm_alloc_page();
     uint64_t used_after_alloc = pmm_get_used_pages();
     
     pmm_free_page(addr);
     uint64_t used_after_first_free = pmm_get_used_pages();
     
-    TEST_ASSERT_EQUAL(used_after_alloc - 1, used_after_first_free, "Used should decrease by 1");
+    TEST_ASSERT_EQUAL_UINT64(used_after_alloc - 1, used_after_first_free);
     
     // Try to free again
     pmm_free_page(addr);
     uint64_t used_after_second_free = pmm_get_used_pages();
     
-    TEST_ASSERT_EQUAL(used_after_first_free, used_after_second_free, "Used should not change on double free");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(used_after_first_free, used_after_second_free);
 }
 
-bool test_pmm_page_alignment(void) {
-    pmm_init(8 * 1024 * 1024);
-    
+void test_pmm_page_alignment(void) {
     for (int i = 0; i < 10; i++) {
         uint64_t addr = pmm_alloc_page();
-        TEST_ASSERT(addr != 0, "Should allocate page");
-        TEST_ASSERT_EQUAL(0, addr % PAGE_SIZE, "Page should be aligned");
+        TEST_ASSERT_NOT_EQUAL(0, addr);
+        TEST_ASSERT_EQUAL_UINT64(0, addr % PAGE_SIZE);
     }
-    
-    return true;
 }
 
 int main(void) {
-    printf("\n========================================\n");
-    printf("Running PMM Tests\n");
-    printf("========================================\n\n");
+    UNITY_BEGIN();
     
     RUN_TEST(test_pmm_init);
     RUN_TEST(test_pmm_alloc_page);
@@ -285,12 +256,10 @@ int main(void) {
     RUN_TEST(test_pmm_double_free);
     RUN_TEST(test_pmm_page_alignment);
     
-    PRINT_TEST_SUMMARY();
-    
     // Cleanup
     if (page_bitmap != NULL) {
         free(page_bitmap);
     }
     
-    return (test_results.failed == 0) ? 0 : 1;
+    return UNITY_END();
 }

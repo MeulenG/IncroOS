@@ -1,4 +1,4 @@
-#include "test_framework.h"
+#include "unity/unity.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -128,120 +128,94 @@ uint64_t kmalloc_get_free(void) {
     return free_memory;
 }
 
+// Unity setup and teardown
+void setUp(void) {
+    kmalloc_init();
+}
+
+void tearDown(void) {
+    // Reset for next test
+}
+
 // Test cases
-bool test_kmalloc_init(void) {
-    kmalloc_init();
-    TEST_ASSERT_NOT_NULL(heap_start, "Heap should be initialized");
-    TEST_ASSERT(heap_start->is_free, "Initial heap block should be free");
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "Used memory should be 0 after init");
-    return true;
+void test_kmalloc_init(void) {
+    TEST_ASSERT_NOT_NULL(heap_start);
+    TEST_ASSERT_TRUE(heap_start->is_free);
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_basic_allocation(void) {
-    kmalloc_init();
-    
+void test_kmalloc_basic_allocation(void) {
     void* ptr = kmalloc(64);
-    TEST_ASSERT_NOT_NULL(ptr, "Should allocate 64 bytes");
-    TEST_ASSERT(kmalloc_get_used() > 0, "Used memory should be > 0 after allocation");
-    
-    return true;
+    TEST_ASSERT_NOT_NULL(ptr);
+    TEST_ASSERT_GREATER_THAN(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_zero_size(void) {
-    kmalloc_init();
-    
+void test_kmalloc_zero_size(void) {
     void* ptr = kmalloc(0);
-    TEST_ASSERT_NULL(ptr, "Should return NULL for zero size");
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "Used memory should be 0");
-    
-    return true;
+    TEST_ASSERT_NULL(ptr);
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_free_null(void) {
-    kmalloc_init();
-    
-    // Should not crash
-    kfree(NULL);
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "Used memory should be 0");
-    
-    return true;
+void test_kmalloc_free_null(void) {
+    kfree(NULL);  // Should not crash
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_alloc_and_free(void) {
-    kmalloc_init();
-    
+void test_kmalloc_alloc_and_free(void) {
     void* ptr = kmalloc(128);
-    TEST_ASSERT_NOT_NULL(ptr, "Should allocate 128 bytes");
+    TEST_ASSERT_NOT_NULL(ptr);
     uint64_t used_after_alloc = kmalloc_get_used();
-    TEST_ASSERT(used_after_alloc > 0, "Used memory should be > 0");
+    TEST_ASSERT_GREATER_THAN(0, used_after_alloc);
     
     kfree(ptr);
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "Used memory should be 0 after free");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_multiple_allocations(void) {
-    kmalloc_init();
-    
+void test_kmalloc_multiple_allocations(void) {
     void* ptr1 = kmalloc(64);
     void* ptr2 = kmalloc(128);
     void* ptr3 = kmalloc(256);
     
-    TEST_ASSERT_NOT_NULL(ptr1, "First allocation should succeed");
-    TEST_ASSERT_NOT_NULL(ptr2, "Second allocation should succeed");
-    TEST_ASSERT_NOT_NULL(ptr3, "Third allocation should succeed");
+    TEST_ASSERT_NOT_NULL(ptr1);
+    TEST_ASSERT_NOT_NULL(ptr2);
+    TEST_ASSERT_NOT_NULL(ptr3);
     
-    TEST_ASSERT(ptr1 != ptr2, "Allocations should have different addresses");
-    TEST_ASSERT(ptr2 != ptr3, "Allocations should have different addresses");
-    TEST_ASSERT(ptr1 != ptr3, "Allocations should have different addresses");
+    TEST_ASSERT_NOT_EQUAL(ptr1, ptr2);
+    TEST_ASSERT_NOT_EQUAL(ptr2, ptr3);
+    TEST_ASSERT_NOT_EQUAL(ptr1, ptr3);
     
     kfree(ptr1);
     kfree(ptr2);
     kfree(ptr3);
     
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "All memory should be freed");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
-bool test_kmalloc_reuse_freed_memory(void) {
-    kmalloc_init();
-    
+void test_kmalloc_reuse_freed_memory(void) {
     void* ptr1 = kmalloc(64);
-    TEST_ASSERT_NOT_NULL(ptr1, "First allocation should succeed");
+    TEST_ASSERT_NOT_NULL(ptr1);
     
     kfree(ptr1);
     
     void* ptr2 = kmalloc(64);
-    TEST_ASSERT_NOT_NULL(ptr2, "Second allocation should succeed");
-    TEST_ASSERT_EQUAL(ptr1, ptr2, "Should reuse the same memory block");
+    TEST_ASSERT_NOT_NULL(ptr2);
+    TEST_ASSERT_EQUAL_PTR(ptr1, ptr2);
     
     kfree(ptr2);
-    
-    return true;
 }
 
-bool test_kmalloc_alignment(void) {
-    kmalloc_init();
-    
+void test_kmalloc_alignment(void) {
     void* ptr = kmalloc(1);
-    TEST_ASSERT_NOT_NULL(ptr, "Should allocate 1 byte (aligned)");
+    TEST_ASSERT_NOT_NULL(ptr);
     
     // The size stored in the block header should be aligned to 16 bytes
-    // In the real kernel, the returned pointer would be 16-byte aligned
-    // but in the test environment, we just verify the size is aligned
     block_header_t* block = (block_header_t*)((uint8_t*)ptr - BLOCK_HEADER_SIZE);
-    TEST_ASSERT_EQUAL(0, block->size % 16, "Allocated size should be 16-byte aligned");
+    TEST_ASSERT_EQUAL_UINT64(0, block->size % 16);
     
     kfree(ptr);
-    
-    return true;
 }
 
-bool test_kmalloc_fragmentation(void) {
-    kmalloc_init();
-    
+void test_kmalloc_fragmentation(void) {
     void* ptr1 = kmalloc(64);
     void* ptr2 = kmalloc(64);
     void* ptr3 = kmalloc(64);
@@ -251,18 +225,14 @@ bool test_kmalloc_fragmentation(void) {
     
     // Allocate a smaller block - should fit in the freed space
     void* ptr4 = kmalloc(32);
-    TEST_ASSERT_NOT_NULL(ptr4, "Should allocate in freed space");
+    TEST_ASSERT_NOT_NULL(ptr4);
     
     kfree(ptr1);
     kfree(ptr3);
     kfree(ptr4);
-    
-    return true;
 }
 
-bool test_kmalloc_coalescing(void) {
-    kmalloc_init();
-    
+void test_kmalloc_coalescing(void) {
     void* ptr1 = kmalloc(64);
     void* ptr2 = kmalloc(64);
     
@@ -272,37 +242,29 @@ bool test_kmalloc_coalescing(void) {
     // After freeing adjacent blocks, they should be coalesced
     // Should be able to allocate a large block
     void* ptr3 = kmalloc(128);
-    TEST_ASSERT_NOT_NULL(ptr3, "Should allocate large block after coalescing");
+    TEST_ASSERT_NOT_NULL(ptr3);
     
     kfree(ptr3);
-    
-    return true;
 }
 
-bool test_kmalloc_memory_tracking(void) {
-    kmalloc_init();
-    
+void test_kmalloc_memory_tracking(void) {
     uint64_t initial_free = kmalloc_get_free();
-    TEST_ASSERT(initial_free > 0, "Initial free memory should be > 0");
+    TEST_ASSERT_GREATER_THAN(0, initial_free);
     
     void* ptr = kmalloc(1024);
     uint64_t used = kmalloc_get_used();
     uint64_t free_after = kmalloc_get_free();
     
-    TEST_ASSERT(used > 0, "Used memory should be > 0");
-    TEST_ASSERT(free_after < initial_free, "Free memory should decrease");
+    TEST_ASSERT_GREATER_THAN(0, used);
+    TEST_ASSERT_LESS_THAN(initial_free, free_after);
     
     kfree(ptr);
     
-    TEST_ASSERT_EQUAL(0, kmalloc_get_used(), "Used memory should be 0 after free");
-    
-    return true;
+    TEST_ASSERT_EQUAL_UINT64(0, kmalloc_get_used());
 }
 
 int main(void) {
-    printf("\n========================================\n");
-    printf("Running kmalloc Tests\n");
-    printf("========================================\n\n");
+    UNITY_BEGIN();
     
     RUN_TEST(test_kmalloc_init);
     RUN_TEST(test_kmalloc_basic_allocation);
@@ -316,12 +278,10 @@ int main(void) {
     RUN_TEST(test_kmalloc_coalescing);
     RUN_TEST(test_kmalloc_memory_tracking);
     
-    PRINT_TEST_SUMMARY();
-    
     // Cleanup
     if (test_heap != NULL) {
         free(test_heap);
     }
     
-    return (test_results.failed == 0) ? 0 : 1;
+    return UNITY_END();
 }
