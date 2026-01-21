@@ -47,11 +47,17 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) {
 }
 
 void terminal_putchar(char c) {
-    terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-    if (++terminal_column == VGA_WIDTH) {
+    if (c == '\n') {
         terminal_column = 0;
         if (++terminal_row == VGA_HEIGHT)
             terminal_row = 0;
+    } else {
+        terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+        if (++terminal_column == VGA_WIDTH) {
+            terminal_column = 0;
+            if (++terminal_row == VGA_HEIGHT)
+                terminal_row = 0;
+        }
     }
 }
 
@@ -62,6 +68,43 @@ void terminal_write(const char* data, size_t size) {
 
 void terminal_writestring(const char* data) {
     terminal_write(data, strlen(data));
+    // Also output to serial port
+    serial_writestring(data);
+}
+
+// Color-coded message printing functions
+void terminal_print_success(const char* data) {
+    uint8_t old_color = terminal_color;
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
+    terminal_write(data, strlen(data));
+    terminal_setcolor(old_color);
+    // Also output to serial port
+    serial_writestring(data);
+}
+
+void terminal_print_info(const char* data) {
+    uint8_t old_color = terminal_color;
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+    terminal_write(data, strlen(data));
+    terminal_setcolor(old_color);
+    // Also output to serial port
+    serial_writestring(data);
+}
+
+void terminal_print_warning(const char* data) {
+    uint8_t old_color = terminal_color;
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
+    terminal_write(data, strlen(data));
+    terminal_setcolor(old_color);
+    // Also output to serial port
+    serial_writestring(data);
+}
+
+void terminal_print_error(const char* data) {
+    uint8_t old_color = terminal_color;
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK));
+    terminal_write(data, strlen(data));
+    terminal_setcolor(old_color);
     // Also output to serial port
     serial_writestring(data);
 }

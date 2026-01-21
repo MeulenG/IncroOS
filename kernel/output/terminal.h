@@ -44,6 +44,12 @@ void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
 
+// Color-coded message printing functions
+void terminal_print_success(const char* data);
+void terminal_print_info(const char* data);
+void terminal_print_warning(const char* data);
+void terminal_print_error(const char* data);
+
 
 
 #endif // !__TERMINAL_INTERFACE__
