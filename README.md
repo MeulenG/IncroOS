@@ -8,6 +8,23 @@ This project is purely for educational purposes, and to satisfy my own interests
 <div id="top"></div>
 (This is an old screenshot, will be updated ASAP)
 
+## Testing
+
+The project includes a comprehensive test suite for the memory management subsystem using the [Unity Test Framework](https://github.com/ThrowTheSwitch/Unity). To run the tests:
+
+```bash
+cd tests
+make run
+```
+
+This will build and run unit tests for:
+- **kmalloc**: Kernel heap allocator (11 tests)
+- **PMM**: Physical Memory Manager (9 tests)
+
+The tests run separately from the OS in a hosted userspace environment for rapid development and validation.
+
+See [tests/README.md](tests/README.md) for more details on the test suite.
+
 ## Run Locally
 
 Clone the project locally along with the submodules(SSH is recommended):
