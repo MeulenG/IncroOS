@@ -31,13 +31,39 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
+    - name: Check if nightly tag exists and compare with current commit
+      id: check_commit
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Current commit SHA: ${{ github.sha }}"
+        
+        # Try to get the SHA of the existing nightly tag
+        NIGHTLY_TAG_SHA=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" --jq '.object.sha' 2>/dev/null || echo "")
+        
+        if [ -z "$NIGHTLY_TAG_SHA" ]; then
+          echo "No existing nightly tag found. Release will be created."
+          echo "should_create_release=true" >> $GITHUB_OUTPUT
+        elif [ "$NIGHTLY_TAG_SHA" == "${{ github.sha }}" ]; then
+          echo "Nightly tag already points to current commit (${{ github.sha }})"
+          echo "No new commits since last nightly release. Skipping release creation."
+          echo "should_create_release=false" >> $GITHUB_OUTPUT
+        else
+          echo "Nightly tag points to different commit: $NIGHTLY_TAG_SHA"
+          echo "Current commit is: ${{ github.sha }}"
+          echo "New commits detected. Release will be created."
+          echo "should_create_release=true" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Download disk image
+      if: steps.check_commit.outputs.should_create_release == 'true'
       uses: actions/download-artifact@v4
       with:
         name: disk-image
         path: .
     
     - name: Verify disk image exists
+      if: steps.check_commit.outputs.should_create_release == 'true'
       run: |
         if [ ! -f disk.img ]; then
           echo "ERROR: disk.img not found after download"
@@ -47,10 +73,12 @@ jobs:
         ls -lh disk.img
     
     - name: Get current date
+      if: steps.check_commit.outputs.should_create_release == 'true'
       id: date
       run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
     
     - name: Delete existing nightly release
+      if: steps.check_commit.outputs.should_create_release == 'true'
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,6 +89,7 @@ jobs:
         gh api "repos/${{ github.repository }}/git/refs/tags/nightly" -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
     
     - name: Verify deletion succeeded
+      if: steps.check_commit.outputs.should_create_release == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -72,6 +101,7 @@ jobs:
         fi
     
     - name: Create nightly release
+      if: steps.check_commit.outputs.should_create_release == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
