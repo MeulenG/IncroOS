@@ -38,32 +38,41 @@ jobs:
       run: |
         echo "Current commit SHA: ${{ github.sha }}"
         
-        # Try to get the SHA of the existing nightly tag
+        # Try to get the SHA and type of the existing nightly tag in a single API call
         # This handles both lightweight and annotated tags
-        NIGHTLY_TAG_SHA=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" --jq '.object.sha' 2>/dev/null || echo "")
+        TAG_INFO=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" 2>/dev/null || echo "")
         
-        if [ -n "$NIGHTLY_TAG_SHA" ]; then
-          # Check if this is an annotated tag (check the object type)
-          TAG_TYPE=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" --jq '.object.type' 2>/dev/null || echo "")
+        if [ -z "$TAG_INFO" ]; then
+          echo "No existing nightly tag found. Release will be created."
+          echo "should_create_release=true" >> $GITHUB_OUTPUT
+        else
+          NIGHTLY_TAG_SHA=$(echo "$TAG_INFO" | jq -r '.object.sha')
+          TAG_TYPE=$(echo "$TAG_INFO" | jq -r '.object.type')
           
           if [ "$TAG_TYPE" = "tag" ]; then
             # It's an annotated tag, need to get the commit it points to
-            NIGHTLY_TAG_SHA=$(gh api "repos/${{ github.repository }}/git/tags/$NIGHTLY_TAG_SHA" --jq '.object.sha' 2>/dev/null || echo "$NIGHTLY_TAG_SHA")
+            COMMIT_SHA=$(gh api "repos/${{ github.repository }}/git/tags/$NIGHTLY_TAG_SHA" --jq '.object.sha' 2>/dev/null)
+            if [ -z "$COMMIT_SHA" ]; then
+              echo "Warning: Failed to retrieve commit SHA from annotated tag. Treating as new commit."
+              NIGHTLY_TAG_SHA=""
+            else
+              NIGHTLY_TAG_SHA="$COMMIT_SHA"
+            fi
           fi
-        fi
-        
-        if [ -z "$NIGHTLY_TAG_SHA" ]; then
-          echo "No existing nightly tag found. Release will be created."
-          echo "should_create_release=true" >> $GITHUB_OUTPUT
-        elif [ "$NIGHTLY_TAG_SHA" = "${{ github.sha }}" ]; then
-          echo "Nightly tag already points to current commit (${{ github.sha }})"
-          echo "No new commits since last nightly release. Skipping release creation."
-          echo "should_create_release=false" >> $GITHUB_OUTPUT
-        else
-          echo "Nightly tag points to different commit: $NIGHTLY_TAG_SHA"
-          echo "Current commit is: ${{ github.sha }}"
-          echo "New commits detected. Release will be created."
-          echo "should_create_release=true" >> $GITHUB_OUTPUT
+          
+          if [ -z "$NIGHTLY_TAG_SHA" ]; then
+            echo "Unable to determine tag SHA. Release will be created."
+            echo "should_create_release=true" >> $GITHUB_OUTPUT
+          elif [ "$NIGHTLY_TAG_SHA" = "${{ github.sha }}" ]; then
+            echo "Nightly tag already points to current commit (${{ github.sha }})"
+            echo "No new commits since last nightly release. Skipping release creation."
+            echo "should_create_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Nightly tag points to different commit: $NIGHTLY_TAG_SHA"
+            echo "Current commit is: ${{ github.sha }}"
+            echo "New commits detected. Release will be created."
+            echo "should_create_release=true" >> $GITHUB_OUTPUT
+          fi
         fi
     
     - name: Download disk image
