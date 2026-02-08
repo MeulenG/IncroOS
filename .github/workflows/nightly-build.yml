@@ -36,7 +36,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "Current commit SHA: ${{ github.sha }}"
+        CURRENT_SHA="${{ github.sha }}"
+        echo "Current commit SHA: $CURRENT_SHA"
         
         # Try to get the SHA and type of the existing nightly tag in a single API call
         # This handles both lightweight and annotated tags
@@ -67,13 +68,13 @@ jobs:
             echo "Could not determine nightly tag commit SHA (possibly due to annotated tag retrieval failure)."
             echo "Release will be created to ensure nightly build is updated."
             echo "should_create_release=true" >> $GITHUB_OUTPUT
-          elif [ "$NIGHTLY_TAG_SHA" = "${{ github.sha }}" ]; then
-            echo "Nightly tag already points to current commit (${{ github.sha }})"
+          elif [ "$NIGHTLY_TAG_SHA" = "$CURRENT_SHA" ]; then
+            echo "Nightly tag already points to current commit ($CURRENT_SHA)"
             echo "No new commits since last nightly release. Skipping release creation."
             echo "should_create_release=false" >> $GITHUB_OUTPUT
           else
             echo "Nightly tag points to different commit: $NIGHTLY_TAG_SHA"
-            echo "Current commit is: ${{ github.sha }}"
+            echo "Current commit is: $CURRENT_SHA"
             echo "New commits detected. Release will be created."
             echo "should_create_release=true" >> $GITHUB_OUTPUT
           fi
