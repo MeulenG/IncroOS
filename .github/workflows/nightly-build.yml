@@ -39,7 +39,18 @@ jobs:
         echo "Current commit SHA: ${{ github.sha }}"
         
         # Try to get the SHA of the existing nightly tag
+        # This handles both lightweight and annotated tags
         NIGHTLY_TAG_SHA=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" --jq '.object.sha' 2>/dev/null || echo "")
+        
+        if [ -n "$NIGHTLY_TAG_SHA" ]; then
+          # Check if this is an annotated tag (check the object type)
+          TAG_TYPE=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" --jq '.object.type' 2>/dev/null || echo "")
+          
+          if [ "$TAG_TYPE" = "tag" ]; then
+            # It's an annotated tag, need to get the commit it points to
+            NIGHTLY_TAG_SHA=$(gh api "repos/${{ github.repository }}/git/tags/$NIGHTLY_TAG_SHA" --jq '.object.sha' 2>/dev/null || echo "$NIGHTLY_TAG_SHA")
+          fi
+        fi
         
         if [ -z "$NIGHTLY_TAG_SHA" ]; then
           echo "No existing nightly tag found. Release will be created."
