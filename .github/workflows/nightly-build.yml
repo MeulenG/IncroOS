@@ -51,17 +51,21 @@ jobs:
           
           if [ "$TAG_TYPE" = "tag" ]; then
             # It's an annotated tag, need to get the commit it points to
+            echo "Detected annotated tag. Fetching underlying commit SHA..."
             COMMIT_SHA=$(gh api "repos/${{ github.repository }}/git/tags/$NIGHTLY_TAG_SHA" --jq '.object.sha' 2>/dev/null)
             if [ -z "$COMMIT_SHA" ]; then
-              echo "Warning: Failed to retrieve commit SHA from annotated tag. Treating as new commit."
+              echo "Warning: Failed to retrieve commit SHA from annotated tag (API error or network issue)."
+              echo "Treating as new commit to ensure release is created."
               NIGHTLY_TAG_SHA=""
             else
+              echo "Annotated tag points to commit: $COMMIT_SHA"
               NIGHTLY_TAG_SHA="$COMMIT_SHA"
             fi
           fi
           
           if [ -z "$NIGHTLY_TAG_SHA" ]; then
-            echo "Unable to determine tag SHA. Release will be created."
+            echo "Could not determine nightly tag commit SHA (possibly due to annotated tag retrieval failure)."
+            echo "Release will be created to ensure nightly build is updated."
             echo "should_create_release=true" >> $GITHUB_OUTPUT
           elif [ "$NIGHTLY_TAG_SHA" = "${{ github.sha }}" ]; then
             echo "Nightly tag already points to current commit (${{ github.sha }})"
