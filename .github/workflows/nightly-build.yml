@@ -44,7 +44,7 @@ jobs:
         if [ -z "$NIGHTLY_TAG_SHA" ]; then
           echo "No existing nightly tag found. Release will be created."
           echo "should_create_release=true" >> $GITHUB_OUTPUT
-        elif [ "$NIGHTLY_TAG_SHA" == "${{ github.sha }}" ]; then
+        elif [ "$NIGHTLY_TAG_SHA" = "${{ github.sha }}" ]; then
           echo "Nightly tag already points to current commit (${{ github.sha }})"
           echo "No new commits since last nightly release. Skipping release creation."
           echo "should_create_release=false" >> $GITHUB_OUTPUT
