@@ -2,7 +2,6 @@ name: Nightly Build Check
 
 on:
   schedule:
-    # Run every night at 21:00 UTC (adjust for your timezone as needed)
     - cron: '0 21 * * *'
   workflow_dispatch:
 
@@ -31,47 +30,101 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
+    - name: Check if nightly tag exists and compare with current commit
+      id: check_commit
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        CURRENT_SHA="${{ github.sha }}"
+        echo "Current commit SHA: $CURRENT_SHA"
+        
+        # Try to get the SHA and type of the existing nightly tag in a single API call
+        # This handles both lightweight and annotated tags
+        TAG_INFO=$(gh api "repos/${{ github.repository }}/git/refs/tags/nightly" 2>/dev/null || echo "")
+        
+        if [ -z "$TAG_INFO" ]; then
+          echo "No existing nightly tag found. Release will be created."
+          echo "should_create_release=true" >> $GITHUB_OUTPUT
+        else
+          NIGHTLY_TAG_SHA=$(echo "$TAG_INFO" | jq -r '.object.sha')
+          TAG_TYPE=$(echo "$TAG_INFO" | jq -r '.object.type')
+          
+          if [ "$TAG_TYPE" = "tag" ]; then
+            # It's an annotated tag, need to get the commit it points to
+            echo "Detected annotated tag. Fetching underlying commit SHA..."
+            COMMIT_SHA=$(gh api "repos/${{ github.repository }}/git/tags/$NIGHTLY_TAG_SHA" --jq '.object.sha' 2>/dev/null)
+            if [ -z "$COMMIT_SHA" ]; then
+              echo "Warning: Failed to retrieve commit SHA from annotated tag (API error or network issue)."
+              echo "Treating as new commit to ensure release is created."
+              NIGHTLY_TAG_SHA=""
+            else
+              echo "Annotated tag points to commit: $COMMIT_SHA"
+              NIGHTLY_TAG_SHA="$COMMIT_SHA"
+            fi
+          fi
+          
+          if [ -z "$NIGHTLY_TAG_SHA" ]; then
+            echo "Could not determine nightly tag commit SHA (possibly due to annotated tag retrieval failure)."
+            echo "Release will be created to ensure nightly build is updated."
+            echo "should_create_release=true" >> $GITHUB_OUTPUT
+          elif [ "$NIGHTLY_TAG_SHA" = "$CURRENT_SHA" ]; then
+            echo "Nightly tag already points to current commit ($CURRENT_SHA)"
+            echo "No new commits since last nightly release. Skipping release creation."
+            echo "should_create_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Nightly tag points to different commit: $NIGHTLY_TAG_SHA"
+            echo "Current commit is: $CURRENT_SHA"
+            echo "New commits detected. Release will be created."
+            echo "should_create_release=true" >> $GITHUB_OUTPUT
+          fi
+        fi
+    
     - name: Download disk image
+      if: steps.check_commit.outputs.should_create_release == 'true'
       uses: actions/download-artifact@v4
       with:
         name: disk-image
         path: .
     
     - name: Verify disk image exists
+      if: steps.check_commit.outputs.should_create_release == 'true'
       run: |
         if [ ! -f disk.img ]; then
-          echo "ERROR: disk.img not found after download"
+          echo "disk.img not found after download"
           exit 1
         fi
-        echo "SUCCESS: disk.img found"
+        echo "disk.img found"
         ls -lh disk.img
     
     - name: Get current date
+      if: steps.check_commit.outputs.should_create_release == 'true'
       id: date
       run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
     
     - name: Delete existing nightly release
+      if: steps.check_commit.outputs.should_create_release == 'true'
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Delete the nightly release if it exists
         gh release delete nightly --yes 2>/dev/null || echo "No existing nightly release to delete"
-        # Delete the nightly tag using GitHub API
         gh api "repos/${{ github.repository }}/git/refs/tags/nightly" -X DELETE 2>/dev/null || echo "No existing nightly tag to delete"
     
     - name: Verify deletion succeeded
+      if: steps.check_commit.outputs.should_create_release == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Check if the release still exists
         if gh release view nightly 2>/dev/null; then
-          echo "WARNING: Nightly release still exists after deletion attempt"
+          echo "Nightly release still exists after deletion attempt"
         else
-          echo "SUCCESS: Nightly release successfully deleted or did not exist"
+          echo "Nightly release successfully deleted or did not exist"
         fi
     
     - name: Create nightly release
+      if: steps.check_commit.outputs.should_create_release == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -81,55 +134,41 @@ jobs:
         
         This is an automated nightly build of IncroOS.
         
-        ## Build Information
         - **Build Date**: ${{ steps.date.outputs.date }}
         - **Commit**: ${{ github.sha }}
         - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
         
-        ## Included Files
         - \`disk.img\`: Bootable disk image for the OS
         
-        ## Usage
         Download \`disk.img\` and run it with Bochs emulator.
         
         You'll need to create a \`bochsrc\` configuration file. Example:
         \`\`\`
         display_library: sdl2
         
-        # ROM images (adjust paths based on your Bochs installation)
         romimage: file=/usr/share/bochs/BIOS-bochs-latest
         vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
         
-        # CPU configuration
         cpu: model=core2_penryn_t9600, count=1, ips=50000000
         cpuid: x86_64=1, mmx=1, sep=1, simd=sse4_2, apic=xapic, aes=1, movbe=1, xsave=1
         
-        # Memory
         memory: guest=4096, host=256
         
-        # PCI
         pci: enabled=1, chipset=i440fx
         
-        # Disk image
         ata0-master: type=disk, mode=flat, path=disk.img
         boot: disk
         
-        # Serial port for debugging
         com1: enabled=1, mode=file, dev=serial.out
         \`\`\`
         
-        Then run:
         \`\`\`bash
         bochs -q -f bochsrc
         \`\`\`
-        
-        **Note**: You may need to adjust ROM paths and other settings based on your Bochs installation and system requirements.
-        
-        ## Warning
+                
         This is a pre-release nightly build and may be unstable.
         EOF
         
-        # Create the release
         gh release create nightly \
           disk.img \
           --title "Nightly Build - ${{ steps.date.outputs.date }}" \
