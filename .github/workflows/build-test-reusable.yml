@@ -87,7 +87,7 @@ jobs:
     
     - name: Build diskbuilder
       run: |
-        cd External/diskbuilder
+        cd External/bake
         mkdir -p build
         cd build
         cmake .. -G Ninja
