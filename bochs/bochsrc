@@ -768,7 +768,7 @@ debugger_log: debugger.out
 #   com4: enabled=1, mode=pipe-client, dev=\\.\pipe\mypipe
 #   com4: enabled=1, mode=pipe-server, dev=\\.\pipe\mypipe
 #=======================================================================
-#com1: enabled=1, mode=file, dev=serial.txt
+com1: enabled=1, mode=file, dev=serial.txt
 
 
 #=======================================================================

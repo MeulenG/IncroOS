@@ -1,0 +1,17 @@
+schema: mbr
+
+partitions:
+  - label: test-partition
+    type: fat32
+    id: 0C
+    attributes:
+      - boot
+    fat-options:
+      reserved-image: build/STAGE2.SYS
+    sources:
+      - type: file
+        source: build/KRNLDR.BIN
+        target: /KRNLDR.BIN
+      - type: raw
+        source: build/BOOT.SYS
+        target: sector=0
