@@ -7,3 +7,8 @@ x86test/
 bochsout.txt
 disk.img
 dep/_codeql_detected_source_root
+External/*
+!External/bake/
+debugger.out
+pc.img
+serial.txt
