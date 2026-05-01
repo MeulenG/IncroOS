@@ -55,7 +55,11 @@ jobs:
           curl \
           libcurl4-openssl-dev \
           libssl-dev \
-          libsqlite3-dev
+          libsqlite3-dev \
+          libfuse3-dev \
+          libbpf-dev \
+          libcap-dev \
+          libseccomp-dev
     
     - name: Build and install Bochs with serial support
       run: |
