@@ -85,7 +85,7 @@ jobs:
         cd /tmp
         rm -rf bochs-2.7 bochs-2.7.tar.gz
     
-    - name: Build diskbuilder
+    - name: Build bake
       run: |
         cd External/bake
         mkdir -p build
