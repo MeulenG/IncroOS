@@ -155,8 +155,7 @@ FixCS:
 
 	; Ehh if we reach here, not found :s
 	.cEnd:
-    mov si, ErrorFixCS
-    call Puts16
+	; silent halt
 	cli
 	hlt
 
@@ -217,6 +216,7 @@ ReadCluster:
 	mov 	bl, byte [bSectorsPerCluster]
 	mul 	bx
 	add 	eax, dword [dReserved0]
+	add 	eax, dword [dHiddenSectors]
 
 	; Eax is now the sector of data
 	pop 	bx
@@ -242,40 +242,42 @@ ReadCluster:
 	mov 	esi, dword [dReserved1]
 	ret
 
-; **************************
-; BIOS ReadSector 
-; IN:
-; 	- ES:BX: Buffer
-;	- AX: Sector start
-; 	- CX: Sector count
-;
-; Registers:
-; 	- Conserves all but ES:BX
-; **************************
+; ============================================
+; ReadSector (LBA-extended)
+; IN:  EAX = starting LBA (disk-absolute, 32-bit)
+;      ES:BX = destination buffer
+;      CX = sector count
+; OUT: ES:BX advanced by CX sectors on success
+;      Halts on permanent failure
+; ============================================
 ReadSector:
+	push si
 	; Error Counter
 	.Start:
 		mov 	di, 5
 
 	.sLoop:
 		; Save states
-		push 	ax
-		push 	bx
-		push 	cx
+		push 	eax
+		push 	ebx
+		push 	ecx
 
-		; Convert LBA to CHS
-		xor     dx, dx
-        div     WORD [wSectorsPerTrack]
-        inc     dl ; adjust for sector 0
-        mov     cl, dl ;Absolute Sector
-        xor     dx, dx
-        div     WORD [wHeadsPerCylinder]
-        mov     dh, dl ;Absolute Head
-        mov     ch, al ;Absolute Track
+		; DAP.offset <- BX
+		mov [DAP + 4], bx
+
+		; DAP.segment <- ES
+		mov [DAP + 6], es
+
+		; DAP.lba low 32 bits <- EAX
+		mov dword [DAP + 8], eax
+
+		; DAP.lba high 32 bits <- 0
+		mov dword [DAP + 12], 0
 
         ; Bios Disk Read -> 01 sector
-		mov 	ax, 0x0201
+		mov		ah, 0x42
 		mov 	dl, byte [bPhysicalDriveNum]
+		mov		si, DAP
 		int 	0x13
 		jnc 	.Success
 
@@ -284,22 +286,20 @@ ReadSector:
 		xor 	ax, ax
 		int 	0x13
 		dec 	di
-		pop 	cx
-		pop 	bx
-		pop 	ax
+		pop 	ecx
+		pop 	ebx
+		pop 	eax
 		jnz 	.sLoop
 		
-		; Give control to next OS, we failed 
-        mov si, ErrorReadSector
-        call Puts16
+		; silent halt
 		cli
 		hlt
 
 	.Success:
 		; Next sector
-		pop 	cx
-		pop 	bx
-		pop 	ax
+		pop 	ecx
+		pop 	ebx
+		pop 	eax
 
 		add 	bx, word [wBytesPerSector]
 		jnc 	.SkipEs
@@ -308,10 +308,11 @@ ReadSector:
 		mov 	es, dx
 
 	.SkipEs:
-		inc 	ax
+		inc 	eax
 		loop 	.Start
 
 	; Done
+	pop si
 	ret
 
 ; **************************
@@ -332,6 +333,7 @@ GetNextCluster:
 	mov 	ax, si
 	shl 	ax, 2 			; REM * 4, since entries are 32 bits long, and not 8
 	div 	word [wBytesPerSector]
+	add 	ax, word [dHiddenSectors]
 	add 	ax, word [wReservedSectors]
 	push 	dx
 
@@ -358,9 +360,18 @@ GetNextCluster:
 ; Variables
 ; **************************
 szStage2					db 		"STAGE2  SYS"
-ErrorFixCS:  DB "FixCS error", 0x00
 
-ErrorReadSector: DB "ReadSector error", 0x00
+DAP:
+    db 0x10           ; packet size
+    db 0              ; reserved
+.count:
+    dw 1              ; sectors to transfer
+.offset:
+    dw 0              ; dest offset (filled at runtime)
+.segment:
+    dw 0              ; dest segment (filled at runtime)
+.lba:
+    dq 0              ; 64-bit LBA (filled at runtime)
 
 ; Fill out bootloader
 times 510-($-$$) db 0

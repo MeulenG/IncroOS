@@ -192,6 +192,7 @@ ReadCluster:
 	mov 	bl, byte [0x7C00 + 0x0D]
 	mul 	bx
 	add 	eax, dword [0x7C00 + 0x34]
+	add 	eax, dword [0x7C00 + 0x1C]
 
 	; Eax is now the sector of data
 	pop 	bx
@@ -228,29 +229,33 @@ ReadCluster:
 ; 	- Conserves all but ES:BX
 ; **************************
 ReadSector:
+	push si
 	; Error Counter
 	.Start:
 		mov 	di, 5
 
 	.sLoop:
 		; Save states
-		push 	ax
-		push 	bx
-		push 	cx
+		push 	eax
+		push 	ebx
+		push 	ecx
 
-		; Convert LBA to CHS
-		xor     dx, dx
-        div     WORD [0x7C00 + 0x18]
-        inc     dl ; adjust for sector 0
-        mov     cl, dl ;Absolute Sector
-        xor     dx, dx
-        div     WORD [0x7C00 + 0x1A]
-        mov     dh, dl ;Absolute Head
-        mov     ch, al ;Absolute Track
+		; DAP.offset <- BX
+		mov [DAP + 4], bx
+
+		; DAP.segment <- ES
+		mov [DAP + 6], es
+
+		; DAP.lba low 32 bits <- EAX
+		mov dword [DAP + 8], eax
+
+		; DAP.lba high 32 bits <- 0
+		mov dword [DAP + 12], 0
 
         ; Bios Disk Read -> 01 sector
-		mov 	ax, 0x0201
+		mov		ah, 0x42
 		mov 	dl, byte [bPhysicalDriveNum]
+		mov		si, DAP
 		int 	0x13
 		jnc 	.Success
 
@@ -259,22 +264,20 @@ ReadSector:
 		xor 	ax, ax
 		int 	0x13
 		dec 	di
-		pop 	cx
-		pop 	bx
-		pop 	ax
+		pop 	ecx
+		pop 	ebx
+		pop 	eax
 		jnz 	.sLoop
 		
-		; Give control to next OS, we failed 
-        mov si, ErrorReadSector
-        call Puts16
+		; silent halt
 		cli
 		hlt
 
 	.Success:
 		; Next sector
-		pop 	cx
-		pop 	bx
-		pop 	ax
+		pop 	ecx
+		pop 	ebx
+		pop 	eax
 
 		add 	bx, word [0x7C00 + 0x0B]
 		jnc 	.SkipEs
@@ -283,10 +286,11 @@ ReadSector:
 		mov 	es, dx
 
 	.SkipEs:
-		inc 	ax
+		inc 	eax
 		loop 	.Start
 
 	; Done
+	pop si
 	ret
 
 ; **************************
@@ -307,6 +311,7 @@ GetNextCluster:
 	mov 	ax, si
 	shl 	ax, 2 			; REM * 4, since entries are 32 bits long, and not 8
 	div 	word [0x7C00 + 0x0B]
+	add 	ax, word [0x7C00 + 0x1C]
 	add 	ax, word [0x7C00 + 0x0E]
 	push 	dx
 
@@ -502,3 +507,15 @@ LoaderEntry64:
 
 Continue_Part3:
 	jmp 0x100000
+
+DAP:
+    db 0x10           ; packet size
+    db 0              ; reserved
+.count:
+    dw 1              ; sectors to transfer
+.offset:
+    dw 0              ; dest offset (filled at runtime)
+.segment:
+    dw 0              ; dest segment (filled at runtime)
+.lba:
+    dq 0              ; 64-bit LBA (filled at runtime)
