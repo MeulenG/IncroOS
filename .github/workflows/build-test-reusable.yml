@@ -52,7 +52,10 @@ jobs:
           ninja-build \
           python3 \
           git \
-          curl
+          curl \
+          libcurl4-openssl-dev \
+          libssl-dev \
+          libsqlite3-dev
     
     - name: Build and install Bochs with serial support
       run: |
@@ -329,7 +332,7 @@ jobs:
       run: |
         # Clean up temporary build directories
         rm -rf build
-        rm -rf External/diskbuilder/build
+        rm -rf External/bake/build
         
         # Clean up bochs test directory
         rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/disk.img
