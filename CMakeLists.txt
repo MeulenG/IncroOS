@@ -31,7 +31,7 @@ if(MFOS)
 
     add_custom_command(
         OUTPUT disk.img
-        COMMAND cd .. && External/bake/build/bin/mkcdk test/example.yaml -s 256M -o disk.img
+        COMMAND cd .. && External/bake/build/bin/mkcdk -s 256M builder.yaml
         DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS 
                 ${CMAKE_BINARY_DIR}/STAGE2.SYS 
                 ${CMAKE_BINARY_DIR}/KRNLDR.BIN
