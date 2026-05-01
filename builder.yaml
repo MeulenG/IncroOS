@@ -6,12 +6,13 @@ partitions:
     id: 0C
     attributes:
       - boot
-    fat-options:
-      reserved-image: build/STAGE2.SYS
     sources:
       - type: file
         source: build/KRNLDR.BIN
         target: /KRNLDR.BIN
+      - type: file
+        source: build/STAGE2.SYS
+        target: /STAGE2.SYS
       - type: raw
         source: build/BOOT.SYS
         target: sector=0
