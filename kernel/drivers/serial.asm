@@ -1,4 +1,3 @@
-; Serial Port Driver - Assembly Implementation
 ; COM1 base port: 0x3F8
 
 section .text
@@ -32,9 +31,9 @@ serial_init:
     mov al, 0x80
     out dx, al
     
-    ; Set divisor to 3 (lo byte) 38400 baud
+    ; Set divisor to 1 115200  baud
     mov dx, COM1_DATA
-    mov al, 0x03
+    mov al, 0x01
     out dx, al
     
     ; Set divisor to 0 (hi byte)
@@ -76,7 +75,7 @@ serial_init:
 
 ; serial_putchar - Write a character to the serial port
 ; Parameters:
-;   rdi - character to write (first argument in x86-64 calling convention)
+;   rdi - character to write
 ; No return value
 serial_putchar:
     push rax
