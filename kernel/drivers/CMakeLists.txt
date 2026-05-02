@@ -21,7 +21,7 @@ endif()
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/vga.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND x86_64-linux-gnu-gcc -c ${CMAKE_CURRENT_SOURCE_DIR}/vga.c -o ${CMAKE_BINARY_DIR}/vga.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -m64
+    COMMAND x86_64-linux-gnu-gcc -c ${CMAKE_CURRENT_SOURCE_DIR}/vga.c -o ${CMAKE_BINARY_DIR}/vga.o -ffreestanding -O2 -Wall -Wextra -Werror -fno-exceptions -m64
     COMMENT "Compiling VGA Driver"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vga.c
 )
