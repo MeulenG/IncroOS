@@ -4,11 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Assembly functions (implemented in serial.asm)
-void serial_init(void);
+// C wrapper functions
+int serial_init();
 void serial_putchar(char c);
 
-// C wrapper functions
 void serial_write(const char* data, size_t size);
 void serial_writestring(const char* data);
 
