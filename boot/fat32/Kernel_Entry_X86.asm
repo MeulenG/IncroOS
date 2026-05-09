@@ -7,7 +7,7 @@ _start:
 	cli
     
 	; Place the vboot header into first argument for kMain
-	mov rcx, rbx
+	; mov rcx, rbx
 
 	call kMain
 	mov rax, 0x000000000000DEAD
