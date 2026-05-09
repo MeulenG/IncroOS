@@ -29,9 +29,6 @@ void serial_putchar(char c) {
     outb(COM1_PORT + 0, c);
 }
 
-// Use strlen from terminal.h
-extern size_t strlen(const char* str);
-
 
 // Write a string of specific size to serial port
 void serial_write(const char* data, size_t size) {
