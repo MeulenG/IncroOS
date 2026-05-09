@@ -3,6 +3,7 @@
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 #include "memory/kmalloc.h"
+#include "lib/print.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -117,6 +118,8 @@ void kMain(void) {
     serial_writestring("===========================================\n");
 
     terminal_writestring("Memory Manager Initialized!\n");
+    kprintf("%d %d %d\n", 0, -1, 1234);
+    kprintf("hello %s, count=%d, addr=%p\n", "world", 42, (void*)0xDEAD);
 
     while (1) {
         __asm__ volatile("hlt");
