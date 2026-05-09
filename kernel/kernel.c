@@ -119,7 +119,7 @@ void kMain(void) {
 
     terminal_writestring("Memory Manager Initialized!\n");
     kprintf("%d %d %d\n", 0, -1, 1234);
-    // kprintf("hello %s, count=%d, addr=%p\n", "world", 42, (void*)0xDEAD);
+    kprintf("hello %s, count=%d, addr=%p\n", "world", 42, (void*)0xDEAD);
 
     while (1) {
         __asm__ volatile("hlt");
