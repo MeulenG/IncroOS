@@ -3,9 +3,15 @@
  
 #include <stdio.h>
 #include <stdint.h>
+#include "../lib/print.h"
+
+extern uint64_t gdt[5];
+struct gdtr {
+    uint16_t limit;     // size of gdtr in bytes minus 1
+    uint64_t base;      // address of gdtr
+} __attribute__((packed));
  
 // Each define here is for a specific flag in the descriptor.
-// Refer to the intel documentation for a description of what each one does.
 #define SEG_DESCTYPE(x)  ((x) << 0x04) // Descriptor type (0 for system, 1 for code/data)
 #define SEG_PRES(x)      ((x) << 0x07) // Present
 #define SEG_SAVL(x)      ((x) << 0x0C) // Available for system use
@@ -32,7 +38,7 @@
 #define SEG_CODE_EXRDCA    0x0F // Execute/Read, conforming, accessed
  
 #define GDT_CODE_PL0 SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | \
-                     SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) | \
+                     SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) | \
                      SEG_PRIV(0)     | SEG_CODE_EXRD
  
 #define GDT_DATA_PL0 SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | \
@@ -40,13 +46,14 @@
                      SEG_PRIV(0)     | SEG_DATA_RDWR
  
 #define GDT_CODE_PL3 SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | \
-                     SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) | \
+                     SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) | \
                      SEG_PRIV(3)     | SEG_CODE_EXRD
  
 #define GDT_DATA_PL3 SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | \
                      SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) | \
                      SEG_PRIV(3)     | SEG_DATA_RDWR
  
-void create_descriptor(uint32_t base, uint32_t limit, uint16_t flag);
+void create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag);
+void init_gdt();
 
 #endif
