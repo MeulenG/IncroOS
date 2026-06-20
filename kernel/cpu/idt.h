@@ -1,7 +1,9 @@
-#ifndef __SERIAL_H__
-#define __SERIAL_H__
+#ifndef __IDT_H__
+#define __IDT_H__
 
 #include <stdint.h>
+#include "../drivers/serial.h"
+#include "../output/terminal.h"
 
 struct InterruptDescriptor64 {
    uint16_t offset_1;        // offset bits 0..15
@@ -13,19 +15,16 @@ struct InterruptDescriptor64 {
    uint32_t zero;            // reserved
 };
 
-struct idt_entry_64 {
-    uint16_t offset_low;       // bits 0-15 of handler address
-    uint16_t selector;         // GDT code segment selector
-    uint8_t  ist;              // bits 0-2 = IST index; bits 3-7 = 0
-    uint8_t  type_attr;        // gate type | DPL | P  (e.g., 0x8E = present, ring 0, interrupt gate)
-    uint16_t offset_mid;       // bits 16-31 of handler address
-    uint32_t offset_high;      // bits 32-63 of handler address
-    uint32_t zero;             // reserved, must be 0
-} __attribute__((packed));
+// IDT is a a lookup table with 256 slots(one per interrupt number) 
+extern struct InterruptDescriptor64 idt[256];
 
 struct idtr {
     uint16_t limit;     // size of IDT in bytes minus 1
     uint64_t base;      // address of IDT
 } __attribute__((packed));
+
+void unhandled_interrupt();
+void set_idt_gate(int slot_number, void* handler_address);
+void fill_idt_slots();
 
 #endif // __SERIAL_H__
