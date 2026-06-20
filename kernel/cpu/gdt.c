@@ -39,4 +39,21 @@ void init_gdt() {
     gdtr.base  = (uint64_t)&gdt; // address of gdt array
     gdtr.limit = sizeof(gdt) - 1; // size in bytes minus
     __asm__ volatile ("lgdt %0" : : "memory"(*&gdtr));
-}
+
+    __asm__ volatile (
+    "push 0x08\n"   // Push code segment to stack, 0x08 is a stand-in for your code segment
+    "lea rax, [rip+1f]\n" // Load address of .reload_CS into RAX
+    "push rax\n" // Push this value to the stack
+    "lretq\n"   // Perform a far return, RETFQ or LRETQ depending on syntax
+    "1:\n"
+    );
+
+    __asm__ volatile (
+    "mov ax, 0x10\n"   // kernel data selector
+    "mov ds, ax\n"
+    "mov es, ax\n"
+    "mov fs, ax\n"
+    "mov gs, ax\n"
+    "mov ss, ax\n"
+    );
+}   
