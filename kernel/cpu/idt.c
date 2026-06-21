@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "interrupt_handler.h"
 
 struct InterruptDescriptor64 idt[256];
 
@@ -21,6 +22,8 @@ void fill_idt_slots() {
     for(int i = 0; i < 256; i++) {
         set_idt_gate(i, unhandled_interrupt);
     }
+    set_idt_gate(0, isr_divide_by_zero);
+    set_idt_gate(14, isr_page_fault);
     struct idtr idtr;
     // address of idtr array
     idtr.base  = (uint64_t)&idt;

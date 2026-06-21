@@ -34,3 +34,20 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/idt.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/idt.c
 )
 add_custom_target(IDT ALL DEPENDS ${CMAKE_BINARY_DIR}/idt.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/interrupt_handler.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-80387 -c ${CMAKE_CURRENT_SOURCE_DIR}/interrupt_handler.c -o ${CMAKE_BINARY_DIR}/interrupt_handler.o
+    COMMENT "Compiling Interrupt Handler"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/interrupt_handler.c
+)
+add_custom_target(InterruptHandler ALL DEPENDS ${CMAKE_BINARY_DIR}/interrupt_handler.o)
+
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/pic.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/pic.c -o ${CMAKE_BINARY_DIR}/pic.o
+    COMMENT "Compiling PIC"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/pic.c
+)
+add_custom_target(PIC ALL DEPENDS ${CMAKE_BINARY_DIR}/pic.o)
