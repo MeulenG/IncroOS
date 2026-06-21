@@ -4,6 +4,8 @@
 #include "memory/vmm.h"
 #include "memory/kmalloc.h"
 #include "lib/print.h"
+#include "cpu/gdt.h"
+#include "cpu/idt.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -40,6 +42,12 @@ void kMain(void) {
     terminal_writestring("Hello, 64-bit kernel World!\n");
 
     serial_writestring("\n[INIT] Initializing Memory Subsystem...\n");
+
+    init_gdt();
+    fill_idt_slots();
+
+    // trigger divide by 0
+    volatile int x = 1 / 0;
 
     // 4GB
     uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
