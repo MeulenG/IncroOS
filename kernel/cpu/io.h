@@ -39,7 +39,9 @@ static inline uint32_t inl(uint16_t port) {
     return ret;
 }
 
-
+// On some older machines
+// it is necessary to give the PIC for example some time to react to commands as they might not be processed quickly
+// Funny enough, this comment is also added while implementing the PIC, which is why that is the only example I have lol
 static inline void io_wait(void) {  outb(0x80, 0); }
 
 #endif // KERNEL_CPU_IO_H
