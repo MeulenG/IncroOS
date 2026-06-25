@@ -34,9 +34,3 @@ void PIC_remap(int offset1, int offset2)
 	outb(PIC1_DATA, 0);
 	outb(PIC2_DATA, 0);
 }
-
-void irq0_handler() {
-    serial_writestring("IRQ0: Timer interrupt received\n");
-    // Send an EOI to the PICs
-    PIC_sendEOI(0);
-}
