@@ -31,6 +31,6 @@ void fill_idt_slots() {
     idtr.base  = (uint64_t)&idt;
     // size in bytes minus 1
     idtr.limit = sizeof(idt) - 1;
-    __asm__ volatile ("sti");
     __asm__ volatile ("lidt %0" : : "memory"(*&idtr));
+    __asm__ volatile ("sti");
 }
