@@ -1,4 +1,5 @@
 #include "interrupt_handler.h"
+#include "pic.h"
 #include "../drivers/serial.h"
 #include "../output/terminal.h"
 
@@ -24,4 +25,10 @@ __attribute__((interrupt)) void isr_divide_by_zero(struct interrupt_frame* frame
 __attribute__((interrupt)) void isr_page_fault(struct interrupt_frame* frame, uintptr_t error_code) {
     log_interrupt("Page Fault");
     for(;;);
+}
+
+__attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ0: Timer interrupt received\n");
+    // Send an EOI to the PICs
+    PIC_sendEOI(0);
 }
