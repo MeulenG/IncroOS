@@ -25,7 +25,7 @@ void fill_idt_slots() {
     }
     set_idt_gate(0, isr_divide_by_zero);
     set_idt_gate(14, isr_page_fault);
-    set_idt_gate(20, irq0_handler);
+    set_idt_gate(32, irq0_handler);
     struct idtr idtr;
     // address of idtr array
     idtr.base  = (uint64_t)&idt;
