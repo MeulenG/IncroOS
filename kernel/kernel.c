@@ -47,7 +47,9 @@ void kMain(void) {
     fill_idt_slots();
 
     // trigger divide by 0
-    volatile int x = 1 / 0;
+    // volatile int x = 1 / 0;
+
+    /*
 
     // 4GB
     uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
@@ -128,6 +130,7 @@ void kMain(void) {
     terminal_writestring("Memory Manager Initialized!\n");
     kprintf("%d %d %d\n", 0, -1, 1234);
     kprintf("hello %s, count=%d, addr=%p\n", "world", 42, (void*)0xDEAD);
+    */
 
     while (1) {
         __asm__ volatile("hlt");
