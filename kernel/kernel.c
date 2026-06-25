@@ -6,6 +6,7 @@
 #include "lib/print.h"
 #include "cpu/gdt.h"
 #include "cpu/idt.h"
+#include "cpu/pic.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -45,6 +46,8 @@ void kMain(void) {
 
     init_gdt();
     fill_idt_slots();
+    // remap PIC
+    PIC_remap(0x20, 0x28);
 
     // trigger divide by 0
     // volatile int x = 1 / 0;
