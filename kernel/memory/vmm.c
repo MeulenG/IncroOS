@@ -49,11 +49,12 @@ static pte_t* get_or_create_table(pte_t* parent, uint64_t index, uint64_t flags)
     return table;
 }
 
-void vmm_init(void) {
+int vmm_init(void) {
     uint64_t cr3 = get_cr3();
     pml4 = (pte_t*)cr3;
 
     serial_writestring("[VMM] Virtual Memory Manager initialized\n");
+    return 0;
 }
 
 bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
@@ -80,30 +81,31 @@ bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
     return true;
 }
 
-void vmm_unmap_page(uint64_t virt) {
+int vmm_unmap_page(uint64_t virt) {
     uint64_t pml4_idx = PML4_INDEX(virt);
     uint64_t pdpt_idx = PDPT_INDEX(virt);
     uint64_t pd_idx = PD_INDEX(virt);
     uint64_t pt_idx = PT_INDEX(virt);
 
     if (!(pml4[pml4_idx] & PT_PRESENT)) { 
-        return; 
+        return -1;
     }
     pte_t* pdpt = (pte_t*)(pml4[pml4_idx] & PT_ADDR_MASK);
 
     if (!(pdpt[pdpt_idx] & PT_PRESENT)) {
-        return;
+        return -1;
     }
     pte_t* pd = (pte_t*)(pdpt[pdpt_idx] & PT_ADDR_MASK);
 
     if (!(pd[pd_idx] & PT_PRESENT)) {
-        return;
+        return -1;
     }
     pte_t* pt = (pte_t*)(pd[pd_idx] & PT_ADDR_MASK);
 
     pt[pt_idx] = 0;
 
     __asm__ volatile("invlpg (%0)" :: "r"(virt) : "memory");
+    return 0;
 }
 
 uint64_t vmm_get_physical(uint64_t virt) {
