@@ -28,8 +28,8 @@
 #define CASCADE_IRQ 2
 
 
-void PIC_sendEOI(uint8_t irq);
-void PIC_remap(int offset1, int offset2);
+int PIC_sendEOI(uint8_t irq);
+int PIC_remap(int offset1, int offset2);
 
 void irq0_handler();
 

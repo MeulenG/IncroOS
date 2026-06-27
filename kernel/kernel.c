@@ -1,5 +1,6 @@
 #include "drivers/serial.h"
 #include "output/terminal.h"
+#include "output/boot_service.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 #include "memory/kmalloc.h"
@@ -44,17 +45,24 @@ void kMain(void) {
 
     serial_writestring("\n[INIT] Initializing Memory Subsystem...\n");
 
-    init_gdt();
-    fill_idt_slots();
-    // remap PIC
-    PIC_remap(0x20, 0x28);
+    // call all services using the boot service framework
+    struct boot_service services[] = {
+        {"GDT Initialization\n", init_gdt, TRUE},
+        {"IDT Initialization\n", fill_idt_slots, TRUE},
+        {"PIC Remapping\n", (int (*)())PIC_remap, TRUE},
+        {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
+        {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
+        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
+    };
+    
+    run_boot_services(services, sizeof(services) / sizeof(services[0]));
 
     // trigger divide by 0
     // volatile int x = 1 / 0;
 
     // 4GB
+    /*
     uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
-    pmm_init(total_memory);
 
     char buffer[32];
     uint64_to_string(pmm_get_total_pages(), buffer);
@@ -71,10 +79,6 @@ void kMain(void) {
     serial_writestring("[PMM] Used pages: ");
     serial_writestring(buffer);
     serial_writestring("\n");
-
-    vmm_init();
-
-    kmalloc_init();
 
     serial_writestring("\n[INIT] Memory Subsystem Initialized Successfully\n");
 
@@ -131,6 +135,7 @@ void kMain(void) {
     terminal_writestring("Memory Manager Initialized!\n");
     kprintf("%d %d %d\n", 0, -1, 1234);
     kprintf("hello %s, count=%d, addr=%p\n", "world", 42, (void*)0xDEAD);
+    */
 
     while (1) {
         __asm__ volatile("hlt");

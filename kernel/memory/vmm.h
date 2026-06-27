@@ -13,13 +13,13 @@
 
 typedef uint64_t pte_t;
 
-void vmm_init(void);
+int vmm_init(void);
 
 // Returns: true on success, false on failure
 bool vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags);
 
 // virtual address to unmap
-void vmm_unmap_page(uint64_t virt);
+int vmm_unmap_page(uint64_t virt);
 
 // returns the physical address, or 0 if not mapped
 uint64_t vmm_get_physical(uint64_t virt);

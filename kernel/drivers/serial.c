@@ -24,14 +24,15 @@ int serial_init() {
    return 0;
 }
 
-void serial_putchar(char c) {
+int serial_putchar(char c) {
     while (!(inb(COM1_PORT + 5) & 0x20)) { /* wait for THR empty */ }
     outb(COM1_PORT + 0, c);
+    return 0;
 }
 
 
 // Write a string of specific size to serial port
-void serial_write(const char* data, size_t size) {
+int serial_write(const char* data, size_t size) {
     for (size_t i = 0; i < size; i++) {
         // Convert LF to CRLF for proper serial terminal output
         if (data[i] == '\n') {
@@ -39,9 +40,11 @@ void serial_write(const char* data, size_t size) {
         }
         serial_putchar(data[i]);
     }
+    return 0;
 }
 
 // Write a null-terminated string to serial port
-void serial_writestring(const char* data) {
+int serial_writestring(const char* data) {
     serial_write(data, strlen(data));
+    return 0;
 }

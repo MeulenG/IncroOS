@@ -31,7 +31,7 @@ static void set_page_free(uint64_t page) {
     page_bitmap[byte] &= ~(1 << bit);
 }
 
-void pmm_init(uint64_t total_memory) {
+int pmm_init(uint64_t total_memory) {
     total_pages = total_memory / PAGE_SIZE;
     uint64_t bitmap_size = (total_pages + PAGES_PER_BYTE - 1) / PAGES_PER_BYTE;
     page_bitmap = (uint8_t*)0x140000;
@@ -60,6 +60,7 @@ void pmm_init(uint64_t total_memory) {
     }
 
     serial_writestring("[PMM] Physical Memory Manager initialized\n");
+    return 0;
 }
 
 uint64_t pmm_alloc_page(void) {
@@ -74,17 +75,18 @@ uint64_t pmm_alloc_page(void) {
     return 0;
 }
 
-void pmm_free_page(uint64_t addr) {
+int pmm_free_page(uint64_t addr) {
     uint64_t page = addr / PAGE_SIZE;
 
     if (page >= total_pages) {
-        return;
+        return -1; // Invalid page number
     }
 
     if (is_page_allocated(page)) {
         set_page_free(page);
         used_pages--;
     }
+    return 0;
 }
 
 uint64_t pmm_get_total_pages(void) {

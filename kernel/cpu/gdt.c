@@ -2,7 +2,7 @@
 
 uint64_t gdt[5];
 
-void create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag)
+int create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag)
 {
     uint64_t descriptor;
 
@@ -21,9 +21,10 @@ void create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag)
 
     // insert into our gdt struct
     gdt[slot] = descriptor;
+    return 0;
 }
 
-void init_gdt() {
+int init_gdt() {
     // gdt null descriptor
     create_descriptor(0 ,0, 0x00000000, 0);
     // kernel mode code segment
@@ -58,4 +59,5 @@ void init_gdt() {
     "mov %%ax, %%ss\n"
     : : : "ax"
     );
-}   
+    return 0;
+}
