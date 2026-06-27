@@ -37,19 +37,13 @@ void kMain(void) {
 
     terminal_initialize();
 
-    serial_writestring("===========================================\n");
-    serial_writestring("  IncroOS - Kernel Starting\n");
-    serial_writestring("===========================================\n");
-
-    terminal_writestring("Hello, 64-bit kernel World!\n");
-
-    serial_writestring("\n[INIT] Initializing Memory Subsystem...\n");
-
+    // 4GB
+    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
     // call all services using the boot service framework
     struct boot_service services[] = {
         {"GDT Initialization\n", init_gdt, TRUE},
         {"IDT Initialization\n", fill_idt_slots, TRUE},
-        {"PIC Remapping\n", (int (*)())PIC_remap, TRUE},
+        {"PIC Remapping\n", (int (*)())pic_init, TRUE},
         {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
@@ -60,9 +54,9 @@ void kMain(void) {
     // trigger divide by 0
     // volatile int x = 1 / 0;
 
-    // 4GB
+    
     /*
-    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
+    
 
     char buffer[32];
     uint64_to_string(pmm_get_total_pages(), buffer);
