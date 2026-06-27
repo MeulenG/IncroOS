@@ -24,7 +24,7 @@ struct idtr {
 } __attribute__((packed));
 
 void unhandled_interrupt();
-void set_idt_gate(int slot_number, void* handler_address);
-void fill_idt_slots();
+int set_idt_gate(int slot_number, void* handler_address);
+int fill_idt_slots();
 
 #endif // __SERIAL_H__

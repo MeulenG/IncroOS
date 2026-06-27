@@ -32,3 +32,16 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
     // Send an EOI to the PICs
     PIC_sendEOI(0);
 }
+
+// Spurious IRQ for IRQ7 and IRQ15
+__attribute__((interrupt)) void irq7_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ7: Spurious interrupt received\n");
+    // Dont send an EOI to the PICs for spurious interrupts, as it can cause issues
+    // we just log it for now since we are in early development
+}
+
+__attribute__((interrupt)) void irq15_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ15: Spurious interrupt received\n");
+    // Dont send an EOI to the PICs for spurious interrupts, as it can cause issues
+    // we just log it for now since we are in early development
+}
