@@ -53,7 +53,7 @@ struct gdtr {
                      SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) | \
                      SEG_PRIV(3)     | SEG_DATA_RDWR
  
-void create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag);
-void init_gdt();
+int create_descriptor(int slot, uint32_t base, uint32_t limit, uint16_t flag);
+int init_gdt();
 
 #endif
