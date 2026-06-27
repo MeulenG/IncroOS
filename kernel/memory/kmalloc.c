@@ -20,13 +20,14 @@ static size_t align_size(size_t size) {
     return (size + 15) & ~15;
 }
 
-void kmalloc_init(void) {
+int kmalloc_init(void) {
     heap_start = (block_header_t*)HEAP_START;
     heap_start->size = HEAP_SIZE - BLOCK_HEADER_SIZE;
     heap_start->is_free = true;
     heap_start->next = NULL;
 
     serial_writestring("[KMALLOC] Kernel heap allocator initialized\n");
+    return 0;
 }
 
 void* kmalloc(size_t size) {
@@ -62,15 +63,15 @@ void* kmalloc(size_t size) {
     return NULL;
 }
 
-void kfree(void* ptr) {
+int kfree(void* ptr) {
     if (ptr == NULL) {
-        return;
+        return 0;
     }
 
     block_header_t* block = (block_header_t*)((uint8_t*)ptr - BLOCK_HEADER_SIZE);
 
     if (block->is_free) {
-        return;
+        return 0;
     }
 
     block->is_free = true;
@@ -90,6 +91,7 @@ void kfree(void* ptr) {
         current->size += BLOCK_HEADER_SIZE + block->size;
         current->next = block->next;
     }
+    return 0;
 }
 
 uint64_t kmalloc_get_used(void) {

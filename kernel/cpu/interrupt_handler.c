@@ -1,4 +1,5 @@
 #include "interrupt_handler.h"
+#include "pic.h"
 #include "../drivers/serial.h"
 #include "../output/terminal.h"
 
@@ -24,4 +25,23 @@ __attribute__((interrupt)) void isr_divide_by_zero(struct interrupt_frame* frame
 __attribute__((interrupt)) void isr_page_fault(struct interrupt_frame* frame, uintptr_t error_code) {
     log_interrupt("Page Fault");
     for(;;);
+}
+
+__attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ0: Timer interrupt received\n");
+    // Send an EOI to the PICs
+    PIC_sendEOI(0);
+}
+
+// Spurious IRQ for IRQ7 and IRQ15
+__attribute__((interrupt)) void irq7_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ7: Spurious interrupt received\n");
+    // Dont send an EOI to the PICs for spurious interrupts, as it can cause issues
+    // we just log it for now since we are in early development
+}
+
+__attribute__((interrupt)) void irq15_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ15: Spurious interrupt received\n");
+    // Dont send an EOI to the PICs for spurious interrupts, as it can cause issues
+    // we just log it for now since we are in early development
 }
