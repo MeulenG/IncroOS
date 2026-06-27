@@ -31,7 +31,10 @@ static void set_page_free(uint64_t page) {
     page_bitmap[byte] &= ~(1 << bit);
 }
 
-int pmm_init(uint64_t total_memory) {
+// Takes a total memory size but is wrong
+// The total memory should be passed in from the bootloader, but for now we will just assume 4GB
+int pmm_init() {
+    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
     total_pages = total_memory / PAGE_SIZE;
     uint64_t bitmap_size = (total_pages + PAGES_PER_BYTE - 1) / PAGES_PER_BYTE;
     page_bitmap = (uint8_t*)0x140000;

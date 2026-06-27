@@ -30,6 +30,7 @@
 
 int PIC_sendEOI(uint8_t irq);
 int PIC_remap(int offset1, int offset2);
+int pic_init();
 
 void irq0_handler();
 

@@ -36,3 +36,9 @@ int PIC_remap(int offset1, int offset2)
 	outb(PIC2_DATA, 0);
 	return 0;
 }
+
+int pic_init() {
+	// Remap the PICs to avoid errors with our boot service
+	PIC_remap(0x20, 0x28);
+	return 0;
+}
