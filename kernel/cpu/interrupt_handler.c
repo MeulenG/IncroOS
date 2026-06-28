@@ -1,7 +1,4 @@
 #include "interrupt_handler.h"
-#include "pic.h"
-#include "../drivers/serial.h"
-#include "../output/terminal.h"
 
 
 // Logging for interrupts
@@ -31,6 +28,15 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
     serial_writestring("IRQ0: Timer interrupt received\n");
     // Send an EOI to the PICs
     PIC_sendEOI(0);
+}
+
+// Read the keyboard scancode and send an EOI to the PICs
+__attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame) {
+    // read from port 0x60 to acknowledge the keyboard interrupt
+    uint8_t scancode = inb(0x60);
+    kprintf("IRQ1: Keyboard interrupt received, scancode: 0x%02x\n", scancode);
+    // Send an EOI to the PICs
+    PIC_sendEOI(1);
 }
 
 // Spurious IRQ for IRQ7 and IRQ15
