@@ -7,6 +7,7 @@
 #include "../output/terminal.h"
 #include "../cpu/io.h"
 #include "../lib/print.h"
+#include "../drivers/keyboard.h"
 
 struct interrupt_frame {
     uintptr_t rip;
