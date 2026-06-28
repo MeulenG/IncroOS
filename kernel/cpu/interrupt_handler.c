@@ -33,8 +33,15 @@ __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
 // Read the keyboard scancode and send an EOI to the PICs
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame) {
     // read from port 0x60 to acknowledge the keyboard interrupt
+    // For now: if the scancode is above 0x80, return early as it is a key release event and we are not handling those yet
     uint8_t scancode = inb(0x60);
-    kprintf("IRQ1: Keyboard interrupt received, scancode: 0x%02x\n", scancode);
+    if (scancode & 0x80) {
+        PIC_sendEOI(1);
+        return;
+    }
+    // kprintf("IRQ1: Keyboard interrupt received, scancode: 0x%x\n", scancode);
+    // parse it to the keyboard driver
+    handle_keyboard_interrupt(scancode);
     // Send an EOI to the PICs
     PIC_sendEOI(1);
 }
