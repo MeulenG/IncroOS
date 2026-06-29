@@ -351,12 +351,28 @@ SetA20:
 	;-------------------------------;
     call    EnableA20_KKbrd_Out
 
+get_vesa_info:
+	clc
+	mov ax, 0x4f00
+	int 0x10
+	cmp ax, 0x004f
+	jne .failed
+	.failed:
+		stc
+		ret
+
 SetVideoMode:
     ;-------------------------------;
 	;   Set Video Mode  	        ;
 	;-------------------------------;
-    mov     ax, 3
-    int     0x10
+    mov ax, 0x4F01        ; get mode info
+	mov cx, 0x4112        ; mode 0x4112 = 800x600 32bpp
+	mov di, 0x600        ; address to store mode info block
+	int 0x10
+	mov ax, 0x4F02        ; set mode
+	mov bx, 0x4112        ; mode + bit 14 set (use linear framebuffer)
+	or  bx, 0x4000
+	int 0x10
     cli
     ;-------------------------------;
 	;   Install our GDT		        ;
