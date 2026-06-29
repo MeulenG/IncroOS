@@ -27,6 +27,7 @@ int fill_idt_slots() {
     set_idt_gate(0, isr_divide_by_zero);
     set_idt_gate(14, isr_page_fault);
     set_idt_gate(32, irq0_handler);
+    set_idt_gate(33, irq1_handler);
     set_idt_gate(39, irq7_handler);
     set_idt_gate(47, irq15_handler);
     struct idtr idtr;
