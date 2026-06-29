@@ -8,6 +8,7 @@
 #include "cpu/gdt.h"
 #include "cpu/idt.h"
 #include "cpu/pic.h"
+#include "drivers/vesa.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -48,6 +49,13 @@ void kMain(void) {
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
     };
+
+    // read in VESA framebuffer at 0x600
+    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x600;
+    uint32_t framebuffer = vesa_info->framebuffer;
+    uint16_t width = vesa_info->width;
+    uint16_t height = vesa_info->height;
+    uint8_t bpp = vesa_info->bpp;
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
 

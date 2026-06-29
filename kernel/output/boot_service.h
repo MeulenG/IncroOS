@@ -7,6 +7,7 @@ typedef enum { FALSE, TRUE } boolean;
 struct boot_service {
     char *name;
     int (*fptr)();
+    int (*validate)();
     boolean isCritical;
 };
 
