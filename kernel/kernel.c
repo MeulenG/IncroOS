@@ -37,8 +37,6 @@ void kMain(void) {
 
     terminal_initialize();
 
-    // 4GB
-    uint64_t total_memory = 4ULL * 1024 * 1024 * 1024;
     // call all services using the boot service framework
     struct boot_service services[] = {
         {"GDT Initialization\n", init_gdt, TRUE},
@@ -54,7 +52,7 @@ void kMain(void) {
     // trigger divide by 0
     // volatile int x = 1 / 0;
 
-    
+    // Needs to fix this and add it into the boot service at some point where it self-tests the services as a part of the bootup
     /*
     
 

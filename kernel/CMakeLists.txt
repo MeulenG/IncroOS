@@ -32,8 +32,8 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -Wall -Wextra -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o
     COMMENT "Compiling C Kernel"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o
 )
 
-add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o)
-add_dependencies(Kernel terminal BootService SerialDriver PMM VMM KMALLOC PrintLib StringLib GDT IDT InterruptHandler PIC)
+add_custom_target(Kernel ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o)
+add_dependencies(Kernel terminal BootService SerialDriver KeyboardDriver PMM VMM KMALLOC PrintLib StringLib GDT IDT InterruptHandler PIC)
