@@ -25,7 +25,6 @@ add_subdirectory(cpu)
 add_subdirectory(drivers)
 add_subdirectory(output)
 add_subdirectory(memory)
-add_subdirectory(lib)
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/kernel.o
