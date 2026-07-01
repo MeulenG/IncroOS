@@ -43,12 +43,3 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/vesa.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vesa.c
 )
 add_custom_target(VESADriver ALL DEPENDS ${CMAKE_BINARY_DIR}/vesa.o)
-
-
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/keyboard.o
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.c -o ${CMAKE_BINARY_DIR}/keyboard.o
-    COMMENT "Compiling Keyboard Driver"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.c
-)
-add_custom_target(KeyboardDriver ALL DEPENDS ${CMAKE_BINARY_DIR}/keyboard.o)
