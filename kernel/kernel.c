@@ -4,7 +4,7 @@
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 #include "memory/kmalloc.h"
-#include "lib/print.h"
+#include "../libs/libkernel/print.h"
 #include "cpu/gdt.h"
 #include "cpu/idt.h"
 #include "cpu/pic.h"
