@@ -48,15 +48,12 @@ void kMain(void) {
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
     };
 
-    // read in VESA framebuffer at 0x7000
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
-    uint32_t framebuffer = vesa_info->framebuffer;
-    uint16_t width = vesa_info->width;
-    uint16_t height = vesa_info->height;
-    uint8_t bpp = vesa_info->bpp;
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
 
+    // Draw a green pixel at (10, 10)
+    vesa_put_pixel(10, 10, 0x00FF00);
+    
     // trigger divide by 0
     // volatile int x = 1 / 0;
 

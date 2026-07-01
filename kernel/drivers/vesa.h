@@ -42,4 +42,8 @@ struct vbe_mode_info_structure {
 } __attribute__ ((packed));
 
 
+int vesa_init();
+int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color);
+
+
 #endif
