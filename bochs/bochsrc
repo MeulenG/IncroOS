@@ -85,12 +85,12 @@
 #display_library: nogui
 #display_library: rfb
 #display_library: sdl, options="fullscreen" # startup in fullscreen mode
-display_library: sdl2  #options="fullscreen" # startup in fullscreen mode
+#display_library: sdl2  #options="fullscreen" # startup in fullscreen mode
 #display_library: term
 #display_library: vncsrv
 #display_library: win32
 #display_library: wx
-#display_library: x
+display_library: x
 
 #=======================================================================
 # CPU:
@@ -329,8 +329,9 @@ cpu: cpuid_limit_winnt=0
 #  STEPPING:
 #    Set stepping information returned by CPUID. Default stepping value is 3.
 #=======================================================================
-cpuid: x86_64=1, mmx=1, sep=1, simd=sse4_2, apic=xapic, aes=1, movbe=1, xsave=1
-cpuid: family=6, model=0x1a, stepping=5, level=6
+#cpuid: x86_64=1, mmx=1, sep=1, simd=sse4_2, apic=xapic, aes=1, movbe=1, xsave=1
+#cpuid: family=6, model=0x1a, stepping=5, level=6
+cpu: model=corei7_sandy_bridge_2600k
 
 #=======================================================================
 # MEMORY
@@ -377,6 +378,7 @@ romimage: file=$BXSHARE/BIOS-bochs-latest, options=fastboot
 #=======================================================================
 #vgaromimage: file=bios/VGABIOS-elpin-2.40
 vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
+vga: extension=vbe
 #vgaromimage: file=bios/VGABIOS-lgpl-latest-cirrus
 
 #=======================================================================
