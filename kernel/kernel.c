@@ -48,8 +48,8 @@ void kMain(void) {
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
     };
 
-    // read in VESA framebuffer at 0x600
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x600;
+    // read in VESA framebuffer at 0x7000
+    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
     uint32_t framebuffer = vesa_info->framebuffer;
     uint16_t width = vesa_info->width;
     uint16_t height = vesa_info->height;
