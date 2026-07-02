@@ -45,20 +45,16 @@ void kMain(void) {
         {"PIC Remapping\n", (int (*)())pic_init, TRUE},
         {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
-        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE}
+        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE},
+        {"VESA Initialization\n", (int (*)())vesa_init, TRUE}
     };
 
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
-    uint32_t framebuffer = vesa_info->framebuffer;
-    uint16_t width = vesa_info->width;
-    uint16_t height = vesa_info->height;
-    uint8_t bpp = vesa_info->bpp;
     // Draw a green pixel at (10, 10)
-    vesa_put_pixel(10, 10, 0x00FF00, vesa_info);
+    vesa_put_pixel(10, 10, 0x00FF00);
     // Draw white text at (20, 20)
-    draw_string(20, 20, "Hello, VESA!", 0xFFFFFF, vesa_info);
+    draw_string(20, 20, "Hello, VESA!", 0xFFFFFF);
     
     // trigger divide by 0
     // volatile int x = 1 / 0;
