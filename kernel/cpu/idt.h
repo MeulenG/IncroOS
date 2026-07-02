@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "../drivers/serial.h"
-#include "../output/terminal.h"
+#include "../output/vga_terminal.h"
 
 struct InterruptDescriptor64 {
    uint16_t offset_1;        // offset bits 0..15
