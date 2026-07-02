@@ -51,8 +51,17 @@ void kMain(void) {
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
 
+    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
+    uint32_t framebuffer = vesa_info->framebuffer;
+    uint16_t width = vesa_info->width;
+    uint16_t height = vesa_info->height;
+    uint8_t bpp = vesa_info->bpp; 
     // Draw a green pixel at (10, 10)
-    vesa_put_pixel(10, 10, 0x00FF00);
+    vesa_put_pixel(10, 10, 0x00FF00, framebuffer, width, height, bpp);
+    // draw_string(20, 20, "Hello, VESA!", 0xFFFFFF); // Draw white text at (20, 20)
+    if(draw_string(20, 20, "This is a test string.", 0xFF0000, framebuffer, width, height, bpp) != 0) {
+        terminal_writestring("[VESA] Failed to draw string at (20, 40)\n");
+    }
     
     // trigger divide by 0
     // volatile int x = 1 / 0;

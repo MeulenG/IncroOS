@@ -1,25 +1,14 @@
 #include "vesa.h"
-
-// this makes no sense
-// I want the init function, maybe vesa_put_pixel should take in extra params for this, keep for now
+#include "basic_font.h"
 /*
 int vesa_init() {
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
-    uint32_t framebuffer = vesa_info->framebuffer;
-    uint16_t width = vesa_info->width;
-    uint16_t height = vesa_info->height;
-    uint8_t bpp = vesa_info->bpp;   
+      
 
     return 0;
 }
 */
 
-int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
-    uint32_t framebuffer = vesa_info->framebuffer;
-    uint16_t width = vesa_info->width;
-    uint16_t height = vesa_info->height;
-    uint8_t bpp = vesa_info->bpp;
+int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp) {
 
     if (x >= width || y >= height) {
         // Out of bounds
@@ -31,7 +20,29 @@ int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
 
     // Assuming 32 bits per pixel (4 bytes)
     *(uint32_t*)pixel_address = color;
-
     return 0;
+}
 
+int draw_char(int x, int y, char c, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp) {
+    for (int row = 0; row < 8; row++) {
+        if ((uint8_t)c >= 128) {
+            // Out of bounds, bitmap only supports characters in the range 0-127
+            return -1;
+        }
+        uint8_t row_data = font8x8_basic[(uint8_t)c][row];
+        for (int col = 0; col < 8; col++) {
+            if (row_data & (1 << col)) {
+                vesa_put_pixel(x + col, y + row, color, framebuffer, width, height, bpp);
+            }
+        }
+    }
+    return 0;
+}
+
+int draw_string(int x, int y, const char* str, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp) {
+    while (*str) {
+        draw_char(x, y, *str++, color, framebuffer, width, height, bpp);
+        x += 8;
+    }
+    return 0;
 }
