@@ -41,9 +41,11 @@ struct vbe_mode_info_structure {
 	uint8_t reserved1[206];
 } __attribute__ ((packed));
 
+extern uint8_t font[256][8];
 
 int vesa_init();
-int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color);
-
+int vesa_put_pixel(uint32_t x, uint32_t y, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp);
+int draw_char(int x, int y, char c, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp);
+int draw_string(int x, int y, const char* str, uint32_t color, uint32_t framebuffer, uint16_t width, uint16_t height, uint8_t bpp);
 
 #endif
