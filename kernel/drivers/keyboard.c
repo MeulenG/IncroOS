@@ -25,5 +25,5 @@ void handle_keyboard_interrupt(uint8_t scancode) {
     // lookup the ASCII character from the scancode
     char ascii_char = scancode_to_ascii[scancode];
     // print the character to the terminal
-    terminal_putchar(ascii_char);
+    vesa_terminal_putchar(ascii_char, VESA_COLOR_WHITE);
 };

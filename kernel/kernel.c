@@ -1,5 +1,5 @@
 #include "drivers/serial.h"
-#include "output/terminal.h"
+#include "output/vga_terminal.h"
 #include "output/boot_service.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
@@ -9,6 +9,7 @@
 #include "cpu/idt.h"
 #include "cpu/pic.h"
 #include "drivers/vesa.h"
+#include "output/vesa_terminal.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -46,15 +47,12 @@ void kMain(void) {
         {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE},
-        {"VESA Initialization\n", (int (*)())vesa_init, TRUE}
+        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE}
     };
 
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
-    // Draw a green pixel at (10, 10)
-    vesa_put_pixel(10, 10, 0x00FF00);
-    // Draw white text at (20, 20)
-    draw_string(20, 20, "Hello, VESA!", 0xFFFFFF);
+    vesa_terminal_writestring("All boot services completed successfully!\n", VESA_COLOR_LIGHT_GREEN);
     
     // trigger divide by 0
     // volatile int x = 1 / 0;
