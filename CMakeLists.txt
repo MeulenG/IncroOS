@@ -16,6 +16,7 @@ if(MFOS)
     set(boot-dir ${CMAKE_SOURCE_DIR}/boot)
     set(kernel-dir ${CMAKE_SOURCE_DIR}/kernel)
 
+    add_subdirectory(libs)
     add_subdirectory(boot)
     add_subdirectory(kernel)
     

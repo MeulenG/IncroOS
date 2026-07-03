@@ -1,4 +1,4 @@
-#include "terminal.h"
+#include "vga_terminal.h"
 #include "../drivers/serial.h"
 
 const size_t VGA_WIDTH = 80;

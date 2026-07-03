@@ -13,7 +13,7 @@
 ;   - 0x000F0000 - 0x000FFFFF - System BIOS
 ; *************************
 ; *************************
-;    Real Mode 16-Bit
+;    Real Mode 16-Bit 
 ; - Uses the native Segment:offset memory model
 ; - Limited to 1MB of memory
 ; - No memory protection or virtual memory
@@ -352,12 +352,21 @@ SetA20:
     call    EnableA20_KKbrd_Out
 
 SetVideoMode:
-    ;-------------------------------;
-	;   Set Video Mode  	        ;
-	;-------------------------------;
-    mov     ax, 3
-    int     0x10
-    cli
+    mov ax, 0x0000
+    mov es, ax
+    mov di, 0x7000        ; scratch buffer for VBE info
+    mov ax, 0x4F01
+    mov cx, 0x4112
+    int 0x10
+    cmp ax, 0x004F
+    jne ReadError
+
+    mov ax, 0x4F02
+    mov bx, (0x4112 | 0x4000)
+    int 0x10
+    cmp ax, 0x004F
+    jne ReadError
+	mov eax, dword [0x7028]   ; framebuffer address is at offset 40 in mode info block
     ;-------------------------------;
 	;   Install our GDT		        ;
 	;-------------------------------;
@@ -420,36 +429,38 @@ LoaderEntry32:
 	;   Setup 64-bit Paging Tables  ;
 	;-------------------------------;
 	; Memory layout for page tables:
-	;   0x1000-0x1FFF: PML4 (Page Map Level 4) - 512 entries
-	;   0x2000-0x2FFF: PDPT (Page Directory Pointer Table) - 512 entries
-	;   0x3000-0x3FFF: PD (Page Directory) - 512 entries
-	; This maps the first 1GB of physical memory using 2MB pages
+	;   0x1000-0x1FFF: PML4 (Page Map Level 4)
+	;   0x2000-0x2FFF: PDPT (Page Directory Pointer Table) - 4 entries
+	;   0x3000-0x3FFF: PD[0] - maps 0x00000000-0x3FFFFFFF (0-1GB)
+	;   0x4000-0x4FFF: PD[1] - maps 0x40000000-0x7FFFFFFF (1-2GB)
+	;   0x5000-0x5FFF: PD[2] - maps 0x80000000-0xBFFFFFFF (2-3GB)
+	;   0x6000-0x6FFF: PD[3] - maps 0xC0000000-0xFFFFFFFF (3-4GB)
+	; Identity maps the first 4GB of physical memory using 2MB pages
 	
 	mov edi, 0x1000
 	xor eax, eax				; EAX = 0 for clearing
-    mov ecx, 4096				; Clear 4096 DWORDs (16KB)
-    rep stosd					; Zero out memory from 0x1000-0x4FFF
+	mov ecx, 6144				; Clear 6144 DWORDs (24KB) — covers 0x1000-0x6FFF
+	rep stosd					; Zero out page table region
 	mov edi, 0x1000				; Reset EDI to start of PML4
 
-	; Each entry is 8 bytes in 64-bit paging
-	; Lower 32 bits: physical address | flags
-	; Upper 32 bits: remain 0 for addresses < 4GB (already cleared above)
-	; Flags: bit 0 = Present, bit 1 = Read/Write
-	
-	; PML4[0] -> PDPT at 0x2000 (present + writable)
 	mov DWORD [edi], 0x2003
 	mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
-    add edi, 0x1000				; Move to PDPT at 0x2000
-    
-	; PDPT[0] -> PD at 0x3000 (present + writable)
-    mov DWORD [edi], 0x3003
-    mov DWORD [edi + 4], 0		; Explicitly set upper 32 bits to 0
-	add edi, 0x1000				; Move to PD at 0x3000
 
-	; Each PD entry maps a 2MB page: physical_addr | flags
-	; Maps virtual 0x0-0x3FFFFFFF to physical 0x0-0x3FFFFFFF (1GB identity)
-	xor ebx, ebx				; Start at physical address 0
-	mov ecx, 512				; 512 entries = 1GB of mapped memory
+	; PDPT at 0x2000: 4 entries for 4 PDs
+	mov edi, 0x2000
+	mov DWORD [edi + 0],  0x3003   ; PDPT[0] → PD at 0x3000 (0–1GB)
+	mov DWORD [edi + 4],  0
+	mov DWORD [edi + 8],  0x4003   ; PDPT[1] → PD at 0x4000 (1–2GB)
+	mov DWORD [edi + 12], 0
+	mov DWORD [edi + 16], 0x5003   ; PDPT[2] → PD at 0x5000 (2–3GB)
+	mov DWORD [edi + 20], 0
+	mov DWORD [edi + 24], 0x6003   ; PDPT[3] → PD at 0x6000 (3–4GB)
+	mov DWORD [edi + 28], 0
+
+	; Fill all 4 PDs with 2MB identity pages (2048 entries total)
+	mov edi, 0x3000
+	xor ebx, ebx
+	mov ecx, 2048               ; 4 PDs × 512 entries
     
 .SetEntry:
 	mov eax, ebx				; Copy physical address to eax

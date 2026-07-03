@@ -1,8 +1,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include "print.h"
-#include "../drivers/serial.h"
-#include "../output/terminal.h"
+#include "drivers/serial.h"
+#include "output/vga_terminal.h"
 
 static void emit_char(char c)         { 
     if (c == '\n')

@@ -2,7 +2,7 @@
 #define __KEYBOARD_H__
 
 #include <stdint.h>
-#include "../output/terminal.h"
+#include "../output/vesa_terminal.h"
 
 
 
