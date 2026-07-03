@@ -43,3 +43,11 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/vesa.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vesa.c
 )
 add_custom_target(VESADriver ALL DEPENDS ${CMAKE_BINARY_DIR}/vesa.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/ata.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/ata.c -o ${CMAKE_BINARY_DIR}/ata.o
+    COMMENT "Compiling ATA Driver"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ata.c
+)
+add_custom_target(ATADriver ALL DEPENDS ${CMAKE_BINARY_DIR}/ata.o)

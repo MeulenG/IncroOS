@@ -10,6 +10,7 @@
 #include "cpu/pic.h"
 #include "drivers/vesa.h"
 #include "output/vesa_terminal.h"
+#include "drivers/ata.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -47,7 +48,8 @@ void kMain(void) {
         {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE},
-        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE}
+        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE},
+        {"ATA Initialization\n", (int (*)())ata_initialize, TRUE}
     };
 
     
