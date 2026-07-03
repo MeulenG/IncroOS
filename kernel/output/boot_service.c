@@ -1,43 +1,37 @@
 #include "boot_service.h"
-#include "terminal.h"
+#include "vesa_terminal.h"
 
 
 // takes an array of structs boot_service and iterates through them, calling the function pointer for each service
 void run_boot_services(struct boot_service* services, int count) {
     // Initialize the terminal
-    terminal_initialize();
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
-    terminal_writestring("Boot service started...\n");
+    vesa_terminal_initialize();
+    vesa_terminal_writestring("Boot service started...\n", VESA_COLOR_LIGHT_GREY);
     // Call the provided function pointer
     for (int i = 0; i < count; i++) {
         struct boot_service* service = &services[i];
         int result = service->fptr();
         if (result != 0) {
-            terminal_writestring("Boot service failed: ");
-            terminal_writestring(service->name);
-            terminal_writestring("\n");
+            vesa_terminal_writestring("Boot service failed: ", VESA_COLOR_LIGHT_RED);
+            vesa_terminal_writestring(service->name, VESA_COLOR_LIGHT_RED);
+            vesa_terminal_writestring("\n", VESA_COLOR_LIGHT_RED);
             if (service->isCritical) {
-                terminal_writestring("Critical boot service failed. Halting system.\n");
+                vesa_terminal_writestring("Critical boot service failed. Halting system.\n", VESA_COLOR_LIGHT_RED);
                 for(;;);
             }
         }
         // Write to terminal that the service has completed
-        terminal_writestring("[   ");
+        vesa_terminal_writestring("[   ", VESA_COLOR_LIGHT_GREY);
         if (result == 0) {
-            terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
-            terminal_writestring("OK");
-            terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
-            terminal_writestring("   ]");
-            terminal_writestring(" Boot service completed: ");
+            vesa_terminal_writestring("OK", VESA_COLOR_LIGHT_GREEN);
+            vesa_terminal_writestring("   ]", VESA_COLOR_LIGHT_GREY);
+            vesa_terminal_writestring(" Boot service completed: ", VESA_COLOR_LIGHT_GREY);
         } else {
-            terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK));
-            terminal_writestring("FAIL");
-            terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
-            terminal_writestring("   ]");
-            terminal_writestring(" Boot service failed: ");
+            vesa_terminal_writestring("FAIL", VESA_COLOR_LIGHT_RED);
+            vesa_terminal_writestring("   ]", VESA_COLOR_LIGHT_GREY);
+            vesa_terminal_writestring(" Boot service failed: ", VESA_COLOR_LIGHT_RED);
         }
-        terminal_writestring(service->name);
-        terminal_writestring("\n");
-        terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
+        vesa_terminal_writestring(service->name, VESA_COLOR_LIGHT_GREY);
+        vesa_terminal_writestring("\n", VESA_COLOR_LIGHT_GREY);
     }
 }

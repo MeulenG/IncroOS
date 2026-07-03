@@ -6,7 +6,7 @@
 #include "../drivers/serial.h"
 #include "../output/terminal.h"
 #include "../cpu/io.h"
-#include "../lib/print.h"
+#include "../../libs/libkernel/print.h"
 #include "../drivers/keyboard.h"
 
 struct interrupt_frame {

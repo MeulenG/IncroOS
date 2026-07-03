@@ -3,7 +3,7 @@
  
 #include <stdio.h>
 #include <stdint.h>
-#include "../lib/print.h"
+#include "../../libs/libkernel/print.h"
 
 extern uint64_t gdt[5];
 struct gdtr {
