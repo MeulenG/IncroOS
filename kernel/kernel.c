@@ -10,6 +10,7 @@
 #include "cpu/pic.h"
 #include "drivers/vesa.h"
 #include "output/vesa_terminal.h"
+#include "drivers/ata.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -47,12 +48,19 @@ void kMain(void) {
         {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE},
-        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE}
+        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE},
+        {"ATA Initialization\n", (int (*)())ata_initialize, TRUE}
     };
 
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
     vesa_terminal_writestring("All boot services completed successfully!\n", VESA_COLOR_LIGHT_GREEN);
+
+    // lets test a read
+    uint8_t buffer[512];
+    ata_read_sector(0, 0, 1, buffer);
+    kprintf("Check buffer: %d\n", buffer[510]);
+    kprintf("Check buffer: %d\n", buffer[511]);
     
     // trigger divide by 0
     // volatile int x = 1 / 0;

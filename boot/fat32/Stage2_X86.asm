@@ -61,6 +61,30 @@ FixCS:
 	; Done, now we need interrupts again
 	sti
 
+	; Enable A20 Line
+	call    EnableA20_KKbrd_Out
+
+	; Install our GDT
+    call    GdtInstall
+
+	mov eax, cr0
+	or eax, 1
+	mov cr0, eax
+   	jmp 0x18:pmode
+
+pmode:
+    mov ax, DATA_SEGMENT
+    mov ds, ax
+    mov eax, cr0
+    and eax, 0xFFFFFFFE
+    mov cr0, eax
+    jmp 0x0:unreal
+
+unreal:
+   	sti
+
+   	xor ax, ax
+	mov ds, ax
 	; Step 0. Save DL
 	mov 	byte [bPhysicalDriveNum], dl
 
@@ -141,17 +165,45 @@ FixCS:
 ; 	- ESI Start cluster of file
 ; **************************
 LoadFile:
-	push di
 	; Lets load the fuck out of this file
 	; Step 1. Setup buffer
-	mov 	bx, 0x0000
-	mov 	es, bx
-	mov 	bx, 0x500
+	mov dword [writepos], 0x100000
 
 	; Load
 	.cLoop:
+		mov 	bx, 0x0000
+		mov 	es, bx
+		mov 	bx, 0x500
 		; Clustertime
 		call 	ReadCluster
+
+		; Save next cluster - ReadCluster returns it in ESI
+		push esi
+
+		; Setup copy
+		; source: temp buffer
+		mov esi, 0x500
+		; destination: high memory
+		mov edi, dword [writepos]
+		movzx ecx, byte [0x7C00 + 0x0D]
+		; sectors_per_cluster * 128 dwords (= * 512 / 4)
+		shl ecx, 7
+
+		.copy:
+			a32 mov eax, [esi]
+			a32 mov [edi], eax
+			add esi, 4
+			add edi, 4
+			dec ecx
+			jnz .copy
+
+		; Restore next cluster for the comparison
+		pop esi
+
+		; Advance writepos by sectors_percluster * bytespersector
+		movzx 	eax, byte [0x7C00 + 0x0D]
+		shl eax, 9
+		add 	dword [writepos], eax
 
 		; Check
 		cmp 	esi, 0x0FFFFFF8
@@ -344,13 +396,6 @@ CheckCPU:
     ; Is this CPU eligible?
     call    DetectCPU
 
-;Most Modern Computers already have the A20 line set from the get-go, but if not then we enable it
-SetA20:
-    ;-------------------------------;
-	;   Enable A20 Line		        ;
-	;-------------------------------;
-    call    EnableA20_KKbrd_Out
-
 SetVideoMode:
     mov ax, 0x0000
     mov es, ax
@@ -367,10 +412,6 @@ SetVideoMode:
     cmp ax, 0x004F
     jne ReadError
 	mov eax, dword [0x7028]   ; framebuffer address is at offset 40 in mode info block
-    ;-------------------------------;
-	;   Install our GDT		        ;
-	;-------------------------------;
-    call    GdtInstall
     
     ;-------------------------------;
 	;   Install our IDT		        ;
@@ -415,10 +456,10 @@ LoaderEntry32:
 	mov gs, ax
     
 	; Copy kernel from 0x500 to 0x100000 (1MB mark)
-	mov esi, 0x00000500
-	mov edi, 0x00100000
-	mov ecx, dword [KernelSize]
-	rep movsb
+	; mov esi, 0x00000500
+	; mov edi, 0x00100000
+	; mov ecx, dword [KernelSize]
+	; rep movsb
 
 	; Disable paging temporarily before setting up 64-bit paging
 	mov eax, cr0
