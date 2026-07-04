@@ -29,6 +29,7 @@ int fill_idt_slots() {
     set_idt_gate(32, irq0_handler);
     set_idt_gate(33, irq1_handler);
     set_idt_gate(39, irq7_handler);
+    set_idt_gate(46, irq14_handler);
     set_idt_gate(47, irq15_handler);
     struct idtr idtr;
     // address of idtr array

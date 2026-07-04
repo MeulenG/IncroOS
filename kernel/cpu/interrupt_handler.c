@@ -53,6 +53,12 @@ __attribute__((interrupt)) void irq7_handler(struct interrupt_frame* frame) {
     // we just log it for now since we are in early development
 }
 
+__attribute__((interrupt)) void irq14_handler(struct interrupt_frame* frame) {
+    serial_writestring("IRQ14: Primary ATA channel interrupt received\n");
+    // Send an EOI to the PICs
+    PIC_sendEOI(14);
+}
+
 __attribute__((interrupt)) void irq15_handler(struct interrupt_frame* frame) {
     serial_writestring("IRQ15: Spurious interrupt received\n");
     // Dont send an EOI to the PICs for spurious interrupts, as it can cause issues

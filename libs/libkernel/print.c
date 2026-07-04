@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "print.h"
 #include "drivers/serial.h"
-#include "output/vga_terminal.h"
+#include "output/vesa_terminal.h"
 
 static void emit_char(char c)         { 
     if (c == '\n')
@@ -14,7 +14,7 @@ static void emit_char(char c)         {
     serial_putchar(c);
 
     // VGA
-    terminal_putchar(c);
+    vesa_terminal_putchar(c, VESA_COLOR_WHITE);
 }
 
 static void emit_str(const char *s)   {
