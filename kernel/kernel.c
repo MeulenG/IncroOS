@@ -79,7 +79,8 @@ void kMain(void) {
     // print root cluster
     kprintf("Root Cluster: %u\n", bpb->root_cluster);
 
-    uint32_t root_lba = cluster_to_lba(bpb->root_cluster, &partition_start, bpb);
+    uint32_t root_lba;
+    cluster_to_lba(bpb->root_cluster, &root_lba, bpb);
     kprintf("Root Directory LBA: %u\n", root_lba);
 
 
