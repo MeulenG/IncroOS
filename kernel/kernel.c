@@ -55,6 +55,12 @@ void kMain(void) {
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
     vesa_terminal_writestring("All boot services completed successfully!\n", VESA_COLOR_LIGHT_GREEN);
+
+    // lets test a read
+    uint8_t buffer[512];
+    ata_read_sector(0, 0, 1, buffer);
+    kprintf("Check buffer: %d\n", buffer[510]);
+    kprintf("Check buffer: %d\n", buffer[511]);
     
     // trigger divide by 0
     // volatile int x = 1 / 0;

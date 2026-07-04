@@ -10,11 +10,16 @@ int ata_initialize(void) {
         return -1;
     }
     else {
-        vesa_terminal_writestring("Device detected on primary channel.\n", VESA_COLOR_GREEN);
         // Send IDENTIFY command (0xEC) to port 0x1F7
         outb(0x1F7, 0xEC);
+        vesa_terminal_writestring("IDENTIFY command sent to primary channel.\n", VESA_COLOR_LIGHT_GREY);
         // Wait for the device to be ready
-        ata_poll();
+        vesa_terminal_writestring("Waiting for device to be ready...\n", VESA_COLOR_LIGHT_GREY);
+        if (ata_poll() != 0) {
+            vesa_terminal_writestring("Error during IDENTIFY command.\n", VESA_COLOR_RED);
+            return -1;
+        }
+        vesa_terminal_writestring("Device detected on primary channel.\n", VESA_COLOR_GREEN);
         // Read and discard
         for (int i = 0; i < 256; i++) {
             inw(0x1F0);
@@ -26,22 +31,20 @@ int ata_initialize(void) {
 int ata_poll(void) {
     // Polling for the drive to be ready
     int flag = 0;
-    while (1) {
+    vesa_terminal_writestring("Polling drive for readiness...\n", VESA_COLOR_LIGHT_GREY);
+    for (uint32_t i = 0; i < 100000; i++) {
         uint8_t status = inb(0x1F7);
+        if (status & 0x01 || status & 0x20) {
+            vesa_terminal_writestring("Drive error detected.\n", VESA_COLOR_RED);
+            return -1;
+        }
         if (!(status & 0x80) && (status & 0x08)) {
-            if (status & 0x01 || status & 0x20) {
-                vesa_terminal_writestring("Drive error detected.\n", VESA_COLOR_RED);
-                flag = -1;
-                break;
-            } else {
                 vesa_terminal_writestring("Drive is ready.\n", VESA_COLOR_GREEN);
-            }
-            // Drive is ready
-            flag = 0;
-            break;
+            return 0;
         }
     }
-    return flag;
+    vesa_terminal_writestring("Drive poll timeout.\n", VESA_COLOR_RED);
+    return -1;
 }
 
 void ata_read_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, uint8_t* buffer) {
