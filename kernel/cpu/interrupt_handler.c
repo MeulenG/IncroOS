@@ -25,7 +25,7 @@ __attribute__((interrupt)) void isr_page_fault(struct interrupt_frame* frame, ui
 }
 
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame) {
-    serial_writestring("IRQ0: Timer interrupt received\n");
+    // serial_writestring("IRQ0: Timer interrupt received\n");
     // Send an EOI to the PICs
     PIC_sendEOI(0);
 }
