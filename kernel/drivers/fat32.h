@@ -2,6 +2,8 @@
 #define __FAT_32_H__
 
 #include <stdint.h>
+#include "ata.h"
+#include "../../libs/libkernel/print.h"
 #include "../../libs/libkernel/string.h"
 
 struct bios_parameter_block {
