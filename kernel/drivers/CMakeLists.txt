@@ -51,3 +51,11 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/ata.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ata.c
 )
 add_custom_target(ATADriver ALL DEPENDS ${CMAKE_BINARY_DIR}/ata.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/fat32.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/fat32.c -o ${CMAKE_BINARY_DIR}/fat32.o
+    COMMENT "Compiling FAT32 Driver"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/fat32.c
+)
+add_custom_target(FAT32Driver ALL DEPENDS ${CMAKE_BINARY_DIR}/fat32.o)
