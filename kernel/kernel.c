@@ -90,10 +90,10 @@ void kMain(void) {
 
     uint32_t found_cluster = 0;
     uint32_t file_size = 0;
-    if(fat32_find_file(new_buffer, "KERNEL  BIN", &found_cluster, &file_size) == 0) {
-        kprintf("Found KERNEL.BIN at cluster %u\n", found_cluster);
+    if(fat32_find_file(new_buffer, "KRNLDR  BIN", &found_cluster, &file_size) == 0) {
+        kprintf("Found KRNLDR.BIN at cluster %u\n", found_cluster);
     } else {
-        kprintf("KERNEL.BIN not found\n");
+        kprintf("KRNLDR.BIN not found\n");
         return;
     }
     // read a FAT entry to find the next cluster in the chain

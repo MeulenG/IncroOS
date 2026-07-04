@@ -34,7 +34,9 @@ int fat32_find_file(uint8_t* dir_buf, const char* name, uint32_t* cluster, uint3
         filename[11] = '\0';
 
         kprintf("Checking file: %s against %s\n", filename, name);
-        if (strncmp(filename, name) == 0) {
+        int res = strcmp(filename, name);
+        kprintf("strcmp result: %d\n", res);
+        if (res == 0) {
             // High and low cluster
             *cluster = *(uint16_t*)(entry + 20) << 16 | *(uint16_t*)(entry + 26);
             *size = *(uint32_t*)(entry + 28);
