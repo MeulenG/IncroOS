@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "pic.h"
 #include "../drivers/serial.h"
-#include "../output/terminal.h"
+#include "../output/vga_terminal.h"
 #include "../cpu/io.h"
 #include "../../libs/libkernel/print.h"
 #include "../drivers/keyboard.h"
@@ -23,6 +23,7 @@ __attribute__((interrupt)) void isr_page_fault(struct interrupt_frame* frame, ui
 __attribute__((interrupt)) void irq0_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void irq1_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void irq7_handler(struct interrupt_frame* frame);
+__attribute__((interrupt)) void irq14_handler(struct interrupt_frame* frame);
 __attribute__((interrupt)) void irq15_handler(struct interrupt_frame* frame);
 
 #endif
