@@ -5,12 +5,14 @@
 #include "memory/vmm.h"
 #include "memory/kmalloc.h"
 #include "../libs/libkernel/print.h"
+#include "../libs/libkernel/string.h"
 #include "cpu/gdt.h"
 #include "cpu/idt.h"
 #include "cpu/pic.h"
 #include "drivers/vesa.h"
 #include "output/vesa_terminal.h"
 #include "drivers/ata.h"
+#include "drivers/fat32.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -61,6 +63,44 @@ void kMain(void) {
     ata_read_sector(0, 0, 1, buffer);
     kprintf("Check buffer: %d\n", buffer[510]);
     kprintf("Check buffer: %d\n", buffer[511]);
+
+    uint32_t partition_start = *(uint32_t *)(buffer + 454);
+    kprintf("Partition Start: %u\n", partition_start);
+
+    ata_read_sector(0, partition_start, 1, buffer);
+
+    struct bios_parameter_block *bpb = (struct bios_parameter_block *)(buffer + 11);
+
+    // FAT start sector is calculated as follows:
+    uint32_t fat_start_sector = bpb->reserved_sectors;
+    uint32_t data_start_sector  = bpb->reserved_sectors + (bpb->num_fats * bpb->fat_size_32);
+    kprintf("FAT Start Sector: %u\n", fat_start_sector);
+    kprintf("Data Start Sector: %u\n", data_start_sector);
+    // print root cluster
+    kprintf("Root Cluster: %u\n", bpb->root_cluster);
+
+    uint32_t root_lba = cluster_to_lba(bpb->root_cluster, &partition_start, bpb);
+    kprintf("Root Directory LBA: %u\n", root_lba);
+
+
+    // new buffer
+    uint8_t new_buffer[4096];
+    ata_read_sector(0, root_lba, 8, new_buffer);
+
+    uint32_t found_cluster;
+    uint32_t file_size;
+    if(fat32_find_file(new_buffer, "KERNEL  BIN", &found_cluster, &file_size) == 0) {
+        kprintf("Found KERNEL.BIN at cluster %u\n", found_cluster);
+    } else {
+        kprintf("KERNEL.BIN not found\n");
+    }
+    // read a FAT entry to find the next cluster in the chain
+    uint8_t* file_buffer = kmalloc(file_size);
+    if (fat32_read_file(found_cluster, bpb, file_buffer) != 0) {
+        kprintf("Failed to read file starting at cluster %u\n", found_cluster);
+    } else {
+        kprintf("Successfully read file starting at cluster %u\n", found_cluster);
+    }
     
     // trigger divide by 0
     // volatile int x = 1 / 0;
