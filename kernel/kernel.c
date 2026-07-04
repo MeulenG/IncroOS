@@ -88,17 +88,23 @@ void kMain(void) {
     uint8_t new_buffer[4096];
     ata_read_sector(0, root_lba, 8, new_buffer);
 
-    uint32_t found_cluster;
-    uint32_t file_size;
+    uint32_t found_cluster = 0;
+    uint32_t file_size = 0;
     if(fat32_find_file(new_buffer, "KERNEL  BIN", &found_cluster, &file_size) == 0) {
         kprintf("Found KERNEL.BIN at cluster %u\n", found_cluster);
     } else {
         kprintf("KERNEL.BIN not found\n");
+        return;
     }
     // read a FAT entry to find the next cluster in the chain
     uint8_t* file_buffer = kmalloc(file_size);
+    if (file_buffer == NULL) {
+        kprintf("Failed to allocate memory for file buffer\n");
+        return;
+    }
     if (fat32_read_file(found_cluster, bpb, file_buffer) != 0) {
         kprintf("Failed to read file starting at cluster %u\n", found_cluster);
+        return;
     } else {
         kprintf("Successfully read file starting at cluster %u\n", found_cluster);
     }
