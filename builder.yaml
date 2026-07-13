@@ -16,3 +16,6 @@ partitions:
       - type: raw
         source: build/BOOT.SYS
         target: sector=0
+      - type: package
+        source: vali/hello-world/stable
+        target: /packages/hello-world.pack
