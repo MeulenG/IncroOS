@@ -20,6 +20,19 @@ void run_boot_services(struct boot_service* services, int count) {
                 for(;;);
             }
         }
+        // only validate a service that initialized, and skip services without a validator
+        if (result == 0 && service->validate != NULL) {
+            int test_result = service->validate();
+            if (test_result != 0) {
+                vesa_terminal_writestring("Boot service validation failed: ", VESA_COLOR_LIGHT_RED);
+                vesa_terminal_writestring(service->name, VESA_COLOR_LIGHT_RED);
+                vesa_terminal_writestring("\n", VESA_COLOR_LIGHT_RED);
+                if (service->isCritical) {
+                    vesa_terminal_writestring("Critical boot service validation failed. Halting system.\n", VESA_COLOR_LIGHT_RED);
+                    for(;;);
+                }
+            }
+        }
         // Write to terminal that the service has completed
         vesa_terminal_writestring("[   ", VESA_COLOR_LIGHT_GREY);
         if (result == 0) {
