@@ -9,7 +9,7 @@
 int ata_initialize(void);
 int ata_poll(void);
 void ata_read_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, uint8_t* buffer);
-void ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const uint8_t* buffer);
+int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const uint8_t* buffer);
 
 
 #endif
