@@ -9,7 +9,7 @@ on:
         type: string
         default: 'bochs-output'
       upload-disk-image:
-        description: 'Whether to upload disk.img as an artifact'
+        description: 'Whether to upload pc.img as an artifact'
         required: false
         type: boolean
         default: false
@@ -135,7 +135,7 @@ jobs:
         ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
         
         # Disk image
-        ata0-master: type=disk, mode=flat, path=disk.img
+        ata0-master: type=disk, mode=flat, path=pc.img
         
         # Boot from disk
         boot: disk
@@ -170,11 +170,11 @@ jobs:
       timeout-minutes: 2
       run: |
         cd bochs
-        # Copy disk image to bochs directory (it's created in repo root)
-        if [ -f ../disk.img ]; then
-          cp ../disk.img .
+        # Copy disk image to bochs directory (mkcdk creates it in repo root)
+        if [ -f ../pc.img ]; then
+          cp ../pc.img .
         else
-          echo "Error: disk.img not found!"
+          echo "Error: pc.img not found!"
           ls -la ..
           ls -la ../build || true
           exit 1
@@ -277,8 +277,8 @@ jobs:
       if: always()
       run: |
         # Only set disk-image-path when disk image is expected and present
-        if [ "${{ inputs.upload-disk-image }}" = "true" ] && [ -f disk.img ]; then
-          echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
+        if [ "${{ inputs.upload-disk-image }}" = "true" ] && [ -f pc.img ]; then
+          echo "disk-image-path=pc.img" >> $GITHUB_OUTPUT
         else
           echo "disk-image-path=" >> $GITHUB_OUTPUT
         fi
@@ -306,7 +306,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: disk-image
-        path: disk.img
+        path: pc.img
         if-no-files-found: error
     
     - name: Cleanup build artifacts
@@ -317,4 +317,4 @@ jobs:
         rm -rf External/bake/build
         
         # Clean up bochs test directory
-        rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/disk.img
+        rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/pc.img
