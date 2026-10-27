@@ -11,5 +11,6 @@ int kfree(void* ptr);
 
 uint64_t kmalloc_get_used(void);
 uint64_t kmalloc_get_free(void);
+int validate_kmalloc(void);
 
 #endif // __KMALLOC_H__

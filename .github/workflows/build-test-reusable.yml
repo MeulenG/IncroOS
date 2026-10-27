@@ -257,7 +257,7 @@ jobs:
           exit 1
         fi
 
-        for expected in "GDT validation passed!" "All boot services completed successfully!"; do
+        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!"; do
           if ! grep -qF "$expected" serial.out; then
             echo "ERROR: Expected serial output not found: $expected"
             echo "Serial output content:"
