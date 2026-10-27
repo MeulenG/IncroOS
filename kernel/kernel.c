@@ -97,7 +97,9 @@ void kMain(void) {
         return;
     }
     // read a FAT entry to find the next cluster in the chain
-    uint8_t* file_buffer = kmalloc(file_size);
+    // fat32_read_file writes whole clusters, so round the buffer up
+    uint32_t cluster_bytes = bpb->bytes_per_sector * bpb->sectors_per_cluster;
+    uint8_t* file_buffer = kmalloc(((file_size + cluster_bytes - 1) / cluster_bytes) * cluster_bytes);
     if (file_buffer == NULL) {
         kprintf("Failed to allocate memory for file buffer\n");
         return;
