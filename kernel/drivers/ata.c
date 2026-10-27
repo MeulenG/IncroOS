@@ -76,6 +76,46 @@ void ata_read_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, uint8_t*
     }
 }
 
-void ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
-    
+// waits for BSY to clear without requiring DRQ, which ata_poll does
+static int ata_wait_not_busy(void) {
+    for (uint32_t i = 0; i < 100000; i++) {
+        uint8_t status = inb(0x1F7);
+        if (!(status & 0x80)) {
+            return (status & 0x01 || status & 0x20) ? -1 : 0;
+        }
+    }
+    return -1;
+}
+
+int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
+    // Same register setup as ata_read_sector
+    outb(0x1F6, (drive == 0 ? 0xE0 : 0xF0) | ((lba >> 24) & 0x0F));
+    outb(0x1F1, 0x00);
+    outb(0x1F2, sector_count);
+    outb(0x1F3, (uint8_t)(lba & 0xFF));
+    outb(0x1F4, (uint8_t)((lba >> 8) & 0xFF));
+    outb(0x1F5, (uint8_t)((lba >> 16) & 0xFF));
+    // Send the write command (0x30) to port 0x1F7
+    outb(0x1F7, 0x30);
+    for (uint8_t i = 0; i < sector_count; i++) {
+        if (ata_poll() != 0) {
+            vesa_terminal_writestring("Error during sector write.\n", VESA_COLOR_RED);
+            return -1;
+        }
+        for (uint16_t j = 0; j < 256; j++) {
+            uint16_t data = buffer[i * 512 + j * 2] | (buffer[i * 512 + j * 2 + 1] << 8);
+            outw(0x1F0, data);
+        }
+    }
+
+    // Flush the drive's write cache (0xE7) so the data reaches the disk
+    if (ata_wait_not_busy() != 0) {
+        return -1;
+    }
+    outb(0x1F7, 0xE7);
+    if (ata_wait_not_busy() != 0) {
+        vesa_terminal_writestring("Error during cache flush.\n", VESA_COLOR_RED);
+        return -1;
+    }
+    return 0;
 }
