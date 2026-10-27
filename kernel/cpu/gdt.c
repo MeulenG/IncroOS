@@ -31,9 +31,9 @@ int init_gdt() {
     create_descriptor(1, 0, 0xFFFFF, GDT_CODE_PL0);
     // kernel mode data segment
     create_descriptor(2, 0, 0xFFFFF, GDT_DATA_PL0);
-    // user mode code segment
+    // user mode data segment, placed before user code as sysret expects
     create_descriptor(3, 0, 0xFFFFF, GDT_DATA_PL3);
-    // user mode data segment
+    // user mode code segment
     create_descriptor(4, 0, 0xFFFFF, GDT_CODE_PL3);
 
     struct gdtr gdtr;
@@ -59,5 +59,37 @@ int init_gdt() {
     "mov %%ax, %%ss\n"
     : : : "ax"
     );
+    return 0;
+}
+
+// flags live in the high 32 bits of the descriptor, see create_descriptor
+// the accessed bit (bit 8) is masked out since the cpu sets it when the segment is loaded
+static int gdt_flags_match(uint64_t descriptor, uint16_t flag) {
+    return ((uint32_t)(descriptor >> 32) & 0x00F0FE00) == (((uint32_t)flag << 8) & 0x00F0FE00);
+}
+
+int validate_gdt() {
+    // Check that the GDT entries are set correctly
+    if (gdt[0] != 0) {
+        kprintf("GDT validation failed: Null descriptor is not zero\n");
+        return -1;
+    }
+    if (!gdt_flags_match(gdt[1], GDT_CODE_PL0)) {
+        kprintf("GDT validation failed: Kernel code segment descriptor is incorrect\n");
+        return -1;
+    }
+    if (!gdt_flags_match(gdt[2], GDT_DATA_PL0)) {
+        kprintf("GDT validation failed: Kernel data segment descriptor is incorrect\n");
+        return -1;
+    }
+    if (!gdt_flags_match(gdt[3], GDT_DATA_PL3)) {
+        kprintf("GDT validation failed: User data segment descriptor is incorrect\n");
+        return -1;
+    }
+    if (!gdt_flags_match(gdt[4], GDT_CODE_PL3)) {
+        kprintf("GDT validation failed: User code segment descriptor is incorrect\n");
+        return -1;
+    }
+    kprintf("GDT validation passed!\n");
     return 0;
 }

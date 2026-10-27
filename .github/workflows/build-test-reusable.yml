@@ -251,45 +251,23 @@ jobs:
         # Initialize output to ensure it's always set
         echo "serial_verified=false" >> $GITHUB_OUTPUT
         
-        # Check if we have any output indicating the OS started
-        success=0
-        
-        # Check bochs log for successful boot indicators
-        if [ -f bochsout.txt ]; then
-          # Check if bochs started successfully
-          if grep -q "Bochs x86 Emulator" bochsout.txt; then
-            echo "SUCCESS: Bochs emulator started successfully"
-            success=1
-          fi
-          
-          # Check for boot sector execution
-          if grep -q "Booting from" bochsout.txt; then
-            echo "SUCCESS: Boot process initiated"
-            success=1
-          fi
-        fi
-        
-        # Check serial output for any OS messages
-        if [ -f serial.out ] && [ -s serial.out ]; then
-          echo "SUCCESS: Serial output captured"
-          echo "Serial output content:"
-          cat serial.out
-          success=1
-          echo "serial_verified=true" >> $GITHUB_OUTPUT
-        fi
-        
-        if [ $success -eq 0 ]; then
-          echo "ERROR: Could not verify OS boot - no serial output or boot indicators found"
-          echo "The workflow expects either:"
-          echo "  1. Serial output in serial.out, OR"
-          echo "  2. Boot indicators in bochsout.txt (e.g., 'Booting from')"
-          echo ""
-          echo "Current status:"
-          echo "  - Bochs log exists: $([ -f bochsout.txt ] && echo 'Yes' || echo 'No')"
-          echo "  - Serial file exists: $([ -f serial.out ] && echo 'Yes' || echo 'No')"
-          echo "  - Serial file size: $([ -f serial.out ] && wc -c < serial.out || echo '0') bytes"
+        # The kernel must pass boot service validation and finish all boot services
+        if [ ! -s serial.out ]; then
+          echo "ERROR: No serial output captured"
           exit 1
         fi
+
+        for expected in "GDT validation passed!" "All boot services completed successfully!"; do
+          if ! grep -qF "$expected" serial.out; then
+            echo "ERROR: Expected serial output not found: $expected"
+            echo "Serial output content:"
+            cat serial.out
+            exit 1
+          fi
+          echo "SUCCESS: Found '$expected'"
+        done
+
+        echo "serial_verified=true" >> $GITHUB_OUTPUT
         
         echo "SUCCESS: OS verification successful"
         exit 0

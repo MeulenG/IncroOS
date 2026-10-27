@@ -44,14 +44,14 @@ void kMain(void) {
 
     // call all services using the boot service framework
     struct boot_service services[] = {
-        {"GDT Initialization\n", init_gdt, TRUE},
-        {"IDT Initialization\n", fill_idt_slots, TRUE},
-        {"PIC Remapping\n", (int (*)())pic_init, TRUE},
-        {"PMM Initialization\n", (int (*)())pmm_init, TRUE},
-        {"VMM Initialization\n", (int (*)())vmm_init, TRUE},
-        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, TRUE},
-        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, TRUE},
-        {"ATA Initialization\n", (int (*)())ata_initialize, TRUE}
+        {"GDT Initialization\n", init_gdt, validate_gdt, TRUE},
+        {"IDT Initialization\n", fill_idt_slots, NULL, TRUE},
+        {"PIC Remapping\n", (int (*)())pic_init, NULL, TRUE},
+        {"PMM Initialization\n", (int (*)())pmm_init, NULL, TRUE},
+        {"VMM Initialization\n", (int (*)())vmm_init, NULL, TRUE},
+        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, NULL, TRUE},
+        {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, NULL, TRUE},
+        {"ATA Initialization\n", (int (*)())ata_initialize, NULL, TRUE},
     };
 
     
@@ -109,9 +109,6 @@ void kMain(void) {
         kprintf("Successfully read file starting at cluster %u\n", found_cluster);
     }
     
-    // trigger divide by 0
-    // volatile int x = 1 / 0;
-
     // Needs to fix this and add it into the boot service at some point where it self-tests the services as a part of the bootup
     /*
     
