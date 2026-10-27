@@ -110,6 +110,8 @@ void kMain(void) {
     } else {
         kprintf("Successfully read file starting at cluster %u\n", found_cluster);
     }
+
+    validate_fat32_write(bpb);
     
     // Needs to fix this and add it into the boot service at some point where it self-tests the services as a part of the bootup
     /*

@@ -29,8 +29,23 @@ struct bios_parameter_block {
     uint16_t backup_boot_sector;
 } __attribute__((packed));
 
+// A file opened for writing, tracks where its directory entry lives on disk
+struct fat32_file {
+    uint32_t entry_lba;     // sector holding the directory entry
+    uint32_t entry_offset;  // byte offset of the entry within that sector
+    uint32_t first_cluster; // 0 until the first write
+    uint32_t last_cluster;
+    uint32_t size;
+};
+
 int cluster_to_lba(uint32_t cluster_number, uint32_t* lba, struct bios_parameter_block* bpb);
 int fat32_find_file(uint8_t* dir_buf, const char* name, uint32_t* cluster, uint32_t* size);
 int fat32_read_file(uint32_t start_cluster, struct bios_parameter_block* bpb, uint8_t* out);
+
+// Names are 8.3, space padded to 11 characters like fat32_find_file ("WRITE   TST")
+int fat32_create_file(struct bios_parameter_block* bpb, uint32_t dir_cluster, const char* name, struct fat32_file* file);
+int fat32_write_file(struct bios_parameter_block* bpb, struct fat32_file* file, const uint8_t* data, uint32_t length);
+int fat32_mkdir(struct bios_parameter_block* bpb, uint32_t parent_cluster, const char* name, uint32_t* cluster);
+int validate_fat32_write(struct bios_parameter_block* bpb);
 
 #endif
