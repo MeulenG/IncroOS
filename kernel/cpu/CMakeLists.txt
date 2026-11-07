@@ -21,7 +21,7 @@ endif()
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/gdt.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND x86_64-linux-gnu-gcc -c ${CMAKE_CURRENT_SOURCE_DIR}/gdt.c -o ${CMAKE_BINARY_DIR}/gdt.o -ffreestanding -O2 -Wall -Wextra -Werror -fno-exceptions -m64
+    COMMAND x86_64-linux-gnu-gcc -c ${CMAKE_CURRENT_SOURCE_DIR}/gdt.c -o ${CMAKE_BINARY_DIR}/gdt.o -ffreestanding -O2 -Wall -Wextra -Werror -fno-exceptions -m64 -march=x86-64 -mno-mmx -mno-sse
     COMMENT "Compiling GDT"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gdt.c
 )
