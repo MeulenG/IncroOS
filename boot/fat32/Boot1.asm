@@ -106,16 +106,18 @@ FixCS:
 
 	; Read Loop
 	.cLoop:
-		mov 	bx, 0x0000
-		mov 	es, bx
+		; Root directory clusters go to 0x10000, clear of Boot1 (0x7C00) and stage2 (0x7E00)
+		; even with 32KB clusters
 		mov 	bx, 0x1000
-		
+		mov 	es, bx
+		xor 	bx, bx
+
 		; ReadCluster returns next cluster in chain
 		call 	ReadCluster
 		push 	esi
 
 		; Step 3. Parse entries and look for Stage 2
-		mov 	di, 0x1000
+		xor 	di, di
 		mov 	si, szStage2
 		mov 	cx, 0x000B
 		mov 	dx, 0x0020
