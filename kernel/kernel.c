@@ -13,6 +13,9 @@
 #include "output/vesa_terminal.h"
 #include "drivers/ata.h"
 #include "drivers/fat32.h"
+#include "boot_info.h"
+
+const struct boot_info* g_boot_info = NULL;
 
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
@@ -35,10 +38,26 @@ static void uint64_to_string(uint64_t value, char* buffer) {
     buffer[j] = '\0';
 }
 
-void kMain(void) {
+void kMain(const struct boot_info* boot_info) {
     serial_init();
 
     serial_writestring("\n\n=== IncroOS Kernel Starting ===\n");
+
+    // The PMM and VESA take memory and screen details from stage2's block, so it has to be there
+    if (boot_info == NULL || boot_info->magic != BOOT_INFO_MAGIC || boot_info->version != BOOT_INFO_VERSION
+        || boot_info->size != sizeof(struct boot_info)) {
+        serial_writestring("No valid boot info from stage2 (wrong magic, version or size). Halting.\n");
+        while (1) {
+            __asm__ volatile("cli; hlt");
+        }
+    }
+    g_boot_info = boot_info;
+    kprintf("Boot info: kernel at 0x%lx (%lu bytes), boot drive 0x%x, %u memory map entries\n",
+            boot_info->kernel_address, boot_info->kernel_size, boot_info->boot_drive, boot_info->memory_map_count);
+    for (uint32_t i = 0; i < boot_info->memory_map_count; i++) {
+        const struct e820_entry* entry = &boot_info->memory_map[i];
+        kprintf("  0x%lx - 0x%lx type %u\n", entry->base, entry->base + entry->length, entry->type);
+    }
 
     terminal_initialize();
 
