@@ -239,13 +239,13 @@ ReadCluster:
 
 	; Calculate Sector
 	; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-	xor 	eax, eax
-	xor 	bx, bx
+	; 32-bit, a 16-bit mul wraps 32MB into the data area
+	xor 	ebx, ebx
 	xor 	ecx, ecx
-	mov 	ax, si
-	sub 	ax, 2
+	mov 	eax, esi
+	sub 	eax, 2
 	mov 	bl, byte [0x7C00 + 0x0D]
-	mul 	bx
+	mul 	ebx
 	add 	eax, dword [0x7C00 + 0x34]
 	add 	eax, dword [0x7C00 + 0x1C]
 
@@ -361,13 +361,15 @@ ReadSector:
 ; **************************
 GetNextCluster:
 	; Calculte Sector in FAT
-	xor 	eax, eax
+	; 32-bit, since cluster * 4 overflows 16 bits from cluster 16384
+	mov 	eax, esi
+	shl 	eax, 2 			; REM * 4, since entries are 32 bits long, and not 8
 	xor 	edx, edx
-	mov 	ax, si
-	shl 	ax, 2 			; REM * 4, since entries are 32 bits long, and not 8
-	div 	word [0x7C00 + 0x0B]
-	add 	ax, word [0x7C00 + 0x1C]
-	add 	ax, word [0x7C00 + 0x0E]
+	movzx 	ecx, word [0x7C00 + 0x0B]
+	div 	ecx
+	add 	eax, dword [0x7C00 + 0x1C]
+	movzx 	ecx, word [0x7C00 + 0x0E]
+	add 	eax, ecx
 	push 	dx
 
 	; AX contains sector
