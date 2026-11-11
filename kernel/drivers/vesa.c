@@ -1,5 +1,6 @@
 #include "vesa.h"
 #include "basic_font.h"
+#include "../boot_info.h"
 
 static uint32_t g_vesa_framebuffer = 0;
 static uint16_t g_vesa_width = 0;
@@ -7,7 +8,8 @@ static uint16_t g_vesa_height = 0;
 static uint8_t g_vesa_bpp = 0;
 
 int vesa_init() {
-    struct vbe_mode_info_structure* vesa_info = (struct vbe_mode_info_structure*)0x7000;
+    // Stage2's copy of the mode info for the mode it set
+    const struct vbe_mode_info_structure* vesa_info = &g_boot_info->vbe_mode_info;
     g_vesa_framebuffer = vesa_info->framebuffer;
     g_vesa_width = vesa_info->width;
     g_vesa_height = vesa_info->height;

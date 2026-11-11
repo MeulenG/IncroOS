@@ -66,7 +66,7 @@ void kMain(const struct boot_info* boot_info) {
         {"GDT Initialization\n", init_gdt, validate_gdt, TRUE},
         {"IDT Initialization\n", fill_idt_slots, NULL, TRUE},
         {"PIC Remapping\n", (int (*)())pic_init, NULL, TRUE},
-        {"PMM Initialization\n", (int (*)())pmm_init, NULL, TRUE},
+        {"PMM Initialization\n", (int (*)())pmm_init, validate_pmm, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, NULL, TRUE},
         {"KMALLOC Initialization\n", (int (*)())kmalloc_init, validate_kmalloc, TRUE},
         {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, NULL, TRUE},
