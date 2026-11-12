@@ -8,6 +8,12 @@ option(MFOS "Building Target IncroOS" ON)
 option(Barebones "Building Barebones" OFF)
 set(BAKE_DIR ${CMAKE_SOURCE_DIR}/External/bake)
 
+# Kernel code written in C# (kernel/csharp), compiled to x86-64 by IncroCompiler and linked into the kernel.
+# Off by default: it needs the .NET 8 SDK and an IncroCompiler checkout.
+option(INCRO_CSHARP "Link the C# code in kernel/csharp into the kernel" OFF)
+set(INCRO_COMPILER ${CMAKE_SOURCE_DIR}/../IncroCompiler/IncroCompiler/IncroCompiler.csproj
+    CACHE FILEPATH "IncroCompiler.csproj used when INCRO_CSHARP is ON")
+
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
 # Let's check for dependencies
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
@@ -15,6 +21,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 if(MFOS)
     set(boot-dir ${CMAKE_SOURCE_DIR}/boot)
     set(kernel-dir ${CMAKE_SOURCE_DIR}/kernel)
+
+    # boot/ links the kernel and is configured before kernel/, so the object list is decided here
+    set(CSHARP_OBJECTS "")
+    if(INCRO_CSHARP)
+        if(NOT EXISTS ${INCRO_COMPILER})
+            message(FATAL_ERROR "INCRO_CSHARP is ON but ${INCRO_COMPILER} does not exist, "
+                                "pass -DINCRO_COMPILER=<path to IncroCompiler.csproj>")
+        endif()
+        set(CSHARP_OBJECTS ${CMAKE_BINARY_DIR}/kernel_csharp.o)
+    endif()
 
     add_subdirectory(libs)
     add_subdirectory(boot)
