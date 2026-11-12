@@ -2,11 +2,14 @@ project (boot-master)
 
 enable_language (ASM_NASM)
 
+# Both stages %include files from boot/includes, so a change there has to rebuild them too
+file(GLOB BOOT_INCLUDES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../includes/*.inc)
+
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/BOOT.SYS
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND nasm -f bin -o ${CMAKE_BINARY_DIR}/BOOT.SYS Boot1.asm
     COMMENT "Compiling bootloader (Boot1)"
-    DEPENDS Boot1.asm
+    DEPENDS Boot1.asm ${BOOT_INCLUDES}
 )
 add_custom_target(Boot ALL DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS)
 
@@ -14,7 +17,7 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/STAGE2.SYS
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND nasm -f bin -o ${CMAKE_BINARY_DIR}/STAGE2.SYS Stage2_X86.asm
     COMMENT "Compiling bootloader (stage2)"
-    DEPENDS Stage2_X86.asm
+    DEPENDS Stage2_X86.asm ${BOOT_INCLUDES}
 )
 add_custom_target(stage2 ALL DEPENDS ${CMAKE_BINARY_DIR}/STAGE2.SYS)
 
