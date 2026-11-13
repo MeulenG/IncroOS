@@ -59,8 +59,9 @@ jobs:
           libfuse3-dev \
           libbpf-dev \
           libcap-dev \
-          libseccomp-dev
-    
+          libseccomp-dev \
+          dosfstools
+
     - name: Build and install Bochs with serial support
       run: |
         cd /tmp
@@ -186,9 +187,18 @@ jobs:
         # Run bochs in headless mode with timeout
         # The OS should boot and produce serial output
         timeout 30s bochs -q -f bochsrc.ci || true
-        
+
         echo "=== Bochs run completed ==="
-    
+
+    - name: Check the FAT32 partition with fsck.fat
+      run: |
+        # The image after the boot: what mkcdk built, plus anything the kernel wrote to it
+        start=$(od -An -t u4 -j 454 -N 4 bochs/pc.img | tr -d ' ')
+        count=$(od -An -t u4 -j 458 -N 4 bochs/pc.img | tr -d ' ')
+        dd if=bochs/pc.img of=partition.img bs=512 skip="$start" count="$count" status=none
+        fsck.fat -n partition.img
+        rm -f partition.img
+
     - name: Display Bochs output logs
       if: always()
       run: |
