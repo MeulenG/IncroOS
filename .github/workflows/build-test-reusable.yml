@@ -53,6 +53,7 @@ jobs:
           python3 \
           git \
           curl \
+          mtools \
           libcurl4-openssl-dev \
           libssl-dev \
           libsqlite3-dev \
@@ -257,7 +258,7 @@ jobs:
           exit 1
         fi
 
-        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!"; do
+        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!" "FAT32 write validation passed!"; do
           if ! grep -qF "$expected" serial.out; then
             echo "ERROR: Expected serial output not found: $expected"
             echo "Serial output content:"
@@ -271,7 +272,22 @@ jobs:
         
         echo "SUCCESS: OS verification successful"
         exit 0
-    
+
+    - name: Verify FAT32 writes from the host
+      run: |
+        # The kernel's FAT32 write test leaves INCROTST/WRITE.TST on the image,
+        # read it back with mtools (the partition starts at sector 1)
+        mdir -i bochs/pc.img@@512 ::INCROTST/WRITE.TST
+        mtype -i bochs/pc.img@@512 ::INCROTST/WRITE.TST > write.tst
+        # 100 + 4096 + 700 bytes of (i * 7 + 3), see validate_fat32_write
+        python3 -c '
+        import sys
+        data = open("write.tst", "rb").read()
+        expected = bytes((i * 7 + 3) & 0xFF for i in range(4896))
+        sys.exit(0 if data == expected else "WRITE.TST does not match what the kernel wrote")
+        '
+        echo "SUCCESS: WRITE.TST matches"
+
     - name: Set outputs
       id: set-outputs
       if: always()
