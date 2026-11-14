@@ -1,4 +1,5 @@
 #include "fat32.h"
+#include "../memory/kmalloc.h"
 
 int cluster_to_lba(uint32_t cluster_number, uint32_t* lba, struct bios_parameter_block* bpb) {    
     // Calculate the first data sector
@@ -70,6 +71,605 @@ int fat32_read_file(uint32_t start_cluster, struct bios_parameter_block* bpb, ui
     }
 
     // Success
+    return 0;
+}
+
+// The ATA driver only does 512 byte sectors
+#define SECTOR_SIZE         512
+#define FAT32_EOC           0x0FFFFFFF
+#define ATTR_DIRECTORY      0x10
+#define ATTR_ARCHIVE        0x20
+// There is no RTC driver yet, so every entry is stamped 1980-01-01 00:00 (FAT date 0 is invalid)
+#define FAT_DATE_1980_01_01 0x0021
+
+// Allocation state for the one mounted volume
+static uint32_t next_free_hint = 2;
+static int fsinfo_invalidated = 0;
+
+static uint32_t fat32_cluster_count(struct bios_parameter_block* bpb) {
+    uint32_t first_data_sector = bpb->reserved_sectors + (bpb->num_fats * bpb->fat_size_32);
+    return (bpb->total_sectors_32 - first_data_sector) / bpb->sectors_per_cluster;
+}
+
+static uint32_t fat32_next_cluster(struct bios_parameter_block* bpb, uint32_t cluster) {
+    uint8_t sector[SECTOR_SIZE];
+    ata_read_sector(0, bpb->hidden_sectors + bpb->reserved_sectors + (cluster * 4) / SECTOR_SIZE, 1, sector);
+    return *(uint32_t*)(sector + (cluster * 4) % SECTOR_SIZE) & 0x0FFFFFFF;
+}
+
+// Writes a FAT entry into every FAT copy, keeping the reserved top 4 bits
+static int fat32_set_entry(struct bios_parameter_block* bpb, uint32_t cluster, uint32_t value) {
+    uint8_t sector[SECTOR_SIZE];
+    for (uint8_t fat = 0; fat < bpb->num_fats; fat++) {
+        uint32_t lba = bpb->hidden_sectors + bpb->reserved_sectors + fat * bpb->fat_size_32 + (cluster * 4) / SECTOR_SIZE;
+        ata_read_sector(0, lba, 1, sector);
+        uint32_t* entry = (uint32_t*)(sector + (cluster * 4) % SECTOR_SIZE);
+        *entry = (*entry & 0xF0000000) | (value & 0x0FFFFFFF);
+        if (ata_write_sector(0, lba, 1, sector) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+// FSInfo's free cluster count is only a hint, so mark it unknown rather than keep it in sync
+static int fat32_invalidate_fsinfo(struct bios_parameter_block* bpb) {
+    uint8_t sector[SECTOR_SIZE];
+    uint32_t lba = bpb->hidden_sectors + bpb->fs_info;
+    ata_read_sector(0, lba, 1, sector);
+    if (*(uint32_t*)sector != 0x41615252) {
+        // No valid FSInfo sector, nothing to keep consistent
+        return 0;
+    }
+    *(uint32_t*)(sector + 488) = 0xFFFFFFFF; // free cluster count
+    *(uint32_t*)(sector + 492) = 0xFFFFFFFF; // next free cluster
+    return ata_write_sector(0, lba, 1, sector);
+}
+
+// Finds a free cluster, marks it end of chain and links it after prev (0 starts a new chain)
+static int fat32_alloc_cluster(struct bios_parameter_block* bpb, uint32_t prev, uint32_t* cluster) {
+    uint32_t count = fat32_cluster_count(bpb);
+    uint8_t sector[SECTOR_SIZE];
+    uint32_t loaded_lba = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t candidate = 2 + (next_free_hint - 2 + i) % count;
+        uint32_t lba = bpb->hidden_sectors + bpb->reserved_sectors + (candidate * 4) / SECTOR_SIZE;
+        if (lba != loaded_lba) {
+            ata_read_sector(0, lba, 1, sector);
+            loaded_lba = lba;
+        }
+        if ((*(uint32_t*)(sector + (candidate * 4) % SECTOR_SIZE) & 0x0FFFFFFF) != 0) {
+            continue;
+        }
+
+        if (!fsinfo_invalidated) {
+            if (fat32_invalidate_fsinfo(bpb) != 0) {
+                return -1;
+            }
+            fsinfo_invalidated = 1;
+        }
+        if (fat32_set_entry(bpb, candidate, FAT32_EOC) != 0) {
+            // One FAT copy may already mark it used
+            fat32_set_entry(bpb, candidate, 0);
+            return -1;
+        }
+        if (prev != 0 && fat32_set_entry(bpb, prev, candidate) != 0) {
+            // End prev's chain again and release the candidate
+            fat32_set_entry(bpb, prev, FAT32_EOC);
+            fat32_set_entry(bpb, candidate, 0);
+            return -1;
+        }
+        next_free_hint = candidate + 1;
+        *cluster = candidate;
+        return 0;
+    }
+    return -1; // Volume is full
+}
+
+static void fat32_fill_entry(uint8_t* entry, const char* name, uint8_t attr, uint32_t cluster, uint32_t size) {
+    for (int i = 0; i < 32; i++) {
+        entry[i] = 0;
+    }
+    for (int i = 0; i < 11; i++) {
+        entry[i] = name[i];
+    }
+    entry[11] = attr;
+    *(uint16_t*)(entry + 16) = FAT_DATE_1980_01_01; // creation date
+    *(uint16_t*)(entry + 18) = FAT_DATE_1980_01_01; // last access date
+    *(uint16_t*)(entry + 20) = (uint16_t)(cluster >> 16);
+    *(uint16_t*)(entry + 24) = FAT_DATE_1980_01_01; // write date
+    *(uint16_t*)(entry + 26) = (uint16_t)(cluster & 0xFFFF);
+    *(uint32_t*)(entry + 28) = size;
+}
+
+// Scans a directory chain for a free entry, fails if the name is already taken.
+// found is 0 when every entry is in use, cluster is then the last cluster of the chain.
+static int fat32_find_free_entry(struct bios_parameter_block* bpb, uint32_t dir_cluster, const char* name,
+                                 uint8_t* buffer, int* found, uint32_t* lba_out, uint32_t* offset_out, uint32_t* cluster) {
+    uint32_t cluster_bytes = SECTOR_SIZE * bpb->sectors_per_cluster;
+    *found = 0;
+    *cluster = dir_cluster;
+
+    while (1) {
+        uint32_t lba;
+        cluster_to_lba(*cluster, &lba, bpb);
+        ata_read_sector(0, lba, bpb->sectors_per_cluster, buffer);
+
+        for (uint32_t offset = 0; offset < cluster_bytes; offset += 32) {
+            uint8_t* entry = buffer + offset;
+            if (entry[0] == 0x00 || entry[0] == 0xE5) {
+                if (!*found) {
+                    *found = 1;
+                    *lba_out = lba + offset / SECTOR_SIZE;
+                    *offset_out = offset % SECTOR_SIZE;
+                }
+                if (entry[0] == 0x00) {
+                    // End of directory, no entries are in use after this one
+                    return 0;
+                }
+                continue;
+            }
+            if (entry[11] == 0x0F) {
+                // Long file name entry
+                continue;
+            }
+
+            int same = 1;
+            for (int i = 0; i < 11; i++) {
+                if (entry[i] != (uint8_t)name[i]) {
+                    same = 0;
+                    break;
+                }
+            }
+            if (same) {
+                return -1;
+            }
+        }
+
+        uint32_t next = fat32_next_cluster(bpb, *cluster);
+        if (next >= 0x0FFFFFF8) {
+            return 0;
+        }
+        *cluster = next;
+    }
+}
+
+static int fat32_add_entry(struct bios_parameter_block* bpb, uint32_t dir_cluster, const char* name, uint8_t attr,
+                           uint32_t first_cluster, struct fat32_file* file) {
+    for (int i = 0; i < 11; i++) {
+        if (name[i] == '\0') {
+            return -1;
+        }
+    }
+    if (name[0] == ' ' || (uint8_t)name[0] == 0xE5) {
+        return -1;
+    }
+
+    uint32_t cluster_bytes = SECTOR_SIZE * bpb->sectors_per_cluster;
+    uint8_t* buffer = kmalloc(cluster_bytes);
+    if (buffer == NULL) {
+        return -1;
+    }
+
+    int found;
+    uint32_t lba, offset, last_cluster;
+    int status = fat32_find_free_entry(bpb, dir_cluster, name, buffer, &found, &lba, &offset, &last_cluster);
+    uint32_t grown = 0;
+
+    if (status == 0 && !found) {
+        // Directory is full, extend it with a zeroed cluster. Link it only after it is zeroed,
+        // so a failure never leaves the directory pointing at old disk contents.
+        uint32_t new_cluster;
+        status = fat32_alloc_cluster(bpb, 0, &new_cluster);
+        if (status == 0) {
+            for (uint32_t i = 0; i < cluster_bytes; i++) {
+                buffer[i] = 0;
+            }
+            cluster_to_lba(new_cluster, &lba, bpb);
+            offset = 0;
+            status = ata_write_sector(0, lba, bpb->sectors_per_cluster, buffer);
+            if (status == 0) {
+                status = fat32_set_entry(bpb, last_cluster, new_cluster);
+            }
+            if (status != 0) {
+                // A half written link may sit in one FAT copy
+                fat32_set_entry(bpb, last_cluster, FAT32_EOC);
+                fat32_set_entry(bpb, new_cluster, 0);
+            } else {
+                grown = new_cluster;
+            }
+        }
+    }
+
+    if (status == 0) {
+        uint8_t sector[SECTOR_SIZE];
+        ata_read_sector(0, lba, 1, sector);
+        fat32_fill_entry(sector + offset, name, attr, first_cluster, 0);
+        status = ata_write_sector(0, lba, 1, sector);
+        if (status != 0 && grown != 0) {
+            // Undo the growth as well, so a failed create leaves nothing behind
+            fat32_set_entry(bpb, last_cluster, FAT32_EOC);
+            fat32_set_entry(bpb, grown, 0);
+        }
+    }
+
+    if (status == 0) {
+        file->entry_lba = lba;
+        file->entry_offset = offset;
+        file->first_cluster = first_cluster;
+        file->last_cluster = first_cluster;
+        file->size = 0;
+    }
+    kfree(buffer);
+    return status;
+}
+
+// Writes the first cluster and size back into the file's directory entry
+static int fat32_update_entry(struct fat32_file* file) {
+    uint8_t sector[SECTOR_SIZE];
+    ata_read_sector(0, file->entry_lba, 1, sector);
+    uint8_t* entry = sector + file->entry_offset;
+    *(uint16_t*)(entry + 20) = (uint16_t)(file->first_cluster >> 16);
+    *(uint16_t*)(entry + 26) = (uint16_t)(file->first_cluster & 0xFFFF);
+    *(uint32_t*)(entry + 28) = file->size;
+    return ata_write_sector(0, file->entry_lba, 1, sector);
+}
+
+int fat32_create_file(struct bios_parameter_block* bpb, uint32_t dir_cluster, const char* name, struct fat32_file* file) {
+    // Empty files have no clusters
+    return fat32_add_entry(bpb, dir_cluster, name, ATTR_ARCHIVE, 0, file);
+}
+
+// Appends data to the end of the file
+int fat32_write_file(struct bios_parameter_block* bpb, struct fat32_file* file, const uint8_t* data, uint32_t length) {
+    if (length > 0xFFFFFFFF - file->size) {
+        return -1; // FAT32 files are at most 4GB
+    }
+
+    uint32_t cluster_bytes = SECTOR_SIZE * bpb->sectors_per_cluster;
+    uint8_t* buffer = kmalloc(cluster_bytes);
+    if (buffer == NULL) {
+        return -1;
+    }
+    // Sectors are written whole, so clear the buffer to keep old heap contents off the disk
+    for (uint32_t i = 0; i < cluster_bytes; i++) {
+        buffer[i] = 0;
+    }
+
+    int status = 0;
+    while (length > 0) {
+        uint32_t offset = file->size % cluster_bytes;
+        uint32_t prev_last = file->last_cluster;
+        int allocated = 0;
+        if (file->first_cluster == 0 || offset == 0) {
+            // No cluster yet, or the last one is full
+            uint32_t new_cluster;
+            status = fat32_alloc_cluster(bpb, file->first_cluster == 0 ? 0 : prev_last, &new_cluster);
+            if (status != 0) {
+                break;
+            }
+            if (file->first_cluster == 0) {
+                file->first_cluster = new_cluster;
+            }
+            file->last_cluster = new_cluster;
+            allocated = 1;
+        }
+
+        uint32_t chunk = cluster_bytes - offset;
+        if (chunk > length) {
+            chunk = length;
+        }
+        uint32_t first_sector = offset / SECTOR_SIZE;
+        uint32_t end_sector = (offset + chunk + SECTOR_SIZE - 1) / SECTOR_SIZE;
+        uint32_t lba;
+        cluster_to_lba(file->last_cluster, &lba, bpb);
+
+        // Keep the bytes already written to a partly filled sector
+        if (offset % SECTOR_SIZE != 0) {
+            ata_read_sector(0, lba + first_sector, 1, buffer + first_sector * SECTOR_SIZE);
+        }
+        for (uint32_t i = 0; i < chunk; i++) {
+            buffer[offset + i] = data[i];
+        }
+        status = ata_write_sector(0, lba + first_sector, end_sector - first_sector, buffer + first_sector * SECTOR_SIZE);
+        if (status != 0) {
+            if (allocated) {
+                // Take the unwritten cluster back out, so the chain never runs past the data
+                fat32_set_entry(bpb, file->last_cluster, 0);
+                if (prev_last == 0) {
+                    file->first_cluster = 0;
+                } else {
+                    fat32_set_entry(bpb, prev_last, FAT32_EOC);
+                }
+                file->last_cluster = prev_last;
+            }
+            break;
+        }
+
+        file->size += chunk;
+        data += chunk;
+        length -= chunk;
+    }
+
+    // Record what was written even when a later step failed, so the entry matches the chain
+    int entry_status = fat32_update_entry(file);
+    if (status == 0) {
+        status = entry_status;
+    }
+    kfree(buffer);
+    return status;
+}
+
+int fat32_mkdir(struct bios_parameter_block* bpb, uint32_t parent_cluster, const char* name, uint32_t* cluster) {
+    uint32_t cluster_bytes = SECTOR_SIZE * bpb->sectors_per_cluster;
+    uint8_t* buffer = kmalloc(cluster_bytes);
+    if (buffer == NULL) {
+        return -1;
+    }
+
+    uint32_t dir;
+    int status = fat32_alloc_cluster(bpb, 0, &dir);
+    if (status == 0) {
+        for (uint32_t i = 0; i < cluster_bytes; i++) {
+            buffer[i] = 0;
+        }
+        // ".." of a directory in the root points at cluster 0, not the root cluster
+        fat32_fill_entry(buffer, ".          ", ATTR_DIRECTORY, dir, 0);
+        fat32_fill_entry(buffer + 32, "..         ", ATTR_DIRECTORY,
+                         parent_cluster == bpb->root_cluster ? 0 : parent_cluster, 0);
+
+        uint32_t lba;
+        cluster_to_lba(dir, &lba, bpb);
+        status = ata_write_sector(0, lba, bpb->sectors_per_cluster, buffer);
+        if (status != 0) {
+            fat32_set_entry(bpb, dir, 0);
+        }
+    }
+
+    if (status == 0) {
+        struct fat32_file entry;
+        status = fat32_add_entry(bpb, parent_cluster, name, ATTR_DIRECTORY, dir, &entry);
+        if (status != 0) {
+            // Release the cluster again, the name was taken or the parent could not grow
+            fat32_set_entry(bpb, dir, 0);
+        }
+    }
+
+    if (status == 0) {
+        *cluster = dir;
+    }
+    kfree(buffer);
+    return status;
+}
+
+// Test helpers for the failure checks below
+static uint32_t fat32_count_used(struct bios_parameter_block* bpb, uint32_t from, uint32_t count) {
+    uint32_t used = 0;
+    for (uint32_t cluster = from; cluster < from + count; cluster++) {
+        if (fat32_next_cluster(bpb, cluster) != 0) {
+            used++;
+        }
+    }
+    return used;
+}
+
+static uint32_t fat32_chain_length(struct bios_parameter_block* bpb, uint32_t first) {
+    uint32_t length = 0;
+    // Bounded, so a broken chain that loops cannot hang the test
+    for (uint32_t cluster = first; cluster >= 2 && cluster < 0x0FFFFFF8 && length < 64;
+         cluster = fat32_next_cluster(bpb, cluster)) {
+        length++;
+    }
+    return length;
+}
+
+static int fat32_entry_matches(struct fat32_file* file) {
+    uint8_t sector[SECTOR_SIZE];
+    ata_read_sector(0, file->entry_lba, 1, sector);
+    uint8_t* entry = sector + file->entry_offset;
+    uint32_t cluster = (uint32_t)*(uint16_t*)(entry + 20) << 16 | *(uint16_t*)(entry + 26);
+    return cluster == file->first_cluster && *(uint32_t*)(entry + 28) == file->size;
+}
+
+// Clusters an operation can allocate are looked for in this many clusters from the hint
+#define FAILURE_WINDOW 16
+
+int validate_fat32_write(struct bios_parameter_block* bpb) {
+    uint32_t dir;
+    if (fat32_mkdir(bpb, bpb->root_cluster, "INCROTST   ", &dir) != 0) {
+        kprintf("FAT32 write validation failed: could not create the test directory\n");
+        return -1;
+    }
+    uint32_t duplicate;
+    if (fat32_mkdir(bpb, bpb->root_cluster, "INCROTST   ", &duplicate) == 0) {
+        kprintf("FAT32 write validation failed: a duplicate name was accepted\n");
+        return -1;
+    }
+
+    // Three appends: a partial sector, a whole cluster starting mid sector, then a partial sector in a new cluster
+    uint32_t cluster_bytes = SECTOR_SIZE * bpb->sectors_per_cluster;
+    uint32_t lengths[3] = {100, cluster_bytes, 700};
+    uint32_t total = lengths[0] + lengths[1] + lengths[2];
+    uint32_t clusters = (total + cluster_bytes - 1) / cluster_bytes;
+
+    uint8_t* data = kmalloc(total);
+    // fat32_read_file writes whole clusters
+    uint8_t* readback = kmalloc(clusters * cluster_bytes);
+    if (data == NULL || readback == NULL) {
+        kprintf("FAT32 write validation failed: out of memory\n");
+        return -1;
+    }
+    for (uint32_t i = 0; i < total; i++) {
+        data[i] = (uint8_t)(i * 7 + 3);
+    }
+
+    struct fat32_file file;
+    if (fat32_create_file(bpb, dir, "WRITE   TST", &file) != 0) {
+        kprintf("FAT32 write validation failed: could not create the test file\n");
+        return -1;
+    }
+    uint32_t written = 0;
+    for (int i = 0; i < 3; i++) {
+        if (fat32_write_file(bpb, &file, data + written, lengths[i]) != 0) {
+            kprintf("FAT32 write validation failed: write %d failed\n", i);
+            return -1;
+        }
+        written += lengths[i];
+    }
+    if (file.size != total) {
+        kprintf("FAT32 write validation failed: size is %u, expected %u\n", file.size, total);
+        return -1;
+    }
+
+    // Read it back through the existing read path
+    fat32_read_file(file.first_cluster, bpb, readback);
+    for (uint32_t i = 0; i < total; i++) {
+        if (readback[i] != data[i]) {
+            kprintf("FAT32 write validation failed: byte %u differs after read back\n", i);
+            return -1;
+        }
+    }
+
+    // The directory entry on disk has to carry the first cluster and the final size
+    uint8_t dir_sector[SECTOR_SIZE];
+    uint32_t dir_lba, found_cluster, found_size;
+    cluster_to_lba(dir, &dir_lba, bpb);
+    ata_read_sector(0, dir_lba, 1, dir_sector);
+    if (fat32_find_file(dir_sector, "WRITE   TST", &found_cluster, &found_size) != 0
+        || found_cluster != file.first_cluster || found_size != total) {
+        kprintf("FAT32 write validation failed: directory entry does not match the file\n");
+        return -1;
+    }
+
+    // Fill the directory exactly, "." ".." and WRITE.TST are already there
+    uint32_t entries_per_cluster = cluster_bytes / 32;
+    char name[12] = "FILL000 TMP";
+    for (uint32_t i = 0; i <= entries_per_cluster - 3; i++) {
+        name[4] = '0' + (i / 100) % 10;
+        name[5] = '0' + (i / 10) % 10;
+        name[6] = '0' + i % 10;
+        if (i == entries_per_cluster - 3) {
+            // The directory is full, this one makes it grow
+            break;
+        }
+        struct fat32_file fill;
+        if (fat32_create_file(bpb, dir, name, &fill) != 0) {
+            kprintf("FAT32 write validation failed: could not create %s\n", name);
+            return -1;
+        }
+    }
+
+    // Fail each disk write of the growing create in turn. Every failure has to leave the
+    // directory one cluster long with nothing allocated, then the create is tried again.
+    int failures = 0;
+    while (1) {
+        uint32_t hint = next_free_hint;
+        struct fat32_file fill;
+        ata_fail_write_countdown = failures + 1;
+        int status = fat32_create_file(bpb, dir, name, &fill);
+        ata_fail_write_countdown = 0;
+        if (status == 0) {
+            break;
+        }
+        if (fat32_next_cluster(bpb, dir) < 0x0FFFFFF8 || fat32_count_used(bpb, hint, FAILURE_WINDOW) != 0) {
+            kprintf("FAT32 write validation failed: growing a directory left changes behind after failed write %d\n", failures + 1);
+            return -1;
+        }
+        if (++failures > 20) {
+            kprintf("FAT32 write validation failed: the injected write failures never ran out\n");
+            return -1;
+        }
+    }
+    if (fat32_next_cluster(bpb, dir) >= 0x0FFFFFF8) {
+        kprintf("FAT32 write validation failed: the directory did not grow\n");
+        return -1;
+    }
+
+    // The same for mkdir: no failed write may leave a cluster allocated
+    int grow_failures = failures;
+    failures = 0;
+    uint32_t appends;
+    while (1) {
+        uint32_t hint = next_free_hint;
+        ata_fail_write_countdown = failures + 1;
+        int status = fat32_mkdir(bpb, bpb->root_cluster, "APPENDS    ", &appends);
+        ata_fail_write_countdown = 0;
+        if (status == 0) {
+            break;
+        }
+        if (fat32_count_used(bpb, hint, FAILURE_WINDOW) != 0) {
+            kprintf("FAT32 write validation failed: mkdir left a cluster allocated after failed write %d\n", failures + 1);
+            return -1;
+        }
+        if (++failures > 20) {
+            kprintf("FAT32 write validation failed: the injected write failures never ran out\n");
+            return -1;
+        }
+    }
+
+    // And for an append that needs a second cluster, on a fresh file each time. After a failure
+    // the directory entry has to describe exactly what the chain holds, and finishing the write
+    // from where it stopped has to give the full contents.
+    uint32_t append_total = lengths[0] + cluster_bytes;
+    char append_name[12] = "APPEND0 TST";
+    int mkdir_failures = failures;
+    failures = 0;
+    while (1) {
+        if (failures > 9) {
+            kprintf("FAT32 write validation failed: the injected write failures never ran out\n");
+            return -1;
+        }
+        append_name[6] = '0' + failures;
+        struct fat32_file append;
+        uint32_t hint = next_free_hint;
+        if (fat32_create_file(bpb, appends, append_name, &append) != 0
+            || fat32_write_file(bpb, &append, data, lengths[0]) != 0) {
+            kprintf("FAT32 write validation failed: could not start %s\n", append_name);
+            return -1;
+        }
+
+        ata_fail_write_countdown = failures + 1;
+        int status = fat32_write_file(bpb, &append, data + lengths[0], cluster_bytes);
+        ata_fail_write_countdown = 0;
+        if (status != 0) {
+            // All data written means only the final entry update failed, which the retry repairs
+            uint32_t chain = fat32_chain_length(bpb, append.first_cluster);
+            if (append.size < append_total
+                && (!fat32_entry_matches(&append)
+                    || chain != (append.size + cluster_bytes - 1) / cluster_bytes
+                    || fat32_count_used(bpb, hint, FAILURE_WINDOW) != chain)) {
+                kprintf("FAT32 write validation failed: failed write %d left the file inconsistent\n", failures + 1);
+                return -1;
+            }
+            if (fat32_write_file(bpb, &append, data + append.size, append_total - append.size) != 0) {
+                kprintf("FAT32 write validation failed: could not finish the write after failed write %d\n", failures + 1);
+                return -1;
+            }
+        }
+
+        fat32_read_file(append.first_cluster, bpb, readback);
+        for (uint32_t i = 0; i < append_total; i++) {
+            if (readback[i] != data[i]) {
+                kprintf("FAT32 write validation failed: %s byte %u differs after read back\n", append_name, i);
+                return -1;
+            }
+        }
+        if (!fat32_entry_matches(&append) || append.size != append_total) {
+            kprintf("FAT32 write validation failed: %s directory entry does not match the file\n", append_name);
+            return -1;
+        }
+        if (status == 0) {
+            break;
+        }
+        failures++;
+    }
+
+    kfree(readback);
+    kfree(data);
+    kprintf("FAT32 write: recovered from %d failed writes growing a directory, %d in mkdir, %d appending\n",
+            grow_failures, mkdir_failures, failures);
+    kprintf("FAT32 write validation passed!\n");
     return 0;
 }
 
