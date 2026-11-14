@@ -1,5 +1,6 @@
 #include "serial.h"
 #include "../cpu/io.h"
+#include "../../libs/libkernel/string.h"
 
 #define COM1_PORT 0x3f8          // COM1
 
