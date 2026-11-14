@@ -76,6 +76,10 @@ void ata_read_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, uint8_t*
     }
 }
 
+// Test hook for validate_fat32_write: while > 0 it counts down on every ata_write_sector
+// call, and the call that brings it to 0 fails without touching the disk
+int ata_fail_write_countdown = 0;
+
 // The drive can take 400ns to update BSY/DRQ after a command or a data block, and each read
 // of the alternate status register (0x3F6) takes about 100ns, so four reads cover the gap
 static void ata_delay_400ns(void) {
@@ -96,6 +100,10 @@ static int ata_wait_not_busy(void) {
 }
 
 int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const uint8_t* buffer) {
+    if (ata_fail_write_countdown > 0 && --ata_fail_write_countdown == 0) {
+        return -1;
+    }
+
     // Same register setup as ata_read_sector
     outb(0x1F6, (drive == 0 ? 0xE0 : 0xF0) | ((lba >> 24) & 0x0F));
     outb(0x1F1, 0x00);
