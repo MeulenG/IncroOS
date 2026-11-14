@@ -16,5 +16,6 @@ uint64_t pmm_alloc_page(void);
 uint64_t pmm_get_total_pages(void);
 uint64_t pmm_get_free_pages(void);
 uint64_t pmm_get_used_pages(void);
+int validate_pmm(void);
 
 #endif // __PMM_H__

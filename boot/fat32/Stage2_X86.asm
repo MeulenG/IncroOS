@@ -38,6 +38,7 @@ jmp Stage2_Entry
 ;	Data Section
 ;*******************************************************
 %include "../includes/DataSection.inc"
+%include "../includes/BootInfo.inc"
 
 ;*******************************************************
 ;	STAGE 2 ENTRY POINT
@@ -415,6 +416,9 @@ SetVideoMode:
     jne ReadError
 	mov eax, dword [0x7028]   ; framebuffer address is at offset 40 in mode info block
     
+    ; Memory map, VBE mode info and boot details for the kernel, while BIOS calls still work
+    call    BuildBootInfo
+
     ;-------------------------------;
 	;   Install our IDT		        ;
 	;-------------------------------;
@@ -562,6 +566,8 @@ LoaderEntry64:
 
 
 Continue_Part3:
+	; RDI is the first argument of kMain in the System V ABI
+	mov rdi, BootInfoBlock
 	jmp 0x100000
 
 DAP:
