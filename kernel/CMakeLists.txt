@@ -25,6 +25,9 @@ add_subdirectory(cpu)
 add_subdirectory(drivers)
 add_subdirectory(output)
 add_subdirectory(memory)
+if(INCRO_CSHARP)
+    add_subdirectory(csharp)
+endif()
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/kernel.o

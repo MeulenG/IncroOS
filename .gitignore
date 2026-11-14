@@ -12,3 +12,6 @@ External/*
 debugger.out
 pc.img
 serial.txt
+# a manual dotnet build of kernel/csharp (the CMake build keeps these under build/)
+kernel/csharp/bin/
+kernel/csharp/obj/

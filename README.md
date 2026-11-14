@@ -134,6 +134,18 @@ make && sudo make install
    | `KRNLDR.BIN` | 64-bit kernel binary |
    | `disk.img` | 2 GB bootable FAT32 disk image |
 
+   **Optional: C# in the kernel.** `kernel/csharp` holds kernel code written in C#, compiled ahead of
+   time to x86-64 by IncroCompiler and linked into the kernel. It needs the .NET 8 SDK and an
+   IncroCompiler checkout, by default next to this repository:
+
+   ```sh
+   cmake -S . -B build -G Ninja -DINCRO_CSHARP=ON \
+         -DINCRO_COMPILER=../IncroCompiler/IncroCompiler/IncroCompiler.csproj
+   cmake --build build
+   ```
+
+   The kernel then prints `Hello, World! (from C#)` after the boot services.
+
 3. **CI / automated build:**
 
    ```sh
