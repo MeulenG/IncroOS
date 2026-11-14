@@ -14,6 +14,9 @@
 #include "drivers/ata.h"
 #include "drivers/fat32.h"
 
+// Exported by kernel/csharp/HelloWorld.cs through [UnmanagedCallersOnly(EntryPoint = "csharp_hello_world")]
+extern void csharp_hello_world(void) __attribute__((weak));
+
 static void uint64_to_string(uint64_t value, char* buffer) {
     if (value == 0) {
         buffer[0] = '0';
@@ -57,6 +60,11 @@ void kMain(void) {
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
     vesa_terminal_writestring("All boot services completed successfully!\n", VESA_COLOR_LIGHT_GREEN);
+
+    // kernel/csharp, only linked in with -DINCRO_CSHARP=ON. Weak, so it is NULL when absent.
+    if (csharp_hello_world) {
+        csharp_hello_world();
+    }
 
     // lets test a read
     uint8_t buffer[512];
