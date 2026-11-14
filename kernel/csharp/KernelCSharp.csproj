@@ -3,12 +3,25 @@
   <!--
     Kernel code written in C#. This assembly never runs on .NET: IncroCompiler turns its IL
     into x86-64 that is linked into the kernel. See CMakeLists.txt next to this file.
+
+    It compiles against Incro.CoreLib (from the IncroCompiler checkout, passed in as IncroCoreLib)
+    instead of .NET's libraries, so only what IncroCompiler supports exists.
   -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <NoStdLib>true</NoStdLib>
+    <NoCompilerStandardLib>true</NoCompilerStandardLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <RuntimeMetadataVersion>v4.0.30319</RuntimeMetadataVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(IncroCoreLib)" />
+  </ItemGroup>
 
 </Project>

@@ -1,6 +1,9 @@
-# C# kernel code: dotnet build turns it into IL, IncroCompiler turns the IL into NASM,
-# nasm makes the object that boot/fat32/CMakeLists.txt links into KRNLDR.ELF.
+# C# kernel code: dotnet build turns it into IL (against Incro.CoreLib), IncroCompiler turns the IL
+# into NASM, nasm makes the object that boot/fat32/CMakeLists.txt links into KRNLDR.ELF.
 # Only added with -DINCRO_CSHARP=ON, see the top-level CMakeLists.txt.
+
+get_filename_component(INCRO_COMPILER_DIR ${INCRO_COMPILER} DIRECTORY)
+set(INCRO_CORELIB ${INCRO_COMPILER_DIR}/../Incro.CoreLib/Incro.CoreLib.csproj)
 
 set(CSHARP_ARTIFACTS ${CMAKE_BINARY_DIR}/csharp)
 set(CSHARP_DLL ${CSHARP_ARTIFACTS}/bin/KernelCSharp/release/KernelCSharp.dll)
@@ -10,15 +13,16 @@ file(GLOB CSHARP_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cs)
 add_custom_command(
     OUTPUT ${CSHARP_DLL}
     COMMAND dotnet build ${CMAKE_CURRENT_SOURCE_DIR}/KernelCSharp.csproj -c Release --nologo -v quiet
-            --artifacts-path ${CSHARP_ARTIFACTS}
+            --artifacts-path ${CSHARP_ARTIFACTS} -p:IncroCoreLib=${INCRO_CORELIB}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/KernelCSharp.csproj ${CSHARP_SOURCES}
     COMMENT "Compiling kernel C# to IL"
 )
 
-# Also writes kernel_csharp.il and kernel_csharp.ir next to the .asm for inspection
+# --freestanding: no C runtime (no C main, nothing from libc). -g: %line directives, so the object's
+# DWARF line info points at the C# source. Also writes kernel_csharp.il and .ir next to the .asm.
 add_custom_command(
     OUTPUT ${CSHARP_ASM}
-    COMMAND dotnet run --project ${INCRO_COMPILER} -c Release -- ${CSHARP_DLL} ${CSHARP_ASM}
+    COMMAND dotnet run --project ${INCRO_COMPILER} -c Release -- --freestanding -g ${CSHARP_DLL} ${CSHARP_ASM}
     BYPRODUCTS ${CMAKE_BINARY_DIR}/kernel_csharp.il ${CMAKE_BINARY_DIR}/kernel_csharp.ir
     DEPENDS ${CSHARP_DLL}
     COMMENT "Compiling kernel C# IL to x86-64 with IncroCompiler"
@@ -26,7 +30,7 @@ add_custom_command(
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/kernel_csharp.o
-    COMMAND nasm -f elf64 ${CSHARP_ASM} -o ${CMAKE_BINARY_DIR}/kernel_csharp.o
+    COMMAND nasm -f elf64 -g -F dwarf ${CSHARP_ASM} -o ${CMAKE_BINARY_DIR}/kernel_csharp.o
     DEPENDS ${CSHARP_ASM}
     COMMENT "Assembling kernel C#"
 )

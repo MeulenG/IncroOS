@@ -19,6 +19,7 @@ namespace IncroOS.Kernel
         public static void Run()
         {
             vesa_terminal_writestring("Hello, World! (from C#)\n", White);
+            Serial.Write("Hello from the C# serial driver\n");
         }
     }
 }

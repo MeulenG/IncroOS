@@ -4,6 +4,10 @@
 
 struct InterruptDescriptor64 idt[256];
 
+// The timer handler in kernel/csharp/Timer.cs, only linked in with -DINCRO_CSHARP=ON. Weak, so it is
+// NULL without C# and IRQ0 keeps the C handler.
+extern void csharp_timer_isr(void) __attribute__((weak));
+
 void unhandled_interrupt() {
     serial_writestring("unhandled interrupt fired!\n");
     terminal_writestring("unhandled interrupt fired!\n");
@@ -26,7 +30,7 @@ int fill_idt_slots() {
     }
     set_idt_gate(0, isr_divide_by_zero);
     set_idt_gate(14, isr_page_fault);
-    set_idt_gate(32, irq0_handler);
+    set_idt_gate(32, csharp_timer_isr ? (void*)csharp_timer_isr : (void*)irq0_handler);
     set_idt_gate(33, irq1_handler);
     set_idt_gate(39, irq7_handler);
     set_idt_gate(46, irq14_handler);
