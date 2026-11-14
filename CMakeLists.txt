@@ -16,6 +16,7 @@ if(MFOS)
     set(boot-dir ${CMAKE_SOURCE_DIR}/boot)
     set(kernel-dir ${CMAKE_SOURCE_DIR}/kernel)
 
+    add_subdirectory(libs)
     add_subdirectory(boot)
     add_subdirectory(kernel)
     
@@ -56,9 +57,12 @@ if(MFOS)
     endif()
     #add_subdirectory(${BAKE_DIR})
 
+    # defaults to the bake submodule build (as in CI), override with -DMKCDK=<path> for a local bake checkout
+    set(MKCDK ${BAKE_DIR}/build/bin/mkcdk CACHE FILEPATH "Path to the mkcdk disk image tool")
+
     add_custom_command(
         OUTPUT disk.img
-        COMMAND cd .. && External/bake/build/bin/mkcdk -s 512M builder.yaml
+        COMMAND cd .. && ${MKCDK} -s 2G builder.yaml
         DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS 
                 ${CMAKE_BINARY_DIR}/STAGE2.SYS 
                 ${CMAKE_BINARY_DIR}/KRNLDR.BIN

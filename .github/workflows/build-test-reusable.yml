@@ -9,7 +9,7 @@ on:
         type: string
         default: 'bochs-output'
       upload-disk-image:
-        description: 'Whether to upload disk.img as an artifact'
+        description: 'Whether to upload pc.img as an artifact'
         required: false
         type: boolean
         default: false
@@ -52,7 +52,14 @@ jobs:
           ninja-build \
           python3 \
           git \
-          curl
+          curl \
+          libcurl4-openssl-dev \
+          libssl-dev \
+          libsqlite3-dev \
+          libfuse3-dev \
+          libbpf-dev \
+          libcap-dev \
+          libseccomp-dev
     
     - name: Build and install Bochs with serial support
       run: |
@@ -85,9 +92,9 @@ jobs:
         cd /tmp
         rm -rf bochs-2.7 bochs-2.7.tar.gz
     
-    - name: Build diskbuilder
+    - name: Build bake
       run: |
-        cd External/diskbuilder
+        cd External/bake
         mkdir -p build
         cd build
         cmake .. -G Ninja
@@ -128,7 +135,7 @@ jobs:
         ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
         
         # Disk image
-        ata0-master: type=disk, mode=flat, path=disk.img
+        ata0-master: type=disk, mode=flat, path=pc.img
         
         # Boot from disk
         boot: disk
@@ -163,11 +170,11 @@ jobs:
       timeout-minutes: 2
       run: |
         cd bochs
-        # Copy disk image to bochs directory (it's created in repo root)
-        if [ -f ../disk.img ]; then
-          cp ../disk.img .
+        # Copy disk image to bochs directory (mkcdk creates it in repo root)
+        if [ -f ../pc.img ]; then
+          cp ../pc.img .
         else
-          echo "Error: disk.img not found!"
+          echo "Error: pc.img not found!"
           ls -la ..
           ls -la ../build || true
           exit 1
@@ -244,45 +251,23 @@ jobs:
         # Initialize output to ensure it's always set
         echo "serial_verified=false" >> $GITHUB_OUTPUT
         
-        # Check if we have any output indicating the OS started
-        success=0
-        
-        # Check bochs log for successful boot indicators
-        if [ -f bochsout.txt ]; then
-          # Check if bochs started successfully
-          if grep -q "Bochs x86 Emulator" bochsout.txt; then
-            echo "SUCCESS: Bochs emulator started successfully"
-            success=1
-          fi
-          
-          # Check for boot sector execution
-          if grep -q "Booting from" bochsout.txt; then
-            echo "SUCCESS: Boot process initiated"
-            success=1
-          fi
-        fi
-        
-        # Check serial output for any OS messages
-        if [ -f serial.out ] && [ -s serial.out ]; then
-          echo "SUCCESS: Serial output captured"
-          echo "Serial output content:"
-          cat serial.out
-          success=1
-          echo "serial_verified=true" >> $GITHUB_OUTPUT
-        fi
-        
-        if [ $success -eq 0 ]; then
-          echo "ERROR: Could not verify OS boot - no serial output or boot indicators found"
-          echo "The workflow expects either:"
-          echo "  1. Serial output in serial.out, OR"
-          echo "  2. Boot indicators in bochsout.txt (e.g., 'Booting from')"
-          echo ""
-          echo "Current status:"
-          echo "  - Bochs log exists: $([ -f bochsout.txt ] && echo 'Yes' || echo 'No')"
-          echo "  - Serial file exists: $([ -f serial.out ] && echo 'Yes' || echo 'No')"
-          echo "  - Serial file size: $([ -f serial.out ] && wc -c < serial.out || echo '0') bytes"
+        # The kernel must pass boot service validation and finish all boot services
+        if [ ! -s serial.out ]; then
+          echo "ERROR: No serial output captured"
           exit 1
         fi
+
+        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!"; do
+          if ! grep -qF "$expected" serial.out; then
+            echo "ERROR: Expected serial output not found: $expected"
+            echo "Serial output content:"
+            cat serial.out
+            exit 1
+          fi
+          echo "SUCCESS: Found '$expected'"
+        done
+
+        echo "serial_verified=true" >> $GITHUB_OUTPUT
         
         echo "SUCCESS: OS verification successful"
         exit 0
@@ -292,8 +277,8 @@ jobs:
       if: always()
       run: |
         # Only set disk-image-path when disk image is expected and present
-        if [ "${{ inputs.upload-disk-image }}" = "true" ] && [ -f disk.img ]; then
-          echo "disk-image-path=disk.img" >> $GITHUB_OUTPUT
+        if [ "${{ inputs.upload-disk-image }}" = "true" ] && [ -f pc.img ]; then
+          echo "disk-image-path=pc.img" >> $GITHUB_OUTPUT
         else
           echo "disk-image-path=" >> $GITHUB_OUTPUT
         fi
@@ -321,7 +306,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: disk-image
-        path: disk.img
+        path: pc.img
         if-no-files-found: error
     
     - name: Cleanup build artifacts
@@ -329,7 +314,7 @@ jobs:
       run: |
         # Clean up temporary build directories
         rm -rf build
-        rm -rf External/diskbuilder/build
+        rm -rf External/bake/build
         
         # Clean up bochs test directory
-        rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/disk.img
+        rm -rf bochs/bochsrc.ci bochs/bochsout.txt bochs/serial.out bochs/pc.img

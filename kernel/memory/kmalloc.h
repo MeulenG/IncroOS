@@ -5,11 +5,12 @@
 #include <stdint.h>
 
 
-void kmalloc_init(void);
+int kmalloc_init(void);
 void* kmalloc(size_t size);
-void kfree(void* ptr);
+int kfree(void* ptr);
 
 uint64_t kmalloc_get_used(void);
 uint64_t kmalloc_get_free(void);
+int validate_kmalloc(void);
 
 #endif // __KMALLOC_H__
