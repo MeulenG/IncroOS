@@ -13,6 +13,16 @@ partitions:
       - type: file
         source: build/STAGE2.SYS
         target: /STAGE2.SYS
+      # VaFS packs validate_vafs mounts, see tests/vafs
+      - type: file
+        source: tests/vafs/hello-world.pack
+        target: /HELLO.PAK
+      - type: file
+        source: build/VAFSZST.PAK
+        target: /VAFSZST.PAK
+      - type: file
+        source: build/VAFSRAW.PAK
+        target: /VAFSRAW.PAK
       - type: raw
         source: build/BOOT.SYS
         target: sector=0
