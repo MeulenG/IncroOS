@@ -49,7 +49,7 @@ void kMain(void) {
         {"PIC Remapping\n", (int (*)())pic_init, NULL, TRUE},
         {"PMM Initialization\n", (int (*)())pmm_init, NULL, TRUE},
         {"VMM Initialization\n", (int (*)())vmm_init, NULL, TRUE},
-        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, NULL, TRUE},
+        {"KMALLOC Initialization\n", (int (*)())kmalloc_init, validate_kmalloc, TRUE},
         {"VESA Initialization\n", (int (*)())vesa_terminal_initialize, NULL, TRUE},
         {"ATA Initialization\n", (int (*)())ata_initialize, NULL, TRUE},
     };
