@@ -2,9 +2,9 @@ name: Bochs Emulator Test
 
 on:
   push:
-    branches: [ main, master, copilot/** ]
+    branches: [ main, master, devel, copilot/** ]
+  # every pull request, including stacked ones based on another feature branch
   pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
