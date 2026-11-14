@@ -35,4 +35,13 @@ add_custom_command(
     COMMENT "Assembling kernel C#"
 )
 
-add_custom_target(KernelCSharp ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel_csharp.o)
+# incro_alloc and incro_panic, the kernel side of the C# runtime
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/csharp_runtime.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -Wall -Wextra -c ${CMAKE_CURRENT_SOURCE_DIR}/runtime.c -o ${CMAKE_BINARY_DIR}/csharp_runtime.o
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime.c
+    COMMENT "Compiling the C# runtime hooks (C)"
+)
+
+add_custom_target(KernelCSharp ALL DEPENDS ${CMAKE_BINARY_DIR}/kernel_csharp.o ${CMAKE_BINARY_DIR}/csharp_runtime.o)

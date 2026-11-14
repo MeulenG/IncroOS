@@ -147,7 +147,10 @@ make && sudo make install
 
    The kernel then prints `Hello, World! (from C#)` after the boot services, a C# serial driver
    (`Serial.cs`) writes to COM1 with port I/O, and IRQ0 is handled by a C# interrupt handler
-   (`Timer.cs`). The object carries DWARF line info, so a debugger shows the C# source.
+   (`Timer.cs`). A small kernel log (`KernelLog.cs`) uses classes, interfaces, arrays and strings,
+   allocated on the kernel heap through `incro_alloc` in `runtime.c`; a C# `throw` ends in
+   `incro_panic` there, since there is no exception handling yet. The object carries DWARF line
+   info, so a debugger shows the C# source.
 
 3. **CI / automated build:**
 
