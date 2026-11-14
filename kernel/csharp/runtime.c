@@ -1,5 +1,5 @@
 // The two hooks C# compiled by IncroCompiler calls into the kernel. Everything else (type tests,
-// strings, interface calls) is generated into the C# object itself.
+// strings, interface calls, the garbage collector from Incro.CoreLib) is compiled into the C# object.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -9,9 +9,9 @@
 
 void incro_panic(const char *message);
 
-// Every C# object, array and string comes from here. IncroCompiler relies on the memory being zeroed
-// (fields start out as 0 and null), and kmalloc does not zero it. There is no garbage collector yet,
-// so nothing is freed.
+// Raw memory for the C# heap: Incro.CoreLib's garbage collector asks for chunks of 1 MiB (or one per
+// larger object) and manages the objects inside them itself. It relies on the memory being zeroed, and
+// kmalloc does not zero it. Chunks are never given back.
 void *incro_alloc(size_t size)
 {
     uint8_t *memory = kmalloc(size);
