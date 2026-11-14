@@ -76,6 +76,14 @@ void ata_read_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, uint8_t*
     }
 }
 
+// The drive can take 400ns to update BSY/DRQ after a command or a data block, and each read
+// of the alternate status register (0x3F6) takes about 100ns, so four reads cover the gap
+static void ata_delay_400ns(void) {
+    for (int i = 0; i < 4; i++) {
+        inb(0x3F6);
+    }
+}
+
 // waits for BSY to clear without requiring DRQ, which ata_poll does
 static int ata_wait_not_busy(void) {
     for (uint32_t i = 0; i < 100000; i++) {
@@ -97,6 +105,7 @@ int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const ui
     outb(0x1F5, (uint8_t)((lba >> 16) & 0xFF));
     // Send the write command (0x30) to port 0x1F7
     outb(0x1F7, 0x30);
+    ata_delay_400ns();
     for (uint8_t i = 0; i < sector_count; i++) {
         if (ata_poll() != 0) {
             vesa_terminal_writestring("Error during sector write.\n", VESA_COLOR_RED);
@@ -106,6 +115,9 @@ int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const ui
             uint16_t data = buffer[i * 512 + j * 2] | (buffer[i * 512 + j * 2 + 1] << 8);
             outw(0x1F0, data);
         }
+        // Without this the next poll can see the previous block's DRQ, or the final BSY check
+        // can pass before the drive has started writing
+        ata_delay_400ns();
     }
 
     // Flush the drive's write cache (0xE7) so the data reaches the disk
@@ -113,6 +125,7 @@ int ata_write_sector(uint8_t drive, uint32_t lba, uint8_t sector_count, const ui
         return -1;
     }
     outb(0x1F7, 0xE7);
+    ata_delay_400ns();
     if (ata_wait_not_busy() != 0) {
         vesa_terminal_writestring("Error during cache flush.\n", VESA_COLOR_RED);
         return -1;
