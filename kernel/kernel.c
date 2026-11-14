@@ -13,6 +13,7 @@
 #include "output/vesa_terminal.h"
 #include "drivers/ata.h"
 #include "drivers/fat32.h"
+#include "drivers/vafs.h"
 #include "../libs/zstd/zstd_kernel.h"
 
 static void uint64_to_string(uint64_t value, char* buffer) {
@@ -114,6 +115,7 @@ void kMain(void) {
 
     validate_fat32_write(bpb);
     validate_zstd();
+    validate_vafs(bpb);
     
     // Needs to fix this and add it into the boot service at some point where it self-tests the services as a part of the bootup
     /*
