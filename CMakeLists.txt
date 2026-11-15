@@ -29,7 +29,7 @@ if(MFOS)
             message(FATAL_ERROR "INCRO_CSHARP is ON but ${INCRO_COMPILER} does not exist, "
                                 "pass -DINCRO_COMPILER=<path to IncroCompiler.csproj>")
         endif()
-        set(CSHARP_OBJECTS ${CMAKE_BINARY_DIR}/kernel_csharp.o)
+        set(CSHARP_OBJECTS ${CMAKE_BINARY_DIR}/kernel_csharp.o ${CMAKE_BINARY_DIR}/csharp_runtime.o)
     endif()
 
     add_subdirectory(libs)

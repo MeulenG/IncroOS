@@ -135,8 +135,9 @@ make && sudo make install
    | `disk.img` | 2 GB bootable FAT32 disk image |
 
    **Optional: C# in the kernel.** `kernel/csharp` holds kernel code written in C#, compiled ahead of
-   time to x86-64 by IncroCompiler and linked into the kernel. It needs the .NET 8 SDK and an
-   IncroCompiler checkout, by default next to this repository:
+   time to x86-64 by IncroCompiler and linked into the kernel. It compiles against IncroCompiler's
+   Incro.CoreLib instead of .NET's libraries, so it needs the .NET 8 SDK and an IncroCompiler
+   checkout, by default next to this repository:
 
    ```sh
    cmake -S . -B build -G Ninja -DINCRO_CSHARP=ON \
@@ -144,7 +145,12 @@ make && sudo make install
    cmake --build build
    ```
 
-   The kernel then prints `Hello, World! (from C#)` after the boot services.
+   The kernel then prints `Hello, World! (from C#)` after the boot services, a C# serial driver
+   (`Serial.cs`) writes to COM1 with port I/O, and IRQ0 is handled by a C# interrupt handler
+   (`Timer.cs`). A small kernel log (`KernelLog.cs`) uses classes, interfaces, arrays and strings on
+   a garbage-collected heap: Incro.CoreLib's collector gets its memory from the kernel heap through
+   `incro_alloc` in `runtime.c`, and an exception nobody catches ends in `incro_panic` there. The
+   object carries DWARF line info, so a debugger shows the C# source.
 
 3. **CI / automated build:**
 
