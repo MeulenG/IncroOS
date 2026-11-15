@@ -152,6 +152,12 @@ make && sudo make install
    `incro_alloc` in `runtime.c`, and an exception nobody catches ends in `incro_panic` there. The
    object carries DWARF line info, so a debugger shows the C# source.
 
+   **Optional: the whole kernel in C#.** `kernel-csharp` is a port of `kernel/` to C#, file by file,
+   linked with the same entry and bootloader instead of the C objects. Build it with
+   `-DINCRO_CSHARP_KERNEL=ON` instead of `-DINCRO_CSHARP=ON`; it boots to the same serial output.
+   `-DINCRO_BENCH=ON` makes either kernel run the same benchmarks after its boot services and print
+   `[BENCH]` lines on COM1; IncroCompiler's `Benchmarks/README.md` has the results.
+
 3. **CI / automated build:**
 
    ```sh

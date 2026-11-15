@@ -28,16 +28,29 @@ add_custom_command(
 
 add_custom_target(KernelEntry ALL DEPENDS ${CMAKE_BINARY_DIR}/Kernel_Entry.o)
 
+# The C kernel's objects, or with INCRO_CSHARP_KERNEL the one object of the kernel in C# (kernel-csharp)
+if(INCRO_CSHARP_KERNEL)
+    set(KERNEL_OBJECTS ${CMAKE_BINARY_DIR}/kernel_cs.o)
+    set(KERNEL_TARGETS CSharpKernel)
+else()
+    set(KERNEL_OBJECTS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/vesa_terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/vesa.o ${CMAKE_BINARY_DIR}/ata.o ${CMAKE_BINARY_DIR}/fat32.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o ${CSHARP_OBJECTS})
+    set(KERNEL_TARGETS Kernel terminal BootService VESATerminal SerialDriver KeyboardDriver VESADriver ATADriver FAT32Driver PMM VMM KMALLOC GDT IDT InterruptHandler PIC)
+    if(INCRO_BENCH)
+        list(APPEND KERNEL_OBJECTS ${CMAKE_BINARY_DIR}/bench.o)
+        list(APPEND KERNEL_TARGETS Bench)
+    endif()
+endif()
+
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/KRNLDR.ELF
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND ld -o ${CMAKE_BINARY_DIR}/KRNLDR.ELF ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/vesa_terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/vesa.o ${CMAKE_BINARY_DIR}/ata.o ${CMAKE_BINARY_DIR}/fat32.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o ${CSHARP_OBJECTS} -Ttext=0x100000 --entry=_start
+    COMMAND ld -o ${CMAKE_BINARY_DIR}/KRNLDR.ELF ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${KERNEL_OBJECTS} -Ttext=0x100000 --entry=_start
     COMMENT "Linking Kernel to ELF"
-    DEPENDS ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/vesa_terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/vesa.o ${CMAKE_BINARY_DIR}/ata.o ${CMAKE_BINARY_DIR}/fat32.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o ${CSHARP_OBJECTS}
+    DEPENDS ${CMAKE_BINARY_DIR}/Kernel_Entry.o ${KERNEL_OBJECTS}
 )
 
 add_custom_target(KernelELF ALL DEPENDS ${CMAKE_BINARY_DIR}/KRNLDR.ELF)
-add_dependencies(KernelELF Kernel terminal BootService VESATerminal SerialDriver KeyboardDriver VESADriver ATADriver FAT32Driver PMM VMM KMALLOC GDT IDT InterruptHandler PIC)
+add_dependencies(KernelELF ${KERNEL_TARGETS})
 if(INCRO_CSHARP)
     add_dependencies(KernelELF KernelCSharp)
 endif()

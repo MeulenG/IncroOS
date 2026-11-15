@@ -28,11 +28,16 @@ add_subdirectory(memory)
 if(INCRO_CSHARP)
     add_subdirectory(csharp)
 endif()
+set(BENCH_DEFINE "")
+if(INCRO_BENCH)
+    add_subdirectory(bench)
+    set(BENCH_DEFINE -DINCRO_BENCH)
+endif()
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/kernel.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -Wall -Wextra -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o
+    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -Wall -Wextra ${BENCH_DEFINE} -c ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c -o ${CMAKE_BINARY_DIR}/kernel.o
     COMMENT "Compiling C Kernel"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kernel.c ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/vesa_terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/vesa.o ${CMAKE_BINARY_DIR}/ata.o ${CMAKE_BINARY_DIR}/fat32.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o
 )

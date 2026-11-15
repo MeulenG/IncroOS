@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The IncroOS kernel written in C#, a port of kernel/ file by file. It never runs on .NET:
+    IncroCompiler turns its IL into x86-64, which is linked with the same asm entry and bootloader
+    as the C kernel. Built instead of kernel/ with -DINCRO_CSHARP_KERNEL=ON, see CMakeLists.txt.
+
+    It compiles against Incro.CoreLib (from the IncroCompiler checkout, passed in as IncroCoreLib)
+    instead of .NET's libraries, so only what IncroCompiler supports exists.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>IncroKernel</AssemblyName>
+    <NoStdLib>true</NoStdLib>
+    <NoCompilerStandardLib>true</NoCompilerStandardLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <RuntimeMetadataVersion>v4.0.30319</RuntimeMetadataVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants Condition="'$(IncroBench)' == 'true'">$(DefineConstants);INCRO_BENCH</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(IncroCoreLib)" />
+  </ItemGroup>
+
+</Project>
