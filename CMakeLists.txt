@@ -11,8 +11,10 @@ set(BAKE_DIR ${CMAKE_SOURCE_DIR}/External/bake)
 # Kernel code written in C# (kernel/csharp), compiled to x86-64 by IncroCompiler and linked into the kernel.
 # Off by default: it needs the .NET 8 SDK and an IncroCompiler checkout.
 option(INCRO_CSHARP "Link the C# code in kernel/csharp into the kernel" OFF)
+# Or the whole kernel in C#: kernel-csharp, a port of kernel/, linked instead of it
+option(INCRO_CSHARP_KERNEL "Build the kernel from kernel-csharp (C#) instead of kernel (C)" OFF)
 set(INCRO_COMPILER ${CMAKE_SOURCE_DIR}/../IncroCompiler/IncroCompiler/IncroCompiler.csproj
-    CACHE FILEPATH "IncroCompiler.csproj used when INCRO_CSHARP is ON")
+    CACHE FILEPATH "IncroCompiler.csproj used when INCRO_CSHARP or INCRO_CSHARP_KERNEL is ON")
 
 set (CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
 # Let's check for dependencies
@@ -24,17 +26,24 @@ if(MFOS)
 
     # boot/ links the kernel and is configured before kernel/, so the object list is decided here
     set(CSHARP_OBJECTS "")
+    if(INCRO_CSHARP AND INCRO_CSHARP_KERNEL)
+        message(FATAL_ERROR "INCRO_CSHARP adds C# to the C kernel and INCRO_CSHARP_KERNEL replaces it; pick one")
+    endif()
+    if((INCRO_CSHARP OR INCRO_CSHARP_KERNEL) AND NOT EXISTS ${INCRO_COMPILER})
+        message(FATAL_ERROR "C# is ON but ${INCRO_COMPILER} does not exist, "
+                            "pass -DINCRO_COMPILER=<path to IncroCompiler.csproj>")
+    endif()
     if(INCRO_CSHARP)
-        if(NOT EXISTS ${INCRO_COMPILER})
-            message(FATAL_ERROR "INCRO_CSHARP is ON but ${INCRO_COMPILER} does not exist, "
-                                "pass -DINCRO_COMPILER=<path to IncroCompiler.csproj>")
-        endif()
         set(CSHARP_OBJECTS ${CMAKE_BINARY_DIR}/kernel_csharp.o ${CMAKE_BINARY_DIR}/csharp_runtime.o)
     endif()
 
     add_subdirectory(libs)
     add_subdirectory(boot)
-    add_subdirectory(kernel)
+    if(INCRO_CSHARP_KERNEL)
+        add_subdirectory(kernel-csharp)
+    else()
+        add_subdirectory(kernel)
+    endif()
     
 
     add_custom_command(
