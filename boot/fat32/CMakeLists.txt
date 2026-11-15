@@ -35,6 +35,10 @@ if(INCRO_CSHARP_KERNEL)
 else()
     set(KERNEL_OBJECTS ${CMAKE_BINARY_DIR}/kernel.o ${CMAKE_BINARY_DIR}/terminal.o ${CMAKE_BINARY_DIR}/boot_service.o ${CMAKE_BINARY_DIR}/vesa_terminal.o ${CMAKE_BINARY_DIR}/serial.o ${CMAKE_BINARY_DIR}/keyboard.o ${CMAKE_BINARY_DIR}/vesa.o ${CMAKE_BINARY_DIR}/ata.o ${CMAKE_BINARY_DIR}/fat32.o ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o ${CMAKE_BINARY_DIR}/kmalloc.o ${CMAKE_BINARY_DIR}/print.o ${CMAKE_BINARY_DIR}/string.o ${CMAKE_BINARY_DIR}/gdt.o ${CMAKE_BINARY_DIR}/idt.o ${CMAKE_BINARY_DIR}/interrupt_handler.o ${CMAKE_BINARY_DIR}/pic.o ${CSHARP_OBJECTS})
     set(KERNEL_TARGETS Kernel terminal BootService VESATerminal SerialDriver KeyboardDriver VESADriver ATADriver FAT32Driver PMM VMM KMALLOC GDT IDT InterruptHandler PIC)
+    if(INCRO_BENCH)
+        list(APPEND KERNEL_OBJECTS ${CMAKE_BINARY_DIR}/bench.o)
+        list(APPEND KERNEL_TARGETS Bench)
+    endif()
 endif()
 
 add_custom_command(

@@ -13,6 +13,8 @@ set(BAKE_DIR ${CMAKE_SOURCE_DIR}/External/bake)
 option(INCRO_CSHARP "Link the C# code in kernel/csharp into the kernel" OFF)
 # Or the whole kernel in C#: kernel-csharp, a port of kernel/, linked instead of it
 option(INCRO_CSHARP_KERNEL "Build the kernel from kernel-csharp (C#) instead of kernel (C)" OFF)
+# Benchmarks that either kernel runs after its boot services (kernel/bench, kernel-csharp/Bench.cs)
+option(INCRO_BENCH "Run the kernel benchmarks at boot" OFF)
 set(INCRO_COMPILER ${CMAKE_SOURCE_DIR}/../IncroCompiler/IncroCompiler/IncroCompiler.csproj
     CACHE FILEPATH "IncroCompiler.csproj used when INCRO_CSHARP or INCRO_CSHARP_KERNEL is ON")
 

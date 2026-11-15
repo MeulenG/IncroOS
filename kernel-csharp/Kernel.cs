@@ -15,6 +15,9 @@ namespace IncroOS
         [UnmanagedCallersOnly(EntryPoint = "kMain")]
         private static void Main()
         {
+#if INCRO_BENCH
+            ulong bootStart = Cpu.ReadTimestamp();
+#endif
             Serial.Initialize();
             Serial.WriteString("\n\n=== IncroOS Kernel Starting ===\n");
             VgaTerminal.Initialize();
@@ -29,6 +32,9 @@ namespace IncroOS
             BootServices.Run("VESA Initialization\n", &VesaTerminal.InitializeService, null, true);
             BootServices.Run("ATA Initialization\n", &Ata.Initialize, null, true);
             VesaTerminal.WriteString("All boot services completed successfully!\n", VesaColor.LightGreen);
+#if INCRO_BENCH
+            Bench.Run(Cpu.ReadTimestamp() - bootStart);
+#endif
 
             ReadKernelFile();
 

@@ -9,11 +9,15 @@ set(CSHARP_KERNEL_ARTIFACTS ${CMAKE_BINARY_DIR}/csharp-kernel)
 set(CSHARP_KERNEL_DLL ${CSHARP_KERNEL_ARTIFACTS}/bin/IncroKernel/release/IncroKernel.dll)
 set(CSHARP_KERNEL_ASM ${CMAKE_BINARY_DIR}/kernel_cs.asm)
 file(GLOB_RECURSE CSHARP_KERNEL_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cs)
+set(CSHARP_KERNEL_BENCH "")
+if(INCRO_BENCH)
+    set(CSHARP_KERNEL_BENCH -p:IncroBench=true)
+endif()
 
 add_custom_command(
     OUTPUT ${CSHARP_KERNEL_DLL}
     COMMAND dotnet build ${CMAKE_CURRENT_SOURCE_DIR}/IncroKernel.csproj -c Release --nologo -v quiet
-            --artifacts-path ${CSHARP_KERNEL_ARTIFACTS} -p:IncroCoreLib=${INCRO_CORELIB}
+            --artifacts-path ${CSHARP_KERNEL_ARTIFACTS} -p:IncroCoreLib=${INCRO_CORELIB} ${CSHARP_KERNEL_BENCH}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/IncroKernel.csproj ${CSHARP_KERNEL_SOURCES}
     COMMENT "Compiling the C# kernel to IL"
 )

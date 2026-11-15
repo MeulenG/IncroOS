@@ -13,6 +13,9 @@
 #include "output/vesa_terminal.h"
 #include "drivers/ata.h"
 #include "drivers/fat32.h"
+#ifdef INCRO_BENCH
+#include "bench/bench.h"
+#endif
 
 // Exported by kernel/csharp/HelloWorld.cs through [UnmanagedCallersOnly(EntryPoint = "csharp_hello_world")]
 extern void csharp_hello_world(void) __attribute__((weak));
@@ -39,6 +42,9 @@ static void uint64_to_string(uint64_t value, char* buffer) {
 }
 
 void kMain(void) {
+#ifdef INCRO_BENCH
+    uint64_t boot_start = bench_now();
+#endif
     serial_init();
 
     serial_writestring("\n\n=== IncroOS Kernel Starting ===\n");
@@ -60,6 +66,9 @@ void kMain(void) {
     
     run_boot_services(services, sizeof(services) / sizeof(services[0]));
     vesa_terminal_writestring("All boot services completed successfully!\n", VESA_COLOR_LIGHT_GREEN);
+#ifdef INCRO_BENCH
+    run_benchmarks(bench_now() - boot_start);
+#endif
 
     // kernel/csharp, only linked in with -DINCRO_CSHARP=ON. Weak, so it is NULL when absent.
     if (csharp_hello_world) {
