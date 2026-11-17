@@ -51,6 +51,7 @@ jobs:
           cmake \
           ninja-build \
           python3 \
+          zstd \
           git \
           curl \
           mtools \
@@ -258,7 +259,7 @@ jobs:
           exit 1
         fi
 
-        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!" "FAT32 write validation passed!" "ZSTD validation passed!"; do
+        for expected in "GDT validation passed!" "KMALLOC validation passed!" "All boot services completed successfully!" "FAT32 write validation passed!" "ZSTD validation passed!" "VAFS validation passed!"; do
           if ! grep -qF "$expected" serial.out; then
             echo "ERROR: Expected serial output not found: $expected"
             echo "Serial output content:"

@@ -59,3 +59,11 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/fat32.o
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/fat32.c
 )
 add_custom_target(FAT32Driver ALL DEPENDS ${CMAKE_BINARY_DIR}/fat32.o)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/vafs.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/vafs.c -o ${CMAKE_BINARY_DIR}/vafs.o
+    COMMENT "Compiling VaFS Driver"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vafs.c ${CMAKE_CURRENT_SOURCE_DIR}/vafs.h
+)
+add_custom_target(VAFSDriver ALL DEPENDS ${CMAKE_BINARY_DIR}/vafs.o)

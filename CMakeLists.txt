@@ -60,12 +60,24 @@ if(MFOS)
     # defaults to the bake submodule build (as in CI), override with -DMKCDK=<path> for a local bake checkout
     set(MKCDK ${BAKE_DIR}/build/bin/mkcdk CACHE FILEPATH "Path to the mkcdk disk image tool")
 
+    # The generated VaFS packs validate_vafs mounts, see tests/vafs
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/VAFSRAW.PAK ${CMAKE_BINARY_DIR}/VAFSZST.PAK
+        COMMAND python3 ${CMAKE_SOURCE_DIR}/tests/vafs/make_test_pack.py raw ${CMAKE_BINARY_DIR}/VAFSRAW.PAK
+        COMMAND python3 ${CMAKE_SOURCE_DIR}/tests/vafs/make_test_pack.py zstd ${CMAKE_BINARY_DIR}/VAFSZST.PAK
+        DEPENDS ${CMAKE_SOURCE_DIR}/tests/vafs/make_test_pack.py
+        COMMENT "Generating VaFS test packs"
+    )
+
     add_custom_command(
         OUTPUT disk.img
         COMMAND cd .. && ${MKCDK} -s 2G builder.yaml
-        DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS 
-                ${CMAKE_BINARY_DIR}/STAGE2.SYS 
+        DEPENDS ${CMAKE_BINARY_DIR}/BOOT.SYS
+                ${CMAKE_BINARY_DIR}/STAGE2.SYS
                 ${CMAKE_BINARY_DIR}/KRNLDR.BIN
+                ${CMAKE_BINARY_DIR}/VAFSRAW.PAK
+                ${CMAKE_BINARY_DIR}/VAFSZST.PAK
+                ${CMAKE_SOURCE_DIR}/tests/vafs/hello-world.pack
         COMMENT "Building Disk Image"
     )
 
