@@ -89,12 +89,12 @@ jobs:
     - name: Verify disk image exists
       if: steps.check_commit.outputs.should_create_release == 'true'
       run: |
-        if [ ! -f disk.img ]; then
-          echo "disk.img not found after download"
+        if [ ! -f pc.img ]; then
+          echo "pc.img not found after download"
           exit 1
         fi
-        echo "disk.img found"
-        ls -lh disk.img
+        echo "pc.img found"
+        ls -lh pc.img
     
     - name: Get current date
       if: steps.check_commit.outputs.should_create_release == 'true'
@@ -138,9 +138,9 @@ jobs:
         - **Commit**: ${{ github.sha }}
         - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
         
-        - \`disk.img\`: Bootable disk image for the OS
+        - \`pc.img\`: Bootable disk image for the OS
         
-        Download \`disk.img\` and run it with Bochs emulator.
+        Download \`pc.img\` and run it with Bochs emulator.
         
         You'll need to create a \`bochsrc\` configuration file. Example:
         \`\`\`
@@ -156,7 +156,7 @@ jobs:
         
         pci: enabled=1, chipset=i440fx
         
-        ata0-master: type=disk, mode=flat, path=disk.img
+        ata0-master: type=disk, mode=flat, path=pc.img
         boot: disk
         
         com1: enabled=1, mode=file, dev=serial.out
@@ -170,7 +170,7 @@ jobs:
         EOF
         
         gh release create nightly \
-          disk.img \
+          pc.img \
           --title "Nightly Build - ${{ steps.date.outputs.date }}" \
           --notes-file release_notes.md \
           --prerelease \
@@ -179,4 +179,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -f disk.img release_notes.md
+        rm -f pc.img release_notes.md
