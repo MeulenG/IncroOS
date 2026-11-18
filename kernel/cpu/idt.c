@@ -37,6 +37,6 @@ int fill_idt_slots() {
     // size in bytes minus 1
     idtr.limit = sizeof(idt) - 1;
     __asm__ volatile ("lidt %0" : : "memory"(*&idtr));
-    __asm__ volatile ("sti");
+    // No sti yet: until pic_init remaps the PIC, IRQ0 still arrives as vector 8
     return 0;
 }
