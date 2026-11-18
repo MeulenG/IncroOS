@@ -46,6 +46,9 @@ DetectCPU:
     ; eax=0x80000001: Extended Processor Info and Feature Bits
     MOV     eax,0x80000001
     CPUID
+    ; EDX bit 29 is the LM (long mode) flag, the extended leaf alone does not mean 64-bit
+    TEST    edx, (1 << 29)
+    JZ      NoCPUID.NoLongMode
     ret
 
 NoCPUID:
@@ -69,6 +72,6 @@ NoCPUID:
         INT         0x16                            ; SMACK YOUR ASS ON THAT KEYBOARD AGAIN
     
         INT         0x19                            ; Reboot and try again, bios uses int 0x19 to find a bootable device
-ErrorMsgLongMode:           DB  "Long Mode Is Not Supported On This Machine"
-ErrorMsgCPUID:              DB  "Processor does not support CPUID"
+ErrorMsgLongMode:           DB  "Long Mode Is Not Supported On This Machine", 0
+ErrorMsgCPUID:              DB  "Processor does not support CPUID", 0
 %endif

@@ -89,12 +89,20 @@ jobs:
     - name: Verify disk image exists
       if: steps.check_commit.outputs.should_create_release == 'true'
       run: |
-        if [ ! -f disk.img ]; then
-          echo "disk.img not found after download"
+        if [ ! -f pc.img ]; then
+          echo "pc.img not found after download"
           exit 1
         fi
-        echo "disk.img found"
-        ls -lh disk.img
+        echo "pc.img found"
+        ls -lh pc.img
+    
+    - name: Compress disk image
+      if: steps.check_commit.outputs.should_create_release == 'true'
+      run: |
+        # The 2GB image is almost all empty space, compressed it is a few hundred KB
+        command -v zstd >/dev/null || { sudo apt-get update && sudo apt-get install -y zstd; }
+        zstd -19 -T0 -q pc.img -o pc.img.zst
+        ls -lh pc.img.zst
     
     - name: Get current date
       if: steps.check_commit.outputs.should_create_release == 'true'
@@ -138,9 +146,9 @@ jobs:
         - **Commit**: ${{ github.sha }}
         - **Serial Output Verified**: ${{ needs.build-and-test.outputs.serial-output-verified }}
         
-        - \`disk.img\`: Bootable disk image for the OS
+        - \`pc.img.zst\`: Bootable disk image for the OS, compressed with zstd
         
-        Download \`disk.img\` and run it with Bochs emulator.
+        Download \`pc.img.zst\`, decompress it with \`zstd -d pc.img.zst\` (on Windows, 7-Zip with zstd support works too) and run \`pc.img\` with Bochs emulator.
         
         You'll need to create a \`bochsrc\` configuration file. Example:
         \`\`\`
@@ -156,7 +164,7 @@ jobs:
         
         pci: enabled=1, chipset=i440fx
         
-        ata0-master: type=disk, mode=flat, path=disk.img
+        ata0-master: type=disk, mode=flat, path=pc.img
         boot: disk
         
         com1: enabled=1, mode=file, dev=serial.out
@@ -170,7 +178,7 @@ jobs:
         EOF
         
         gh release create nightly \
-          disk.img \
+          pc.img.zst \
           --title "Nightly Build - ${{ steps.date.outputs.date }}" \
           --notes-file release_notes.md \
           --prerelease \
@@ -179,4 +187,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -f disk.img release_notes.md
+        rm -f pc.img pc.img.zst release_notes.md

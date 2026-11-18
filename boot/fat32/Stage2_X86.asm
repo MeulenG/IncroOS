@@ -67,6 +67,8 @@ FixCS:
 	; Install our GDT
     call    GdtInstall
 
+	; IDTR still holds the real-mode IVT, so an IRQ in protected mode would triple fault
+	cli
 	mov eax, cr0
 	or eax, 1
 	mov cr0, eax
@@ -426,6 +428,8 @@ SetVideoMode:
 	;-------------------------------;
 	;   Get Ready For PMode		    ;
 	;-------------------------------;
+    ; Interrupts stay off from here on: IDTR points at the real-mode IVT until the kernel loads its own IDT
+    cli
     mov     eax,cr0             ; Set the A-register to control register 0.
     
     OR      eax, (1 << 0)       ; Set The PM-bit, which is the 0th bit.

@@ -40,5 +40,7 @@ int PIC_remap(int offset1, int offset2)
 int pic_init() {
 	// Remap the PICs to avoid errors with our boot service
 	PIC_remap(0x20, 0x28);
+	// IRQs now land on vectors 0x20-0x2F, which fill_idt_slots has set up, so they can be enabled
+	__asm__ volatile ("sti");
 	return 0;
 }
