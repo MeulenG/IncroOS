@@ -5,7 +5,7 @@ enable_language(C)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/pmm.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/pmm.c -o ${CMAKE_BINARY_DIR}/pmm.o
+    COMMAND gcc ${KERNEL_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/pmm.c -o ${CMAKE_BINARY_DIR}/pmm.o
     COMMENT "Compiling Physical Memory Manager"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/pmm.c ${CMAKE_CURRENT_SOURCE_DIR}/pmm.h
 )
@@ -15,7 +15,7 @@ add_custom_target(PMM ALL DEPENDS ${CMAKE_BINARY_DIR}/pmm.o)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/vmm.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/vmm.c -o ${CMAKE_BINARY_DIR}/vmm.o
+    COMMAND gcc ${KERNEL_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/vmm.c -o ${CMAKE_BINARY_DIR}/vmm.o
     COMMENT "Compiling Virtual Memory Manager"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vmm.c ${CMAKE_CURRENT_SOURCE_DIR}/vmm.h ${CMAKE_BINARY_DIR}/pmm.o
 )
@@ -26,7 +26,7 @@ add_dependencies(VMM PMM)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/kmalloc.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND gcc -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone -c ${CMAKE_CURRENT_SOURCE_DIR}/kmalloc.c -o ${CMAKE_BINARY_DIR}/kmalloc.o
+    COMMAND gcc ${KERNEL_C_FLAGS} -c ${CMAKE_CURRENT_SOURCE_DIR}/kmalloc.c -o ${CMAKE_BINARY_DIR}/kmalloc.o
     COMMENT "Compiling Kernel Memory Allocator"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/kmalloc.c ${CMAKE_CURRENT_SOURCE_DIR}/kmalloc.h ${CMAKE_BINARY_DIR}/pmm.o ${CMAKE_BINARY_DIR}/vmm.o
 )

@@ -16,6 +16,11 @@ if(MFOS)
     set(boot-dir ${CMAKE_SOURCE_DIR}/boot)
     set(kernel-dir ${CMAKE_SOURCE_DIR}/kernel)
 
+    # Flags every kernel C file is built with, files add their own on top (warnings, -O2, -mno-sse).
+    # -march pins the baseline x86-64 ISA, since compilers now default to newer CPUs.
+    # -mno-red-zone, because interrupts would overwrite the 128 bytes below RSP.
+    set(KERNEL_C_FLAGS -march=x86-64 -std=c99 -mcmodel=large -ffreestanding -fno-stack-protector -mno-red-zone)
+
     add_subdirectory(libs)
     add_subdirectory(boot)
     add_subdirectory(kernel)
