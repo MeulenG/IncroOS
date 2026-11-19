@@ -105,16 +105,17 @@ unreal:
 
 	; Read Loop
 	.cLoop:
-		mov 	bx, 0x0000
-		mov 	es, bx
+		; Root directory clusters go to 0x10000, clear of stage2 (0x7E00) even with 32KB clusters
 		mov 	bx, 0x1000
-		
+		mov 	es, bx
+		xor 	bx, bx
+
 		; ReadCluster returns next cluster in chain
 		call 	ReadCluster
 		push 	esi
 
 		; Step 3. Parse entries and look for kernel
-		mov 	di, 0x1000
+		xor 	di, di
 		mov 	si, syskrnldr
 		mov 	cx, 0x000B
 		mov 	dx, 0x0020
@@ -173,9 +174,11 @@ LoadFile:
 
 	; Load
 	.cLoop:
-		mov 	bx, 0x0000
+		; Each cluster lands at 0x20000 first. At 0x500 a 16KB cluster reached the FAT sector
+		; buffer at 0x4000 (overwritten before the copy) and a 32KB one reached stage2 itself.
+		mov 	bx, 0x2000
 		mov 	es, bx
-		mov 	bx, 0x500
+		xor 	bx, bx
 		; Clustertime
 		call 	ReadCluster
 
@@ -184,7 +187,7 @@ LoadFile:
 
 		; Setup copy
 		; source: temp buffer
-		mov esi, 0x500
+		mov esi, 0x20000
 		; destination: high memory
 		mov edi, dword [writepos]
 		movzx ecx, byte [0x7C00 + 0x0D]
@@ -238,13 +241,13 @@ ReadCluster:
 
 	; Calculate Sector
 	; FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-	xor 	eax, eax
-	xor 	bx, bx
+	; 32-bit, a 16-bit mul wraps 32MB into the data area
+	xor 	ebx, ebx
 	xor 	ecx, ecx
-	mov 	ax, si
-	sub 	ax, 2
+	mov 	eax, esi
+	sub 	eax, 2
 	mov 	bl, byte [0x7C00 + 0x0D]
-	mul 	bx
+	mul 	ebx
 	add 	eax, dword [0x7C00 + 0x34]
 	add 	eax, dword [0x7C00 + 0x1C]
 
@@ -360,13 +363,15 @@ ReadSector:
 ; **************************
 GetNextCluster:
 	; Calculte Sector in FAT
-	xor 	eax, eax
+	; 32-bit, since cluster * 4 overflows 16 bits from cluster 16384
+	mov 	eax, esi
+	shl 	eax, 2 			; REM * 4, since entries are 32 bits long, and not 8
 	xor 	edx, edx
-	mov 	ax, si
-	shl 	ax, 2 			; REM * 4, since entries are 32 bits long, and not 8
-	div 	word [0x7C00 + 0x0B]
-	add 	ax, word [0x7C00 + 0x1C]
-	add 	ax, word [0x7C00 + 0x0E]
+	movzx 	ecx, word [0x7C00 + 0x0B]
+	div 	ecx
+	add 	eax, dword [0x7C00 + 0x1C]
+	movzx 	ecx, word [0x7C00 + 0x0E]
+	add 	eax, ecx
 	push 	dx
 
 	; AX contains sector
